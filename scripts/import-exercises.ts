@@ -24,6 +24,7 @@ async function importExercises() {
   const records = parse(fileContent, {
     columns: true,
     skip_empty_lines: true,
+    bom: true,
   });
 
   console.log(`Found ${records.length} exercises to import.`);
@@ -31,13 +32,18 @@ async function importExercises() {
   const batchSize = 100;
   for (let i = 0; i < records.length; i += batchSize) {
     const batch = records.slice(i, i + batchSize).map((record: any) => ({
-      id: record.id,
-      name: record.name,
-      body_part: record.body_part,
-      equipment: record.equipment,
-      instructions: record.instructions,
-      target_muscles: record.target_muscles,
-      video_url: `${r2PublicUrl}/exercises/${record.id}.mp4`,
+      id: String(record.id ?? '').trim(),
+      name: String(record.name ?? '').trim(),
+      body_part: String(record.bodyPart ?? '').trim(),
+      equipment: String(record.equipment ?? '').trim(),
+      instructions: Object.keys(record)
+        .filter((key) => key.startsWith('instructions/'))
+        .sort((a, b) => Number(a.split('/')[1]) - Number(b.split('/')[1]))
+        .map((key) => String(record[key] ?? '').trim())
+        .filter(Boolean)
+        .join('\n'),
+      target_muscles: String(record.target ?? '').trim(),
+      video_url: `${r2PublicUrl}/exercises/${String(record.id ?? '').trim()}.mp4`,
     }));
 
     const { error } = await supabase

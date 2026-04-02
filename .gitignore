@@ -1,1 +1,10 @@
 node_modules
+.next
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+
+# Misc build artifacts
+*.tsbuildinfo

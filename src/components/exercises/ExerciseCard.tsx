@@ -2,6 +2,7 @@
 
 import { LucideBookmark, LucideInfo } from 'lucide-react';
 import { Exercise } from '@/lib/db/dexie';
+import { getExerciseBodyPart, getExerciseVideoSrc } from '@/lib/exercise-data';
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -10,21 +11,14 @@ interface ExerciseCardProps {
 
 export function ExerciseCard({ exercise, style }: ExerciseCardProps) {
   const r2Url = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || '';
-  
-  // High-Robustness URL Builder: Prioritize working R2 paths over broken legacy DB strings
-  let videoSrc = exercise.video_url;
-  if (!videoSrc || videoSrc.includes('undefined')) {
-    // If we have an ID like '0001', the path should be exercises/0001.mp4
-    const cleanId = exercise.id.toString().padStart(4, '0');
-    videoSrc = `${r2Url}/exercises/${cleanId}.mp4`;
-  }
+  const videoSrc = getExerciseVideoSrc(exercise, r2Url);
 
   return (
     <div style={style} className="p-2"> 
-      <div className="bg-[#F8F9FB] rounded-[2.5rem] overflow-hidden border border-gray-100 hover:shadow-2xl transition-all h-full flex flex-col group relative">
+      <div className="bg-white rounded-[2.5rem] overflow-hidden border border-black/5 shadow-[0_14px_45px_rgba(15,23,42,0.08)] hover:shadow-[0_18px_60px_rgba(15,23,42,0.12)] transition-all h-full flex flex-col group relative">
         
         {/* Media Container - 4:5 Vertical Aspect */}
-        <div className="relative aspect-[4/5] flex items-center justify-center p-4">
+        <div className="relative aspect-[4/5] flex items-center justify-center p-4 bg-[#f5f5f7]">
           <video 
             src={videoSrc} 
             autoPlay 
@@ -52,10 +46,10 @@ export function ExerciseCard({ exercise, style }: ExerciseCardProps) {
         </div>
 
         {/* Content Area */}
-        <div className="px-6 pb-6 pt-2">
-          <h3 className="font-black text-gray-900 leading-tight text-xl capitalize mb-1">{exercise.name}</h3>
-          <p className="text-xs font-black text-gray-400 uppercase tracking-widest leading-loose">
-            {exercise.body_part || 'Body Only'}
+        <div className="px-6 pb-6 pt-3">
+          <h3 className="font-black text-gray-900 leading-tight text-2xl capitalize mb-1">{exercise.name}</h3>
+          <p className="text-xs font-black text-gray-500 uppercase tracking-[0.24em] leading-loose">
+            {getExerciseBodyPart(exercise) || 'Body Only'}
           </p>
         </div>
 

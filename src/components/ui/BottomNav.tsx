@@ -1,48 +1,40 @@
 'use client';
 
+import { LucideHome, LucideBarChart2, LucideUsers, LucideSettings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Dumbbell, LayoutDashboard, History, Settings } from 'lucide-react';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 export function BottomNav() {
   const pathname = usePathname();
 
   const navItems = [
-    { label: 'Dash', icon: LayoutDashboard, href: '/' },
-    { label: 'Work', icon: PlayIcon, href: '/workout/active' },
-    { label: 'Exercises', icon: Dumbbell, href: '/exercises' },
-    { label: 'History', icon: History, href: '/history' },
+    { icon: LucideHome, label: 'Home', href: '/dashboard' },
+    { icon: LucideBarChart2, label: 'Analytics', href: '/dashboard/analytics' },
+    { icon: LucideUsers, label: 'Users', href: '/dashboard/users' },
+    { icon: LucideSettings, label: 'Settings', href: '/dashboard/settings' },
   ];
 
-  function PlayIcon({ className }: { className?: string }) {
-     return <div className={`p-2 rounded-full bg-blue-600 text-white -mt-8 shadow-lg shadow-blue-200 ${className}`}><Dumbbell className="h-6 w-6" /></div>
-  }
-
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white border-t border-slate-200 flex justify-around items-center p-2 z-50">
+    <nav className="fixed bottom-0 left-0 right-0 h-20 bg-white/10 backdrop-blur-md border-t border-white/20 flex items-center justify-around px-6 z-50">
       {navItems.map((item) => {
         const isActive = pathname === item.href;
-        const Icon = item.icon;
-
-        if (item.label === 'Work') {
-           return (
-             <Link key={item.href} href={item.href} className="flex flex-col items-center">
-               <Icon />
-               <span className="text-[10px] font-bold mt-1 text-slate-400">TRAIN</span>
-             </Link>
-           );
-        }
-
         return (
           <Link
-            key={item.href}
+            key={item.label}
             href={item.href}
-            className={`flex flex-col items-center p-2 transition-colors ${
-              isActive ? 'text-blue-600' : 'text-slate-400'
-            }`}
+            className={cn(
+              "flex flex-col items-center gap-1 transition-all active:scale-90",
+              isActive ? "text-green-400" : "text-white/60 hover:text-white"
+            )}
           >
-            <Icon className="h-5 w-5" />
-            <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">{item.label}</span>
+            <item.icon className={cn("w-6 h-6", isActive && "drop-shadow-[0_0_8px_rgba(74,222,128,0.5)]")} />
+            <span className="text-[10px] font-bold uppercase tracking-wider">{item.label}</span>
           </Link>
         );
       })}

@@ -40,36 +40,6 @@ export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInp
   );
 }
 
-// src/components/ui/BottomNav.tsx
-import { LucideDumbbell, LucideHistory, LucideLayoutDashboard, LucideSearch, LucideClipboardEdit } from 'lucide-react';
-import Link from 'next/link';
-
-export function BottomNav() {
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 pb-2">
-      <Link href="/" className="flex flex-col items-center text-blue-600 gap-1">
-        <LucideLayoutDashboard className="w-6 h-6" />
-        <span className="text-[10px] font-bold">Home</span>
-      </Link>
-      <Link href="/exercises" className="flex flex-col items-center text-gray-400 gap-1 hover:text-blue-600 transition-colors">
-        <LucideSearch className="w-6 h-6" />
-        <span className="text-[10px] font-medium">Browse</span>
-      </Link>
-      <Link href="/workout" className="flex flex-col items-center bg-blue-600 text-white p-3 rounded-full -mt-12 shadow-lg shadow-blue-200">
-        <LucideDumbbell className="w-7 h-7" />
-      </Link>
-      <Link href="/history" className="flex flex-col items-center text-gray-400 gap-1 hover:text-blue-600 transition-colors">
-        <LucideHistory className="w-6 h-6" />
-        <span className="text-[10px] font-medium">History</span>
-      </Link>
-      <Link href="/coach/builder" className="flex flex-col items-center text-gray-400 gap-1 hover:text-blue-600 transition-colors">
-        <LucideClipboardEdit className="w-6 h-6" />
-        <span className="text-[10px] font-medium">Builder</span>
-      </Link>
-    </nav>
-  );
-}
-
 // Explicit Exports to avoid Star Export conflicts
 export { Card, CardHeader, CardTitle, CardContent } from './card';
 export { Badge } from './badge';
