@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { getSupabaseClient } from '@/lib/supabase/client';
 import { db } from '@/lib/db/dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { getExerciseBodyPart, getExerciseTargetMuscles } from '@/lib/exercise-data';
@@ -34,6 +34,7 @@ export function useExercises(search: string = '', bodyPart: string = 'all') {
       setIsSyncing(true);
       try {
         // Always refresh from remote so local cache does not become permanently stale.
+        const supabase = getSupabaseClient();
         const { data: remoteData, error } = await supabase
           .from('exercises')
           .select('*');

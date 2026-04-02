@@ -9,16 +9,16 @@ interface MetricCardProps {
 
 export function MetricCard({ label, value, trend, isPositive }: MetricCardProps) {
   return (
-    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 shadow-xl">
-      <p className="text-white/60 text-sm font-medium uppercase tracking-widest mb-1">{label}</p>
-      <h3 className="text-white text-2xl font-black">{value}</h3>
+    <div className="glass-panel p-5 rounded-[28px]">
+      <p className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-[0.22em] mb-2">{label}</p>
+      <h3 className="text-[var(--text-primary)] text-3xl font-extrabold tracking-tight">{value}</h3>
       <div className="flex items-center gap-1 mt-2">
         {isPositive ? (
-          <LucideArrowUpRight className="w-4 h-4 text-green-400" />
+          <LucideArrowUpRight className="w-4 h-4 text-[var(--accent-lime)]" />
         ) : (
-          <LucideArrowDownRight className="w-4 h-4 text-red-400" />
+          <LucideArrowDownRight className="w-4 h-4 text-[var(--accent-orange)]" />
         )}
-        <span className={`text-xs font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+        <span className={`text-xs font-bold ${isPositive ? 'text-[var(--accent-lime)]' : 'text-[var(--accent-orange)]'}`}>
           {trend}
         </span>
       </div>

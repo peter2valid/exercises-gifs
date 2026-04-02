@@ -3,6 +3,8 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db/dexie';
+import { useGym } from '@/context/GymContext';
+import { useGymParam } from '@/hooks/useGymParam';
 import { LucideArrowLeft, LucideDumbbell, LucideTarget, LucideCheckCircle2, LucidePlayCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -13,6 +15,8 @@ export default function ExerciseViewer() {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
+  const { gymId, gymName } = useGym();
+  const { buildGymUrl } = useGymParam();
   
   const exercise = useLiveQuery(
     () => db.exercises.get(id as string),
@@ -56,7 +60,7 @@ export default function ExerciseViewer() {
       <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center space-y-4">
         <h1 className="text-2xl font-black text-gray-900">Exercise Not Found</h1>
           <p className="text-gray-500">We couldn&apos;t find the exercise you&apos;re looking for.</p>
-        <Link href="/scan" className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold">
+        <Link href={buildGymUrl('/scan')} className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold">
           Go Back to Scan
         </Link>
       </div>
@@ -67,25 +71,32 @@ export default function ExerciseViewer() {
   const videoSrc = getExerciseVideoSrc(exercise, r2Url);
   const instructionSteps = getExerciseInstructions(exercise.instructions);
 
-  const handleBack = () => {
-     if (window.history.length > 1) {
-        router.back();
-     } else {
-        router.push('/scan');
-     }
-  };
-
   return (
     <div className="min-h-screen bg-white pb-20">
       {/* Navigation */}
       <nav className="fixed top-6 left-6 z-50">
         <button 
-          onClick={handleBack}
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push(buildGymUrl('/scan'));
+            }
+          }}
           className="p-3 bg-white/90 backdrop-blur shadow-xl rounded-2xl active:scale-90 transition-all border border-gray-100"
         >
           <LucideArrowLeft className="w-6 h-6 text-gray-900" />
         </button>
       </nav>
+
+      {/* Gym Badge (if set) */}
+      {gymId && (
+        <div className="sticky top-6 right-6 z-40 float-right">
+          <div className="bg-gradient-to-r from-orange-400 to-orange-500 text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
+            🏋️ {gymName}
+          </div>
+        </div>
+      )}
 
       {/* Video Section */}
       <div 

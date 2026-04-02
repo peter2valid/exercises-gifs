@@ -6,6 +6,12 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 249, 250, 251; /* gray-50 */
   --background-end-rgb: 255, 255, 255;
+  --glass-fill: rgba(36, 38, 44, 0.18);
+  --glass-stroke: rgba(255, 255, 255, 0.12);
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1a1;
+  --accent-orange: #39d5ff;
+  --accent-lime: #ccff00;
 }
 
 body {
@@ -16,6 +22,37 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+}
+
+@layer components {
+  .glass-panel {
+    position: relative;
+    background: var(--glass-fill);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 28px;
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    box-shadow: 0 0 24px rgba(57, 213, 255, 0.08), 0 0 36px rgba(204, 255, 0, 0.03);
+    overflow: hidden;
+  }
+
+  .glass-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-top: 1px solid var(--glass-stroke);
+    border-left: 1px solid var(--glass-stroke);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .dashboard-bg {
+    background:
+      radial-gradient(760px circle at 64% 18%, rgba(57, 213, 255, 0.18), transparent 58%),
+      radial-gradient(700px circle at 18% 72%, rgba(121, 92, 255, 0.14), transparent 62%),
+      radial-gradient(540px circle at 54% 50%, rgba(180, 190, 210, 0.08), transparent 62%),
+      linear-gradient(145deg, #16171c 0%, #1c1d23 48%, #131419 100%);
+  }
 }
 
 .scrollbar-hide::-webkit-scrollbar {

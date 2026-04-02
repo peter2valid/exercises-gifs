@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { useExercises } from '@/hooks/useExercises';
+import { useGym } from '@/context/GymContext';
+import { useGymParam } from '@/hooks/useGymParam';
 import { Input } from '@/components/ui';
 import { LucideSearch, LucideChevronRight, LucideDumbbell } from 'lucide-react';
 import Link from 'next/link';
@@ -14,7 +16,6 @@ import BackMuscleIcon from '@/assets/icons/bodyparts/Back_muscle_Icon.webp';
 import BicepsMuscleIcon from '@/assets/icons/bodyparts/Biceps_muscle_Icon.webp';
 import ForearmsIcon from '@/assets/icons/bodyparts/Forearms_Icon.webp';
 import ForearmsBackIcon from '@/assets/icons/bodyparts/Forearms_back_Icon.webp';
-import GlutesIcon from '@/assets/icons/bodyparts/Glutes_Icon.webp';
 import HamstringsIcon from '@/assets/icons/bodyparts/Hamstrings_Icon.webp';
 import HipsBackMuscleIcon from '@/assets/icons/bodyparts/Hips_back_muscle_Icon.webp';
 import InnerThighIcon from '@/assets/icons/bodyparts/Inner_thigh_Icon.webp';
@@ -29,19 +30,19 @@ const CATEGORIES: Array<{
   iconSrc?: StaticImageData;
   color: string;
 }> = [
-  { id: 'chest', name: 'Chest', iconSrc: AbdominalsIcon, color: 'bg-red-50' },
-  { id: 'biceps', name: 'Biceps', iconSrc: BicepsMuscleIcon, color: 'bg-purple-50' },
-  { id: 'triceps', name: 'Triceps', iconSrc: ForearmsBackIcon, color: 'bg-fuchsia-50' },
-  { id: 'back', name: 'Back', iconSrc: BackMuscleIcon, color: 'bg-blue-50' },
-  { id: 'shoulders', name: 'Shoulders', iconSrc: NeckMuscleIcon, color: 'bg-cyan-50' },
-  { id: 'abs', name: 'Abs', iconSrc: LowerAbdominalsIcon, color: 'bg-rose-50' },
-  { id: 'quads', name: 'Quadriceps', iconSrc: InnerThighIcon, color: 'bg-orange-50' },
-  { id: 'hamstrings', name: 'Hamstrings', iconSrc: HamstringsIcon, color: 'bg-amber-50' },
-  { id: 'glutes', name: 'Hips', iconSrc: HipsBackMuscleIcon, color: 'bg-pink-50' },
-  { id: 'calves', name: 'Calves', iconSrc: LowerLegMuscleIcon, color: 'bg-yellow-50' },
-  { id: 'forearms', name: 'Forearms', iconSrc: ForearmsIcon, color: 'bg-violet-50' },
-  { id: 'neck', name: 'Neck', iconSrc: NeckMuscleIcon, color: 'bg-emerald-50' },
-  { id: 'cardio', name: 'Cardio', iconSrc: CardioIcon, color: 'bg-sky-50' },
+  { id: 'chest', name: 'Chest', iconSrc: AbdominalsIcon, color: 'bg-cyan-400/15' },
+  { id: 'biceps', name: 'Biceps', iconSrc: BicepsMuscleIcon, color: 'bg-[#b26dff]/18' },
+  { id: 'triceps', name: 'Triceps', iconSrc: ForearmsBackIcon, color: 'bg-sky-400/15' },
+  { id: 'back', name: 'Back', iconSrc: BackMuscleIcon, color: 'bg-[#2b3948]/50' },
+  { id: 'shoulders', name: 'Shoulders', iconSrc: NeckMuscleIcon, color: 'bg-[#2a3f49]/50' },
+  { id: 'abs', name: 'Abs', iconSrc: LowerAbdominalsIcon, color: 'bg-indigo-400/15' },
+  { id: 'quads', name: 'Quadriceps', iconSrc: InnerThighIcon, color: 'bg-[#4e3e2b]/45' },
+  { id: 'hamstrings', name: 'Hamstrings', iconSrc: HamstringsIcon, color: 'bg-[#4a3c2a]/45' },
+  { id: 'glutes', name: 'Hips', iconSrc: HipsBackMuscleIcon, color: 'bg-[#4b3430]/45' },
+  { id: 'calves', name: 'Calves', iconSrc: LowerLegMuscleIcon, color: 'bg-[#4f442f]/45' },
+  { id: 'forearms', name: 'Forearms', iconSrc: ForearmsIcon, color: 'bg-[#4d3f66]/45' },
+  { id: 'neck', name: 'Neck', iconSrc: NeckMuscleIcon, color: 'bg-[#3d4a2d]/45' },
+  { id: 'cardio', name: 'Cardio', iconSrc: CardioIcon, color: 'bg-[#2f4a45]/45' },
 ];
 
 const PROGRAMS = [
@@ -50,25 +51,27 @@ const PROGRAMS = [
 ];
 
 const CATEGORY_PREVIEWS: Record<string, { count: string; accent: string }> = {
-  chest: { count: 'push', accent: 'from-rose-500/10 to-white' },
-  biceps: { count: 'arms', accent: 'from-violet-500/10 to-white' },
-  triceps: { count: 'arms', accent: 'from-fuchsia-500/10 to-white' },
-  back: { count: 'pull', accent: 'from-sky-500/10 to-white' },
-  shoulders: { count: 'press', accent: 'from-cyan-500/10 to-white' },
-  abs: { count: 'core', accent: 'from-pink-500/10 to-white' },
-  quads: { count: 'legs', accent: 'from-orange-500/10 to-white' },
-  hamstrings: { count: 'legs', accent: 'from-amber-500/10 to-white' },
-  glutes: { count: 'hips', accent: 'from-red-500/10 to-white' },
-  calves: { count: 'legs', accent: 'from-yellow-500/10 to-white' },
-  forearms: { count: 'arms', accent: 'from-purple-500/10 to-white' },
-  cardio: { count: 'endurance', accent: 'from-emerald-500/10 to-white' },
-  neck: { count: 'mobility', accent: 'from-lime-500/10 to-white' },
+  chest: { count: 'push', accent: 'from-cyan-400/25 to-transparent' },
+  biceps: { count: 'arms', accent: 'from-violet-500/20 to-transparent' },
+  triceps: { count: 'arms', accent: 'from-sky-400/20 to-transparent' },
+  back: { count: 'pull', accent: 'from-sky-500/18 to-transparent' },
+  shoulders: { count: 'press', accent: 'from-cyan-500/18 to-transparent' },
+  abs: { count: 'core', accent: 'from-indigo-400/20 to-transparent' },
+  quads: { count: 'legs', accent: 'from-orange-500/18 to-transparent' },
+  hamstrings: { count: 'legs', accent: 'from-amber-500/18 to-transparent' },
+  glutes: { count: 'hips', accent: 'from-red-500/18 to-transparent' },
+  calves: { count: 'legs', accent: 'from-yellow-500/18 to-transparent' },
+  forearms: { count: 'arms', accent: 'from-purple-500/18 to-transparent' },
+  cardio: { count: 'endurance', accent: 'from-emerald-500/18 to-transparent' },
+  neck: { count: 'mobility', accent: 'from-lime-500/18 to-transparent' },
 };
 
 export default function ScanPage() {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const { exercises, isLoading } = useExercises(search, activeCategory);
+  const { gymId, gymName } = useGym();
+  const { buildGymUrl } = useGymParam();
   const activeCategoryLabel = CATEGORIES.find(category => category.id === activeCategory)?.name ?? 'Exercises';
   const hasActiveSelection = activeCategory !== 'all';
   const isFocusedResultsMode = hasActiveSelection || search.trim().length > 0;
@@ -80,26 +83,35 @@ export default function ScanPage() {
 
   const searchResults = useMemo(() => {
     if (!isFocusedResultsMode) return [];
-    return exercises.slice(0, 60); // Show more rows when a category is selected
+    return exercises.slice(0, 60);
   }, [exercises, isFocusedResultsMode]);
 
   return (
-    <div className="min-h-screen bg-[#f7f7fb] pb-24">
+    <div className="min-h-screen dashboard-bg text-[var(--text-primary)] pb-24">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-30 bg-[#f7f7fb]/90 backdrop-blur-xl border-b border-black/5 px-6 py-6 space-y-4">
-        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Exercises</h1>
+      <header className="sticky top-0 z-30 bg-transparent backdrop-blur-xl border-b border-white/10 px-6 py-6 space-y-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">Exercises</h1>
+            {gymId && (
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-orange)] mt-1">
+                🏋️ {gymName}
+              </p>
+            )}
+          </div>
+        </div>
         <div className="relative group">
-          <LucideSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+          <LucideSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-secondary)] group-focus-within:text-[var(--accent-orange)] transition-colors" />
           <Input 
             placeholder="Search exercises..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-12 pr-12 h-16 bg-white border-none rounded-full text-lg shadow-[0_12px_40px_rgba(15,23,42,0.08)] focus:ring-2 focus:ring-blue-100"
+            className="pl-12 pr-12 h-16 bg-white/10 border border-white/10 rounded-full text-lg text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] shadow-[0_12px_40px_rgba(0,0,0,0.25)] focus:ring-2 focus:ring-[var(--accent-orange)]/35"
           />
           {search && (
             <button 
               onClick={() => setSearch('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-gray-200 rounded-full text-gray-500 hover:text-gray-700 transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-white/10 rounded-full text-[var(--text-secondary)] hover:text-white transition-colors"
             >
               <span className="text-xs">✕</span>
             </button>
@@ -114,17 +126,29 @@ export default function ScanPage() {
             {hasActiveSelection && (
               <div className="-mx-2 overflow-x-auto pb-1 scrollbar-hide">
                 <div className="flex min-w-max gap-2 px-2">
+                  <button
+                    key="mini-all"
+                    type="button"
+                    onClick={() => {
+                      setActiveCategory('all');
+                      setSearch('');
+                    }}
+                    className="shrink-0 rounded-full px-4 py-2 border border-white/10 bg-white/10 text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)] hover:text-white transition-all active:scale-95"
+                  >
+                    All
+                  </button>
                   {CATEGORIES.map((cat, index) => (
                     <button
                       key={`mini-${cat.id}`}
+                      type="button"
                       onClick={() => {
-                        setActiveCategory(activeCategory === cat.id ? 'all' : cat.id);
+                        setActiveCategory(cat.id);
                         setSearch('');
                       }}
-                      className={`shrink-0 rounded-full p-2 border transition-all active:scale-95 ${
+                      className={`shrink-0 rounded-full p-2 border transition-all active:scale-95 cursor-pointer ${
                         activeCategory === cat.id
-                          ? 'border-blue-500 bg-blue-50 shadow-[0_10px_24px_rgba(59,130,246,0.2)]'
-                          : 'border-black/5 bg-white'
+                          ? 'border-[var(--accent-orange)] bg-[var(--accent-orange)]/15 shadow-[0_0_24px_rgba(57,213,255,0.28)]'
+                            : 'border-white/10 bg-white/10'
                       }`}
                     >
                       <div className={`flex h-10 w-10 items-center justify-center rounded-full ${cat.color}`}>
@@ -153,10 +177,10 @@ export default function ScanPage() {
                  {search ? 'Search Results' : `${activeCategoryLabel} Workouts`}
                </h2>
                <div className="flex items-center gap-3">
-                 <span className="text-xs font-bold text-gray-400 uppercase">{exercises.length} results</span>
+                 <span className="text-xs font-bold text-[var(--text-secondary)] uppercase">{exercises.length} results</span>
                  <button 
                    onClick={() => { setSearch(''); setActiveCategory('all'); }}
-                   className="text-xs font-bold text-blue-600"
+                   className="text-xs font-bold text-[var(--accent-orange)]"
                  >
                    Clear All
                  </button>
@@ -165,23 +189,23 @@ export default function ScanPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {isLoading ? (
                  Array(6).fill(0).map((_, i) => (
-                    <div key={i} className="h-28 bg-white rounded-[2rem] animate-pulse shadow-sm" />
+                    <div key={i} className="h-28 glass-panel rounded-[2rem] animate-pulse" />
                  ))
               ) : searchResults.map(ex => (
                 <Link 
                   key={ex.id} 
-                  href={`/scan/exercise/${ex.id}`}
-                  className="flex items-center justify-between p-4 bg-white rounded-[2rem] active:scale-[0.98] transition-all group shadow-[0_10px_30px_rgba(15,23,42,0.06)] border border-black/5 min-h-[7rem]"
+                  href={buildGymUrl(`/scan/exercise/${ex.id}`)}
+                  className="glass-panel flex items-center justify-between p-4 rounded-[2rem] active:scale-[0.98] transition-all group min-h-[7rem]"
                 >
                   <div>
-                    <h3 className="font-black text-gray-900 capitalize text-lg leading-tight">{ex.name}</h3>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.24em] mt-1">{getExerciseBodyPart(ex) || 'Unknown'}</p>
+                    <h3 className="font-black text-[var(--text-primary)] capitalize text-lg leading-tight">{ex.name}</h3>
+                    <p className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-[0.24em] mt-1">{getExerciseBodyPart(ex) || 'Unknown'}</p>
                   </div>
-                  <LucideChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-600 transition-colors" />
+                  <LucideChevronRight className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--accent-orange)] transition-colors" />
                 </Link>
               ))}
               {!isLoading && searchResults.length === 0 && (
-                <p className="text-center py-10 text-gray-400 font-medium">No exercises found.</p>
+                <p className="text-center py-10 text-[var(--text-secondary)] font-medium">No exercises found.</p>
               )}
             </div>
           </section>
@@ -191,23 +215,24 @@ export default function ScanPage() {
         {!isFocusedResultsMode && (
         <section className="space-y-4">
           <div className="flex items-end justify-between">
-            <h2 className="text-sm font-black text-gray-500 uppercase tracking-[0.24em]">Choose a muscle</h2>
-            <span className="text-xs font-bold text-gray-400 uppercase">{CATEGORIES.length} groups</span>
+            <h2 className="text-sm font-black text-[var(--text-secondary)] uppercase tracking-[0.24em]">Choose a muscle</h2>
+            <span className="text-xs font-bold text-[var(--text-secondary)] uppercase">{CATEGORIES.length} groups</span>
           </div>
            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {isLoading ? (
               Array(CATEGORIES.length).fill(0).map((_, i) => (
-                  <div key={i} className="h-48 bg-white rounded-[2.25rem] animate-pulse shadow-sm" />
+                  <div key={i} className="h-48 glass-panel rounded-[2.25rem] animate-pulse" />
                ))
             ) : CATEGORIES.map((cat, index) => (
               <button
                 key={cat.id}
+                type="button"
                 onClick={() => {
-                  setActiveCategory(activeCategory === cat.id ? 'all' : cat.id);
+                  setActiveCategory(cat.id);
                   setSearch('');
                 }}
-                className={`group flex flex-col items-center text-center gap-4 p-4 rounded-[2.25rem] transition-all active:scale-95 text-left shadow-[0_10px_30px_rgba(15,23,42,0.06)] border ${
-                  activeCategory === cat.id ? 'border-blue-500 bg-blue-50' : 'border-black/5 bg-white'
+                className={`glass-panel group flex flex-col items-center text-center gap-4 p-4 rounded-[2.25rem] transition-all active:scale-95 text-left cursor-pointer ${
+                  activeCategory === cat.id ? 'ring-2 ring-[var(--accent-orange)] bg-[var(--accent-orange)]/10' : ''
                 }`}
               >
                 <div className={`w-full rounded-[1.75rem] bg-gradient-to-b ${CATEGORY_PREVIEWS[cat.id]?.accent ?? 'from-gray-100 to-white'} p-4`}> 
@@ -220,18 +245,18 @@ export default function ScanPage() {
                         height={110}
                         priority={index === 0}
                         sizes="110px"
-                        className="h-24 w-24 object-contain drop-shadow-sm"
+                        className="h-24 w-24 object-contain drop-shadow-[0_8px_18px_rgba(0,0,0,0.35)]"
                       />
                     ) : (
-                      <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/80 text-sm font-black uppercase tracking-[0.3em] text-gray-600 shadow-sm">
+                      <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/10 text-sm font-black uppercase tracking-[0.3em] text-[var(--text-secondary)] shadow-sm">
                         CV
                       </div>
                     )}
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <span className="block text-lg font-black text-gray-900 leading-none">{cat.name}</span>
-                  <span className="block text-xs font-bold uppercase tracking-[0.24em] text-gray-400">
+                  <span className="block text-lg font-black text-[var(--text-primary)] leading-none">{cat.name}</span>
+                  <span className="block text-xs font-bold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
                     {CATEGORY_PREVIEWS[cat.id]?.count ?? 'workouts'}
                   </span>
                 </div>
@@ -245,19 +270,19 @@ export default function ScanPage() {
         {!isFocusedResultsMode && (
         <section className="space-y-4">
           <div className="flex items-end justify-between">
-            <h2 className="text-sm font-black text-gray-500 uppercase tracking-[0.24em]">Workouts</h2>
-            <span className="text-xs font-bold text-gray-400 uppercase">tap to open</span>
+            <h2 className="text-sm font-black text-[var(--text-secondary)] uppercase tracking-[0.24em]">Workouts</h2>
+            <span className="text-xs font-bold text-[var(--text-secondary)] uppercase">tap to open</span>
           </div>
           <div className="grid gap-4">
             {isLoading ? (
                Array(2).fill(0).map((_, i) => (
-                  <div key={i} className="h-56 bg-white rounded-[2rem] animate-pulse shadow-sm" />
+                  <div key={i} className="h-56 glass-panel rounded-[2rem] animate-pulse" />
                ))
             ) : workoutCards.map(prog => (
               <Link 
                 key={prog.id} 
-                href={`/scan/program/${prog.id}`}
-                className="block relative overflow-hidden rounded-[2rem] bg-white p-4 shadow-[0_16px_50px_rgba(15,23,42,0.08)] border border-black/5 active:scale-[0.98] transition-transform"
+                href={buildGymUrl(`/scan/program/${prog.id}`)}
+                className="glass-panel block relative overflow-hidden rounded-[2rem] p-4 active:scale-[0.98] transition-transform"
               >
                 <div className={`rounded-[1.75rem] bg-gradient-to-br ${prog.tone} p-5 text-white`}>
                   <div className="flex items-start justify-between gap-4">
@@ -280,8 +305,8 @@ export default function ScanPage() {
                   </div>
                 </div>
                 <div className="mt-4 flex items-center justify-between px-2 pb-1">
-                  <span className="text-xs font-bold uppercase tracking-[0.24em] text-gray-400">Open workout</span>
-                  <LucideChevronRight className="h-5 w-5 text-gray-300" />
+                  <span className="text-xs font-bold uppercase tracking-[0.24em] text-[var(--text-secondary)]">Open workout</span>
+                  <LucideChevronRight className="h-5 w-5 text-[var(--text-secondary)]" />
                 </div>
               </Link>
             ))}

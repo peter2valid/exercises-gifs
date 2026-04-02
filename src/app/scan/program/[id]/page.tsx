@@ -3,6 +3,8 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db/dexie';
+import { useGym } from '@/context/GymContext';
+import { useGymParam } from '@/hooks/useGymParam';
 import { LucideArrowLeft, LucideDumbbell, LucideArrowRightLeft } from 'lucide-react';
 import Link from 'next/link';
 import { getExerciseBodyPart } from '@/lib/exercise-data';
@@ -23,6 +25,8 @@ const PROGRAMS = {
 export default function ProgramViewer() {
   const { id } = useParams();
   const router = useRouter();
+  const { gymId, gymName } = useGym();
+  const { buildGymUrl } = useGymParam();
   const program = PROGRAMS[id as keyof typeof PROGRAMS];
   const workoutTabs = Object.entries(PROGRAMS).map(([key, value]) => ({ id: key, ...value }));
 
@@ -50,11 +54,16 @@ export default function ProgramViewer() {
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-black/5 bg-[#f7f7fb]/90 px-6 pt-6 pb-5 backdrop-blur-xl">
         <button 
-          onClick={() => router.push('/scan')}
+          onClick={() => router.push(buildGymUrl('/scan'))}
           className="p-3 bg-white rounded-full shadow-[0_8px_30px_rgba(15,23,42,0.08)] hover:bg-white active:scale-95 transition-all"
         >
           <LucideArrowLeft className="w-6 h-6 text-gray-900" />
         </button>
+        {gymId && (
+          <div className="mt-3 inline-block bg-gradient-to-r from-orange-400 to-orange-500 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">
+            🏋️ {gymName}
+          </div>
+        )}
         <div className="mt-5 flex items-center justify-between gap-4">
           <div className="space-y-2">
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">Workout</p>
@@ -83,7 +92,7 @@ export default function ProgramViewer() {
             return (
               <Link 
                 key={ex.id} 
-                href={`/scan/exercise/${ex.id}`}
+                href={buildGymUrl(`/scan/exercise/${ex.id}`)}
                 className="block rounded-[2rem] bg-white shadow-[0_16px_50px_rgba(15,23,42,0.08)] border border-black/5 overflow-hidden hover:-translate-y-1 transition-all group active:scale-[0.98]"
               >
                 <div className="p-4 pb-0">
@@ -130,7 +139,7 @@ export default function ProgramViewer() {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => router.push(`/scan/program/${tab.id}`)}
+                onClick={() => router.push(buildGymUrl(`/scan/program/${tab.id}`))}
                 className={`shrink-0 rounded-full px-4 py-3 text-left transition-all active:scale-95 ${
                   active
                     ? 'bg-gray-900 text-white shadow-[0_12px_30px_rgba(15,23,42,0.22)]'
