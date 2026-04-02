@@ -6,6 +6,7 @@ import { getExerciseBodyPart, getExerciseTargetMuscles } from '@/lib/exercise-da
 
 const CATEGORY_ALIASES: Record<string, string[]> = {
   chest: ['chest', 'pectorals', 'serratus anterior'],
+  arms: ['arms', 'upper arms', 'lower arms', 'biceps', 'triceps', 'forearms'],
   biceps: ['biceps', 'upper arms', 'arms'],
   triceps: ['triceps', 'upper arms', 'arms'],
   back: ['back', 'upper back', 'lats', 'traps', 'spine', 'levator scapulae'],
@@ -18,6 +19,26 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
   forearms: ['forearms', 'lower arms', 'arms'],
   neck: ['neck'],
   cardio: ['cardio'],
+};
+
+type LookupRow = {
+  id: number;
+  name: string;
+};
+
+type InstructionRow = {
+  exercise_id: string;
+  step_number: number;
+  instruction_text: string;
+};
+
+type ExerciseRow = {
+  id: string;
+  name: string;
+  body_part_id: number;
+  equipment_id: number;
+  primary_target_id: number;
+  is_active: boolean;
 };
 
 export function useExercises(search: string = '', bodyPart: string = 'all') {
@@ -35,14 +56,50 @@ export function useExercises(search: string = '', bodyPart: string = 'all') {
       try {
         // Always refresh from remote so local cache does not become permanently stale.
         const supabase = getSupabaseClient();
-        const { data: remoteData, error } = await supabase
-          .from('exercises')
-          .select('*');
+        const [exercisesResult, bodyPartsResult, equipmentResult, musclesResult, instructionsResult] = await Promise.all([
+          supabase.from('exercises').select('id,name,body_part_id,equipment_id,primary_target_id,is_active'),
+          supabase.from('body_parts').select('id,name'),
+          supabase.from('equipment_types').select('id,name'),
+          supabase.from('muscles').select('id,name'),
+          supabase.from('exercise_instructions').select('exercise_id,step_number,instruction_text'),
+        ]);
 
+        const remoteData = (exercisesResult.data ?? []) as ExerciseRow[];
+        const { error } = exercisesResult;
         if (error) throw error;
+        if (bodyPartsResult.error) throw bodyPartsResult.error;
+        if (equipmentResult.error) throw equipmentResult.error;
+        if (musclesResult.error) throw musclesResult.error;
+        if (instructionsResult.error) throw instructionsResult.error;
 
-        if (remoteData && remoteData.length > 0) {
-          await db.exercises.bulkPut(remoteData);
+        const bodyParts = (bodyPartsResult.data ?? []) as LookupRow[];
+        const equipmentTypes = (equipmentResult.data ?? []) as LookupRow[];
+        const muscles = (musclesResult.data ?? []) as LookupRow[];
+        const instructions = (instructionsResult.data ?? []) as InstructionRow[];
+
+        const bodyPartMap = new Map(bodyParts.map((row) => [row.id, row.name]));
+        const equipmentMap = new Map(equipmentTypes.map((row) => [row.id, row.name]));
+        const muscleMap = new Map(muscles.map((row) => [row.id, row.name]));
+        const instructionMap = new Map<string, string[]>();
+
+        for (const row of instructions) {
+          const list = instructionMap.get(row.exercise_id) ?? [];
+          list[row.step_number - 1] = row.instruction_text;
+          instructionMap.set(row.exercise_id, list);
+        }
+
+        const localRows = remoteData.map((row) => ({
+          id: row.id,
+          name: row.name,
+          body_part: bodyPartMap.get(row.body_part_id) ?? '',
+          equipment: equipmentMap.get(row.equipment_id) ?? '',
+          instructions: (instructionMap.get(row.id) ?? []).filter(Boolean).join('\n'),
+          target_muscles: muscleMap.get(row.primary_target_id) ?? '',
+          video_url: '',
+        }));
+
+        if (localRows.length > 0) {
+          await db.exercises.bulkPut(localRows);
         }
       } catch (error) {
         console.error('Failed to sync exercises in background:', error);

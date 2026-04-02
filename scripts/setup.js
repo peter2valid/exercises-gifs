@@ -45,6 +45,28 @@ function collectIndexedValues(record, prefix) {
     .filter(Boolean);
 }
 
+function normalizeEquipmentName(equipmentName) {
+  const normalized = String(equipmentName ?? '').trim().toLowerCase();
+
+  const aliases = {
+    'ez barbell': 'barbell',
+    'olympic barbell': 'barbell',
+    'trap bar': 'barbell',
+    'smith machine': 'machine',
+    'sled machine': 'machine',
+    'elliptical machine': 'machine',
+    'stepmill machine': 'machine',
+    'stationary bike': 'machine',
+    'upper body ergometer': 'machine',
+    'skierg machine': 'machine',
+    'bosu ball': 'stability ball',
+    'wheel roller': 'body weight',
+    'roller': 'body weight',
+  };
+
+  return aliases[normalized] || normalized;
+}
+
 async function ensureReferenceData() {
   console.log('📋 Setting up reference data...\n');
 
@@ -56,7 +78,8 @@ async function ensureReferenceData() {
   const equipment = [
     'body weight', 'cable', 'leverage machine', 'assisted',
     'medicine ball', 'band', 'stability ball', 'weighted',
-    'barbell', 'dumbbell', 'kettlebell', 'machine', 'rope'
+    'barbell', 'dumbbell', 'kettlebell', 'machine', 'rope',
+    'resistance band'
   ];
 
   const muscles = [
@@ -134,23 +157,44 @@ async function getOrCreateMuscle(muscleName) {
 }
 
 async function getBodyPartId(bodyPartName) {
+  if (!bodyPartName) return null;
+
   const { data } = await supabase
     .from('body_parts')
     .select('id')
     .eq('name', bodyPartName)
     .single();
 
-  return data?.id || null;
+  if (data) return data.id;
+
+  const { data: newBodyPart } = await supabase
+    .from('body_parts')
+    .insert([{ name: bodyPartName }])
+    .select('id')
+    .single();
+
+  return newBodyPart?.id || null;
 }
 
 async function getEquipmentId(equipmentName) {
+  if (!equipmentName) return null;
+  const normalizedEquipmentName = normalizeEquipmentName(equipmentName);
+
   const { data } = await supabase
     .from('equipment_types')
     .select('id')
-    .eq('name', equipmentName)
+    .eq('name', normalizedEquipmentName)
     .single();
 
-  return data?.id || null;
+  if (data) return data.id;
+
+  const { data: newEquipment } = await supabase
+    .from('equipment_types')
+    .insert([{ name: normalizedEquipmentName }])
+    .select('id')
+    .single();
+
+  return newEquipment?.id || null;
 }
 
 async function importExercises() {
@@ -206,13 +250,13 @@ async function importExercises() {
 
       if (!bodyPartId) {
         skipped++;
-        if (skipped <= 3) console.warn(`⚠️  Skipping "${exercise.name}" - unknown: ${exercise.bodyPart}`);
+        if (skipped <= 3) console.warn(`⚠️  Skipping "${exercise.name}" - unresolved body part: ${exercise.bodyPart}`);
         continue;
       }
 
       if (!equipmentId) {
         skipped++;
-        if (skipped <= 3) console.warn(`⚠️  Skipping "${exercise.name}" - unknown: ${exercise.equipment}`);
+        if (skipped <= 3) console.warn(`⚠️  Skipping "${exercise.name}" - unresolved equipment: ${exercise.equipment}`);
         continue;
       }
 

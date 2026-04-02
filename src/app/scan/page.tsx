@@ -31,6 +31,7 @@ const CATEGORIES: Array<{
   color: string;
 }> = [
   { id: 'chest', name: 'Chest', iconSrc: AbdominalsIcon, color: 'bg-cyan-400/15' },
+  { id: 'arms', name: 'Arms', iconSrc: BicepsMuscleIcon, color: 'bg-violet-400/15' },
   { id: 'biceps', name: 'Biceps', iconSrc: BicepsMuscleIcon, color: 'bg-[#b26dff]/18' },
   { id: 'triceps', name: 'Triceps', iconSrc: ForearmsBackIcon, color: 'bg-sky-400/15' },
   { id: 'back', name: 'Back', iconSrc: BackMuscleIcon, color: 'bg-[#2b3948]/50' },
@@ -52,6 +53,7 @@ const PROGRAMS = [
 
 const CATEGORY_PREVIEWS: Record<string, { count: string; accent: string }> = {
   chest: { count: 'push', accent: 'from-cyan-400/25 to-transparent' },
+  arms: { count: 'arms', accent: 'from-violet-500/18 to-transparent' },
   biceps: { count: 'arms', accent: 'from-violet-500/20 to-transparent' },
   triceps: { count: 'arms', accent: 'from-sky-400/20 to-transparent' },
   back: { count: 'pull', accent: 'from-sky-500/18 to-transparent' },
