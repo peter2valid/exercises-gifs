@@ -8,7 +8,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "import-exercises": "ts-node scripts/import-exercises.ts"
+      "import-exercises": "ts-node scripts/import-exercises.ts",
+      "db:setup": "node scripts/setup.js",
+      "db:setup:ts": "ts-node scripts/setup-simple.ts",
+      "db:setup:schema": "node scripts/setup-schema.js",
+      "db:import": "ts-node scripts/import-exercises-normalized.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
