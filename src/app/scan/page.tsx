@@ -97,7 +97,7 @@ export default function ScanPage() {
             <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">Exercises</h1>
             {gymId && (
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-orange)] mt-1">
-                🏋️ {gymName}
+                Location: {gymName}
               </p>
             )}
           </div>
@@ -176,7 +176,7 @@ export default function ScanPage() {
 
             <div className="flex justify-between items-center">
                <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest">
-                 {search ? 'Search Results' : `${activeCategoryLabel} Workouts`}
+                 {search ? 'Search Results' : `${activeCategoryLabel} Exercises`}
                </h2>
                <div className="flex items-center gap-3">
                  <span className="text-xs font-bold text-[var(--text-secondary)] uppercase">{exercises.length} results</span>
@@ -217,7 +217,7 @@ export default function ScanPage() {
         {!isFocusedResultsMode && (
         <section className="space-y-4">
           <div className="flex items-end justify-between">
-            <h2 className="text-sm font-black text-[var(--text-secondary)] uppercase tracking-[0.24em]">Choose a muscle</h2>
+            <h2 className="text-sm font-black text-[var(--text-secondary)] uppercase tracking-[0.24em]">Choose a body area</h2>
             <span className="text-xs font-bold text-[var(--text-secondary)] uppercase">{CATEGORIES.length} groups</span>
           </div>
            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -272,7 +272,7 @@ export default function ScanPage() {
         {!isFocusedResultsMode && (
         <section className="space-y-4">
           <div className="flex items-end justify-between">
-            <h2 className="text-sm font-black text-[var(--text-secondary)] uppercase tracking-[0.24em]">Workouts</h2>
+            <h2 className="text-sm font-black text-[var(--text-secondary)] uppercase tracking-[0.24em]">Programs</h2>
             <span className="text-xs font-bold text-[var(--text-secondary)] uppercase">tap to open</span>
           </div>
           <div className="grid gap-4">
@@ -289,7 +289,7 @@ export default function ScanPage() {
                 <div className={`rounded-[1.75rem] bg-gradient-to-br ${prog.tone} p-5 text-white`}>
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/60">Workout</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/60">Program</p>
                       <h3 className="mt-2 text-3xl font-black tracking-tight">{prog.name}</h3>
                       <p className="mt-2 max-w-[18rem] text-sm text-white/75">{prog.description}</p>
                     </div>
@@ -301,13 +301,13 @@ export default function ScanPage() {
                   <div className="mt-6 grid grid-cols-3 gap-3">
                     {prog.exercises.map((exerciseId) => (
                       <div key={exerciseId} className="rounded-[1.25rem] bg-white/12 px-3 py-2 text-[11px] font-black uppercase tracking-[0.22em] text-white/80 backdrop-blur-sm">
-                        Move {exerciseId.slice(-2)}
+                        Exercise {exerciseId.slice(-2)}
                       </div>
                     ))}
                   </div>
                 </div>
                 <div className="mt-4 flex items-center justify-between px-2 pb-1">
-                  <span className="text-xs font-bold uppercase tracking-[0.24em] text-[var(--text-secondary)]">Open workout</span>
+                  <span className="text-xs font-bold uppercase tracking-[0.24em] text-[var(--text-secondary)]">Open program</span>
                   <LucideChevronRight className="h-5 w-5 text-[var(--text-secondary)]" />
                 </div>
               </Link>

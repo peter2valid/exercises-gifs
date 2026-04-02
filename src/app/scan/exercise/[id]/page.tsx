@@ -61,7 +61,7 @@ export default function ExerciseViewer() {
         <h1 className="text-2xl font-black text-gray-900">Exercise Not Found</h1>
           <p className="text-gray-500">We couldn&apos;t find the exercise you&apos;re looking for.</p>
         <Link href={buildGymUrl('/scan')} className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold">
-          Go Back to Scan
+          Back to Library
         </Link>
       </div>
     );
@@ -93,7 +93,7 @@ export default function ExerciseViewer() {
       {gymId && (
         <div className="sticky top-6 right-6 z-40 float-right">
           <div className="bg-gradient-to-r from-orange-400 to-orange-500 text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
-            🏋️ {gymName}
+            Location: {gymName}
           </div>
         </div>
       )}

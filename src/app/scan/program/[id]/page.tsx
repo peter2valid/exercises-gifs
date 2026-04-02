@@ -43,7 +43,7 @@ export default function ProgramViewer() {
       <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center">
         <h2 className="text-2xl font-black text-gray-900 mb-4">Program not found</h2>
         <Link href="/scan" className="text-blue-600 font-bold hover:underline">
-          Return to Scan
+          Return to Library
         </Link>
       </div>
     );
@@ -61,12 +61,12 @@ export default function ProgramViewer() {
         </button>
         {gymId && (
           <div className="mt-3 inline-block bg-gradient-to-r from-orange-400 to-orange-500 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">
-            🏋️ {gymName}
+            Location: {gymName}
           </div>
         )}
         <div className="mt-5 flex items-center justify-between gap-4">
           <div className="space-y-2">
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">Workout</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">Program</p>
             <h1 className="text-4xl font-black text-gray-900 tracking-tight">{program.name}</h1>
             <p className="max-w-xl text-gray-500 font-medium text-base leading-relaxed">{program.description}</p>
           </div>
@@ -79,8 +79,8 @@ export default function ProgramViewer() {
       {/* Movement List */}
       <main className="px-6 pt-6 space-y-6">
         <div className="flex items-end justify-between">
-          <h2 className="text-sm font-black text-gray-500 uppercase tracking-[0.24em]">Workout moves</h2>
-          <span className="text-xs font-bold uppercase tracking-[0.24em] text-gray-400">select any move</span>
+          <h2 className="text-sm font-black text-gray-500 uppercase tracking-[0.24em]">Exercises</h2>
+          <span className="text-xs font-bold uppercase tracking-[0.24em] text-gray-400">select any exercise</span>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {exercises === undefined ? (
@@ -110,7 +110,7 @@ export default function ProgramViewer() {
                           <LucideDumbbell className="h-7 w-7 text-blue-600" />
                         </div>
                         <div className="text-3xl font-black text-gray-900 uppercase tracking-tight leading-none capitalize">
-                          {getExerciseBodyPart(ex) || 'Workout'}
+                          {getExerciseBodyPart(ex) || 'Exercise'}
                         </div>
                       </div>
                     </div>
@@ -146,7 +146,7 @@ export default function ProgramViewer() {
                     : 'bg-gray-100 text-gray-600'
                 }`}
               >
-                <span className="block text-[10px] font-black uppercase tracking-[0.24em] opacity-60">Workout</span>
+                <span className="block text-[10px] font-black uppercase tracking-[0.24em] opacity-60">Program</span>
                 <span className="block text-sm font-black leading-none mt-1">{tab.name}</span>
               </button>
             );
@@ -154,7 +154,7 @@ export default function ProgramViewer() {
           <button className="shrink-0 rounded-full bg-blue-600 px-4 py-3 text-white shadow-[0_12px_30px_rgba(37,99,235,0.28)]">
             <span className="flex items-center gap-2 text-sm font-black">
               <LucideArrowRightLeft className="h-4 w-4" />
-              Change workout
+              Change program
             </span>
           </button>
         </div>

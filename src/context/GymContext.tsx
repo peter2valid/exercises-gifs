@@ -27,7 +27,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
         .split('-')
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ')
-    : 'All Gyms';
+    : 'All Locations';
 
   return (
     <GymContext.Provider value={{ gymId, gymName, isLoading }}>
