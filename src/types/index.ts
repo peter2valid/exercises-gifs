@@ -1,4 +1,4 @@
-export type WorkoutEventType =
+export type EventType =
   | 'SESSION_STARTED'
   | 'SET_LOGGED'
   | 'REST_STARTED'
@@ -8,43 +8,66 @@ export type WorkoutEventType =
 
 export type SyncState = 'pending' | 'synced' | 'failed';
 
-export type EventRecord = {
-  id: string;
-  type: WorkoutEventType;
-  payload: Record<string, unknown>;
-  idempotency_key: string;
-  created_at: string;
-  sync_state: SyncState;
-};
+export type QueueStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
-export type SyncQueueItem = {
-  id: string;
-  event_id: string;
-  attempts: number;
-  next_retry_at: string | null;
-  created_at: string;
-};
+export type SessionStatus = 'active' | 'completed' | 'abandoned';
 
-export type WorkoutSessionProjection = {
-  id: string;
-  status: 'active' | 'completed' | 'abandoned';
-  started_at: string;
-  finished_at: string | null;
-  updated_at: string;
-};
-
-export type SetLogProjection = {
-  id: string;
+export type SessionStartedPayload = {
   session_id: string;
+  user_id: string;
+  started_at: string;
+};
+
+export type SetLoggedPayload = {
+  session_id: string;
+  set_id: string;
   exercise_id: string;
   weight: number;
   reps: number;
-  created_at: string;
+  logged_at: string;
 };
 
-export type SessionSnapshot = {
-  id: string;
+export type RestStartedPayload = {
   session_id: string;
-  data: Record<string, unknown>;
-  created_at: string;
+  set_id: string;
+  duration_seconds: number;
+  started_at: string;
+};
+
+export type SessionCompletedPayload = {
+  session_id: string;
+  finished_at: string;
+};
+
+export type SetEditedPayload = {
+  session_id: string;
+  set_id: string;
+  weight: number;
+  reps: number;
+  edited_at: string;
+};
+
+export type SetDeletedPayload = {
+  session_id: string;
+  set_id: string;
+  deleted_at: string;
+};
+
+export type EventPayload =
+  | { type: 'SESSION_STARTED'; payload: SessionStartedPayload }
+  | { type: 'SET_LOGGED'; payload: SetLoggedPayload }
+  | { type: 'REST_STARTED'; payload: RestStartedPayload }
+  | { type: 'SESSION_COMPLETED'; payload: SessionCompletedPayload }
+  | { type: 'SET_EDITED'; payload: SetEditedPayload }
+  | { type: 'SET_DELETED'; payload: SetDeletedPayload };
+
+export type AnyEventPayload = EventPayload['payload'];
+
+export type SessionSnapshotState = {
+  session_id: string;
+  status: SessionStatus;
+  started_at: string;
+  finished_at: string | null;
+  set_count: number;
+  last_event_id: string;
 };

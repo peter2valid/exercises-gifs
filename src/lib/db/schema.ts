@@ -1,34 +1,100 @@
 import type {
-  EventRecord,
-  SetLogProjection,
-  SessionSnapshot,
-  SyncQueueItem,
-  WorkoutSessionProjection,
+  EventType,
+  SyncState,
+  QueueStatus,
+  SessionStatus,
+  AnyEventPayload,
+  SessionSnapshotState,
 } from '@/types';
 
-export const DB_NAME = 'WorkoutEngineDB';
-export const DB_VERSION = 1;
+export interface GymEvent {
+  id: string;
+  type: EventType;
+  payload: AnyEventPayload;
+  tenant_id: string;
+  device_id: string;
+  idempotency_key: string;
+  created_at: string;
+  sync_state: SyncState;
+  version: number;
+}
 
-export type DbStores = {
-  events: string;
-  sync_queue: string;
-  workout_sessions: string;
-  set_logs: string;
-  snapshots: string;
-};
+export interface WorkoutSession {
+  id: string;
+  user_id: string;
+  tenant_id: string;
+  device_id: string;
+  status: SessionStatus;
+  started_at: string;
+  finished_at: string | null;
+  created_at: string;
+  updated_at: string;
+  version: number;
+}
 
-export const DB_STORES: DbStores = {
-  events: 'id, type, created_at, idempotency_key, sync_state',
-  sync_queue: 'id, event_id, attempts, next_retry_at, created_at',
-  workout_sessions: 'id, status, started_at, finished_at, updated_at',
-  set_logs: 'id, session_id, exercise_id, created_at',
-  snapshots: 'id, session_id, created_at',
-};
+export interface SetLog {
+  id: string;
+  session_id: string;
+  exercise_id: string;
+  tenant_id: string;
+  device_id: string;
+  weight: number;
+  reps: number;
+  logged_at: string;
+  created_at: string;
+  version: number;
+}
 
-export type DbTables = {
-  events: EventRecord;
-  sync_queue: SyncQueueItem;
-  workout_sessions: WorkoutSessionProjection;
-  set_logs: SetLogProjection;
-  snapshots: SessionSnapshot;
-};
+export interface SyncQueue {
+  id: string;
+  event_id: string;
+  status: QueueStatus;
+  attempts: number;
+  next_retry_at: string | null;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SessionSnapshot {
+  id: string;
+  session_id: string;
+  tenant_id: string;
+  state: SessionSnapshotState;
+  last_event_id: string;
+  created_at: string;
+  version: number;
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  user_id: string;
+  tenant_id: string;
+  created_at: string;
+  updated_at: string;
+  version: number;
+}
+
+export interface TemplateExercise {
+  id: string;
+  template_id: string;
+  exercise_id: string;
+  sets: number;
+  reps: number;
+  rest_seconds: number;
+  order: number;
+  created_at: string;
+  version: number;
+}
+
+export interface Exercise {
+  id: string;
+  name: string;
+  muscle_group: string | null;
+  equipment: string | null;
+  tenant_id: string;
+  created_at: string;
+  updated_at: string;
+  version: number;
+}
