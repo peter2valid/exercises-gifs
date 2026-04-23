@@ -40,6 +40,3 @@ export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInp
   );
 }
 
-// Explicit Exports to avoid Star Export conflicts
-export { Card, CardHeader, CardTitle, CardContent } from './card';
-export { Badge } from './badge';

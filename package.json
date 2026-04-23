@@ -8,10 +8,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "import-exercises": "ts-node scripts/import-exercises.ts",
-    "db:setup": "node scripts/setup.js",
-    "db:setup:ts": "ts-node scripts/setup-simple.ts",
-    "db:setup:schema": "node scripts/setup-schema.js",
     "db:import": "ts-node scripts/import-exercises-normalized.ts",
     "r2:upload": "node scripts/upload-r2-media.mjs",
     "r2:upload:dry": "node scripts/upload-r2-media.mjs --dry-run",
@@ -29,7 +25,7 @@
     "@tanstack/react-query": "^5.28.14",
     "clsx": "^2.1.0",
     "date-fns": "^3.6.0",
-    "dexie": "^4.0.1",
+    "dexie": "^4.4.2",
     "dexie-react-hooks": "^1.1.7",
     "dotenv": "^17.3.1",
     "lucide-react": "^0.363.0",
@@ -40,7 +36,7 @@
     "react-virtualized-auto-sizer": "^2.0.3",
     "react-window": "^1.8.10",
     "tailwind-merge": "^2.2.2",
-    "zustand": "^4.5.2"
+    "zustand": "^4.5.7"
   },
   "devDependencies": {
     "@types/node": "^20.12.2",
