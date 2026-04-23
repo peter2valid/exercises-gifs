@@ -32,6 +32,18 @@ export class SupafastDB extends Dexie {
       template_exercises: 'id, template_id, exercise_id',
       exercises: 'id, tenant_id, name',
     });
+
+    // v2: session_id promoted to top-level field on events for indexed queries
+    this.version(2).stores({
+      events: 'id, session_id, tenant_id, created_at, sync_state',
+      workout_sessions: 'id, tenant_id, user_id, status, started_at',
+      set_logs: 'id, session_id, exercise_id, [session_id+logged_at]',
+      sync_queue: 'id, event_id, status, next_retry_at',
+      snapshots: 'id, session_id, tenant_id',
+      templates: 'id, tenant_id, user_id',
+      template_exercises: 'id, template_id, exercise_id',
+      exercises: 'id, tenant_id, name',
+    });
   }
 }
 

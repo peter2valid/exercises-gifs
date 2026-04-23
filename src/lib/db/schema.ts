@@ -11,6 +11,7 @@ export interface GymEvent {
   id: string;
   type: EventType;
   payload: AnyEventPayload;
+  session_id: string;       // top-level copy for Dexie indexing
   tenant_id: string;
   device_id: string;
   idempotency_key: string;
