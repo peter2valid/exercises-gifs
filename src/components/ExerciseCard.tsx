@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Bookmark, ChevronRight, HelpCircle } from 'lucide-react';
@@ -12,25 +12,46 @@ type ExerciseCardProps = {
   index?: number;
 };
 
-function ExerciseThumbnail({ src, alt, priority = false }: { src: string; alt: string; priority?: boolean }) {
+function ExerciseThumbnail({ src, alt, priority = false, exerciseId }: { src: string; alt: string; priority?: boolean; exerciseId: string }) {
   const [failed, setFailed] = useState(false);
+  const [gifLoaded, setGifLoaded] = useState(false);
+  const posterSrc = `/exercise-posters/${exerciseId}.jpg`;
 
   if (failed) {
     return <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5" />;
   }
 
   return (
-    <Image
-      src={src}
-      alt={alt}
-      fill
-      onError={() => setFailed(true)}
-      className="object-contain p-2"
-      sizes="(max-width: 768px) 100vw, 33vw"
-      loading={priority ? 'eager' : 'lazy'}
-      decoding="async"
-      priority={priority}
-    />
+    <>
+      {/* Poster (fast-loading JPG) always visible initially */}
+      <Image
+        src={posterSrc}
+        alt={`${alt} poster`}
+        fill
+        className="object-contain p-2"
+        sizes="(max-width: 768px) 100vw, 33vw"
+        onError={() => setFailed(true)}
+      />
+      {/* GIF loads behind poster; when ready, we swap via opacity */}
+      {!failed && (
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          onError={() => setFailed(true)}
+          onLoad={() => setGifLoaded(true)}
+          className={`object-contain p-2 transition-opacity ${gifLoaded ? 'opacity-100' : 'opacity-0'}`}
+          sizes="(max-width: 768px) 100vw, 33vw"
+          loading="lazy"
+          decoding="async"
+          priority={priority && gifLoaded}
+        />
+      )}
+      {/* Skeleton loader while GIF is fetching */}
+      {!gifLoaded && !failed && (
+        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent animate-pulse" />
+      )}
+    </>
   );
 }
 
@@ -57,7 +78,7 @@ export default function ExerciseCard({
               <div className="absolute right-3 top-3 z-10 rounded-full bg-black/25 p-1.5 backdrop-blur-sm">
                 <HelpCircle size={14} className="text-white/80" />
               </div>
-              <ExerciseThumbnail src={src} alt={exercise.name} priority={index < 6} />
+              <ExerciseThumbnail src={src} alt={exercise.name} priority={index < 6} exerciseId={exercise.id} />
             </div>
             <div className="border-t border-white/10 p-3">
               <h3 className="text-sm font-semibold text-white leading-tight line-clamp-2">{exercise.name}</h3>
@@ -67,7 +88,7 @@ export default function ExerciseCard({
         ) : (
           <>
             <div className="relative h-14 w-14 shrink-0 rounded-xl bg-white/6 overflow-hidden border border-white/10">
-              <ExerciseThumbnail src={src} alt={exercise.name} priority={index < 6} />
+              <ExerciseThumbnail src={src} alt={exercise.name} priority={index < 6} exerciseId={exercise.id} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-3">

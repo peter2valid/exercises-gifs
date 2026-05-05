@@ -1,5 +1,6 @@
 import { cp, lstat, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
+import { execSync } from 'child_process';
 
 const root = process.cwd();
 const sourceDir = path.join(root, 'assets');
@@ -31,6 +32,14 @@ async function main() {
   await cp(sourceDir, targetDir, { recursive: true });
 
   console.log(`Prepared public media at ${targetDir}`);
+
+  // Generate posters for fast lazy-loading on slow networks
+  try {
+    console.log('Generating exercise posters for slow networks...');
+    execSync('node scripts/generate-posters.mjs', { stdio: 'inherit' });
+  } catch (error) {
+    console.warn('Poster generation skipped or incomplete (non-critical):', error.message);
+  }
 }
 
 main().catch((error) => {
