@@ -12,6 +12,7 @@ import {
 } from '@/lib/device/identity';
 import { TENANT_ID } from '@/lib/config';
 import { Button, Input } from '@/components/ui';
+import { Play, Pause, RotateCcw, CheckCircle } from 'lucide-react';
 import type { Exercise, SetLog } from '@/lib/db/schema';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -57,6 +58,7 @@ export default function WorkoutPage() {
     } else {
       setIsRestoring(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Actions ────────────────────────────────────────────────────────────────
@@ -153,25 +155,24 @@ function RestoringView() {
 
 function IdleView({ onStart, isLoading }: { onStart: () => void; isLoading: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 gap-10">
-      <div className="text-center space-y-2">
-        <p className="text-[11px] tracking-[0.25em] text-white/25 uppercase font-medium">Supafast</p>
-        <h1 className="text-[34px] font-semibold text-white tracking-tight">Ready to train?</h1>
-        <p className="text-white/35 text-sm">Every rep counts.</p>
+    <div className="dashboard-bg min-h-screen pb-24 flex flex-col items-center justify-center px-4">
+      <div className="text-center space-y-4 mb-12 max-w-md animate-fade-in">
+        <p className="text-xs tracking-[0.3em] text-white/30 uppercase font-medium">Workout</p>
+        <h1 className="text-4xl font-bold text-white tracking-tight">Ready to train?</h1>
+        <p className="text-sm text-white/40">Every rep counts toward your goals</p>
       </div>
 
-      <button
+      <Button
         onClick={onStart}
         disabled={isLoading}
-        className="w-full max-w-xs h-16 rounded-2xl font-semibold text-[16px] tracking-tight transition-all active:scale-[0.98] disabled:opacity-40"
-        style={{
-          background: 'rgba(255,255,255,0.92)',
-          border: '1px solid rgba(255,255,255,0.30)',
-          color: '#0a0a0b',
-        }}
+        className="w-full max-w-xs h-12 text-base font-semibold mb-6 animate-slide-up flex items-center justify-center gap-2"
+        variant="primary"
       >
+        <Play size={18} />
         {isLoading ? 'Starting…' : 'Start Workout'}
-      </button>
+      </Button>
+
+      <p className="text-xs text-white/20">Tap to begin your session</p>
     </div>
   );
 }
@@ -206,6 +207,7 @@ function ActiveView({
 
   useEffect(() => {
     if (!exerciseId && exercises.length > 0) setExerciseId(exercises[0].id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercises]);
 
   const handleExerciseChange = (id: string) => {
@@ -230,132 +232,118 @@ function ActiveView({
   };
 
   return (
-    <div className="flex flex-col min-h-screen max-w-md mx-auto w-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-10 pb-4">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse" />
-          <span className="text-white/40 text-xs font-medium tracking-[0.2em] uppercase">Active</span>
-        </div>
-        <span className="text-white/30 text-xs tabular-nums">
-          {sets.length} set{sets.length !== 1 ? 's' : ''}
-        </span>
-      </div>
-
-      {/* Set history */}
-      <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-2 scrollbar-hide">
-        {sets.length === 0 && (
-          <p className="text-white/20 text-sm text-center py-10">
-            No sets yet
-          </p>
-        )}
-        {[...sets].reverse().map(s => (
-          <div
-            key={s.id}
-            className="flex items-center justify-between px-4 py-3"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: '16px',
-            }}
-          >
-            <span className="text-white/60 text-sm">
-              {exMap[s.exercise_id]?.name ?? s.exercise_id}
+    <div className="dashboard-bg min-h-screen pb-24">
+      <div className="max-w-md mx-auto w-full">
+        {/* Header */}
+        <div className="sticky top-0 backdrop-blur-xl bg-black/50 border-b border-white/10 z-10">
+          <div className="flex items-center justify-between px-4 py-4">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs text-white/40 font-medium tracking-[0.2em] uppercase">Active</span>
+            </div>
+            <span className="text-xs text-white/30 tabular-nums font-medium">
+              {sets.length} set{sets.length !== 1 ? 's' : ''}
             </span>
-            <span className="text-white text-sm font-semibold tabular-nums">
-              {s.weight}kg × {s.reps}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* Log form */}
-      <div className="mx-4 mb-6 p-5 space-y-4" style={{
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(255,255,255,0.10)',
-        borderRadius: '24px',
-        backdropFilter: 'blur(40px)',
-        WebkitBackdropFilter: 'blur(40px)',
-        boxShadow: '0 1px 0 rgba(255,255,255,0.10) inset, 0 8px 32px rgba(0,0,0,0.36)',
-      }}>
-        <select
-          value={exerciseId}
-          onChange={e => handleExerciseChange(e.target.value)}
-          className="w-full h-12 rounded-xl text-white text-sm px-3 outline-none transition-colors appearance-none"
-          style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.10)',
-            color: '#ffffff',
-          }}
-        >
-          {groups.map(([group, exs]) => (
-            <optgroup key={group} label={group.toUpperCase()} style={{ background: '#111113' }}>
-              {exs.map(ex => (
-                <option key={ex.id} value={ex.id} style={{ background: '#111113' }}>
-                  {ex.name}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="text-white/30 text-[10px] tracking-[0.2em] uppercase font-medium">Weight (kg)</label>
-            <Input
-              type="number"
-              min={0}
-              step={2.5}
-              value={weight}
-              onChange={e => setWeight(Number(e.target.value))}
-              className="text-white text-center text-lg font-semibold focus-visible:ring-white/20"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-white/30 text-[10px] tracking-[0.2em] uppercase font-medium">Reps</label>
-            <Input
-              type="number"
-              min={1}
-              step={1}
-              value={reps}
-              onChange={e => setReps(Number(e.target.value))}
-              className="text-white text-center text-lg font-semibold focus-visible:ring-white/20"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
-            />
           </div>
         </div>
 
-        <button
-          onClick={handleLog}
-          disabled={!exerciseId || isLogging}
-          className="w-full h-14 rounded-xl font-semibold text-[15px] tracking-tight transition-all active:scale-[0.98] disabled:opacity-40"
-          style={{
-            background: 'rgba(255,255,255,0.92)',
-            border: '1px solid rgba(255,255,255,0.30)',
-            color: '#0a0a0b',
-          }}
-        >
-          {isLogging ? 'Logging…' : 'Log Set'}
-        </button>
+        {/* Content */}
+        <div className="px-4 pt-6 pb-6">
+          {/* Set History */}
+          {sets.length > 0 && (
+            <div className="mb-8">
+              <p className="text-xs text-white/30 tracking-[0.1em] uppercase font-medium mb-3">Recent</p>
+              <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-hide">
+                {[...sets].reverse().slice(0, 4).map(s => (
+                  <div key={s.id} className="glass-panel p-3 flex items-center justify-between">
+                    <span className="text-xs text-white/50">
+                      {exMap[s.exercise_id]?.name ?? s.exercise_id}
+                    </span>
+                    <span className="text-sm font-medium text-white tabular-nums">
+                      {s.weight}kg × {s.reps}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={onStartRest}
-            disabled={!hasLastSet}
-            className="h-11 rounded-xl text-sm font-medium text-white/50 transition-all active:scale-[0.98] disabled:opacity-30"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
-          >
-            Start Rest
-          </button>
-          <button
-            onClick={onComplete}
-            disabled={sets.length === 0}
-            className="h-11 rounded-xl text-sm font-medium text-white/50 transition-all active:scale-[0.98] disabled:opacity-30"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
-          >
-            Finish
-          </button>
+          {/* Log Form */}
+          <div className="glass-panel p-6 space-y-4">
+            <div>
+              <label className="text-xs text-white/30 tracking-[0.1em] uppercase font-medium block mb-2">Exercise</label>
+              <select
+                value={exerciseId}
+                onChange={e => handleExerciseChange(e.target.value)}
+                className="w-full h-11 rounded-lg text-white text-sm px-3 outline-none transition-colors appearance-none bg-white/5 border border-white/15"
+              >
+                {groups.map(([group, exs]) => (
+                  <optgroup key={group} label={group.toUpperCase()} style={{ background: '#1a1a1b' }}>
+                    {exs.map(ex => (
+                      <option key={ex.id} value={ex.id} style={{ background: '#1a1a1b' }}>
+                        {ex.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-white/30 tracking-[0.1em] uppercase font-medium block mb-2">Weight (kg)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  step={2.5}
+                  value={weight}
+                  onChange={e => setWeight(Number(e.target.value))}
+                  className="text-center text-lg font-semibold"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-white/30 tracking-[0.1em] uppercase font-medium block mb-2">Reps</label>
+                <Input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={reps}
+                  onChange={e => setReps(Number(e.target.value))}
+                  className="text-center text-lg font-semibold"
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleLog}
+              disabled={!exerciseId || isLogging}
+              className="w-full h-11 text-base font-medium flex items-center justify-center gap-2"
+              variant="primary"
+            >
+              {isLogging ? 'Logging…' : 'Log Set'}
+            </Button>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={onStartRest}
+                disabled={!hasLastSet}
+                className="h-10 text-sm"
+                variant="secondary"
+              >
+                <Pause size={16} className="mr-1" />
+                Rest
+              </Button>
+              <Button
+                onClick={onComplete}
+                disabled={sets.length === 0}
+                className="h-10 text-sm"
+                variant="secondary"
+              >
+                <CheckCircle size={16} className="mr-1" />
+                Finish
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -374,45 +362,33 @@ function RestingView({
   onEndRest: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 gap-10">
-      <div className="text-center space-y-4">
-        <div
-          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto"
-          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
-        >
-          <span className="text-white/40 text-xl">—</span>
+    <div className="dashboard-bg min-h-screen pb-24 flex flex-col items-center justify-center px-4">
+      <div className="text-center space-y-6 max-w-md">
+        <div className="animate-fade-in">
+          <p className="text-xs tracking-[0.3em] text-white/30 uppercase font-medium mb-4">Rest</p>
+          <h2 className="text-3xl font-bold text-white mb-4">Take a break</h2>
+          {lastSet && (
+            <div className="glass-panel p-6">
+              <p className="text-xs text-white/40 tracking-[0.1em] uppercase mb-2">Last Set</p>
+              <p className="text-white/60 text-sm mb-2">
+                {exMap[lastSet.exercise_id]?.name ?? lastSet.exercise_id}
+              </p>
+              <p className="text-white font-semibold text-xl">
+                {lastSet.weight}kg × {lastSet.reps}
+              </p>
+            </div>
+          )}
         </div>
-        <p className="text-[11px] tracking-[0.25em] text-white/30 uppercase font-medium">Rest</p>
-        {lastSet && (
-          <div
-            className="px-6 py-4"
-            style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '20px',
-            }}
-          >
-            <p className="text-white/40 text-sm mb-1">
-              {exMap[lastSet.exercise_id]?.name ?? lastSet.exercise_id}
-            </p>
-            <p className="text-white font-semibold text-xl">
-              {lastSet.weight}kg × {lastSet.reps}
-            </p>
-          </div>
-        )}
-      </div>
 
-      <button
-        onClick={onEndRest}
-        className="w-full max-w-xs h-16 rounded-2xl font-semibold text-[16px] tracking-tight transition-all active:scale-[0.98]"
-        style={{
-          background: 'rgba(255,255,255,0.92)',
-          border: '1px solid rgba(255,255,255,0.30)',
-          color: '#0a0a0b',
-        }}
-      >
-        Ready
-      </button>
+        <Button
+          onClick={onEndRest}
+          className="w-full h-12 text-base font-semibold animate-slide-up flex items-center justify-center gap-2"
+          variant="primary"
+        >
+          <Play size={18} />
+          Ready
+        </Button>
+      </div>
     </div>
   );
 }
@@ -428,46 +404,35 @@ function FinishedView({
   exMap: Record<string, Exercise>;
   onReset: () => void;
 }) {
+  const totalVolume = sets.reduce((acc, s) => acc + (s.weight * s.reps), 0);
+
   return (
-    <div className="flex flex-col min-h-screen max-w-md mx-auto w-full">
-      <div className="px-5 pt-12 pb-8 text-center">
-        <p className="text-[11px] tracking-[0.25em] text-white/30 uppercase font-medium mb-3">Complete</p>
-        <h2 className="text-[34px] font-semibold text-white tracking-tight">{sets.length} Sets Done</h2>
-      </div>
+    <div className="dashboard-bg min-h-screen pb-24 flex flex-col items-center justify-center px-4">
+      <div className="text-center max-w-md space-y-8">
+        <div className="animate-fade-in">
+          <p className="text-xs tracking-[0.3em] text-white/30 uppercase font-medium mb-3">Complete</p>
+          <h2 className="text-4xl font-bold text-white tracking-tight mb-2">{sets.length} Sets</h2>
+          <p className="text-sm text-white/40">{totalVolume.toLocaleString()}kg total volume</p>
+        </div>
 
-      <div className="flex-1 overflow-y-auto px-5 space-y-2 pb-6 scrollbar-hide">
-        {sets.map((s, i) => (
-          <div
-            key={s.id}
-            className="flex items-center gap-4 px-4 py-3"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: '16px',
-            }}
-          >
-            <span className="text-white/20 text-xs tabular-nums w-4 text-right">{i + 1}</span>
-            <span className="text-white/60 text-sm flex-1">
-              {exMap[s.exercise_id]?.name ?? s.exercise_id}
-            </span>
-            <span className="text-white text-sm font-semibold tabular-nums">
-              {s.weight}kg × {s.reps}
-            </span>
-          </div>
-        ))}
-      </div>
+        {/* Summary */}
+        <div className="glass-panel p-6 space-y-4">
+          {sets.map((s, i) => (
+            <div key={s.id} className="flex items-center justify-between text-sm">
+              <span className="text-white/50">{exMap[s.exercise_id]?.name || 'Exercise'}</span>
+              <span className="text-white font-medium tabular-nums">{s.weight}kg × {s.reps}</span>
+            </div>
+          ))}
+        </div>
 
-      <div className="px-5 pb-10">
-        <button
+        <Button
           onClick={onReset}
-          className="w-full h-14 rounded-2xl font-medium text-[15px] text-white/60 transition-all active:scale-[0.98]"
-          style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.10)',
-          }}
+          className="w-full h-12 text-base font-semibold animate-slide-up flex items-center justify-center gap-2"
+          variant="primary"
         >
-          New Workout
-        </button>
+          <RotateCcw size={18} />
+          Start New Session
+        </Button>
       </div>
     </div>
   );
