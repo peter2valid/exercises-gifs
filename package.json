@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "db:import": "ts-node scripts/import-exercises-normalized.ts",
+    "db:parse-local": "ts-node scripts/parse-exercises-to-json.ts",
     "r2:upload": "node scripts/upload-r2-media.mjs",
     "r2:upload:dry": "node scripts/upload-r2-media.mjs --dry-run",
     "r2:upload:videos": "node scripts/upload-r2-media.mjs --videos",
