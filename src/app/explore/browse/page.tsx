@@ -428,34 +428,41 @@ function BrowsePageContent() {
 
             {mode === 'muscles' ? (
               <>
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/30">By muscle</p>
-                    <h3 className="text-xl font-semibold text-white">Browse categories</h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveMuscle(null)}
-                    className="rounded-full border border-white/10 px-3 py-2 text-xs font-medium text-white/70"
-                  >
-                    Clear
-                  </button>
-                </div>
+                {/* When a muscle is selected we hide the large "Browse categories" grid
+                    to avoid repeating icons. The compact rail above remains visible and
+                    filtered exercises will appear below. */}
+                {!activeMuscle && (
+                  <>
+                    <div className="mb-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/30">By muscle</p>
+                        <h3 className="text-xl font-semibold text-white">Browse categories</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveMuscle(null)}
+                        className="rounded-full border border-white/10 px-3 py-2 text-xs font-medium text-white/70"
+                      >
+                        Clear
+                      </button>
+                    </div>
 
-                <div className="mb-8 grid grid-cols-3 gap-3">
-                  {bodyGroups.map((group) => (
-                    <MuscleTile
-                      key={group.key}
-                      group={group}
-                      active={activeMuscle === group.key}
-                      count={muscleCounts.get(group.key) || 0}
-                      onClick={() => {
-                        setActiveMuscle(group.key);
-                        setActiveEquipment(null);
-                      }}
-                    />
-                  ))}
-                </div>
+                    <div className="mb-8 grid grid-cols-3 gap-3">
+                      {bodyGroups.map((group) => (
+                        <MuscleTile
+                          key={group.key}
+                          group={group}
+                          active={activeMuscle === group.key}
+                          count={muscleCounts.get(group.key) || 0}
+                          onClick={() => {
+                            setActiveMuscle(group.key);
+                            setActiveEquipment(null);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
               </>
             ) : (
               <>
