@@ -24,6 +24,7 @@ type WorkoutStore = {
   deleteSet: (setId: string) => Promise<void>;
   completeSession: () => Promise<void>;
   loadSession: (sessionId: string, tenantId: string, deviceId: string) => Promise<void>;
+  endRest: () => void;
   reset: () => void;
 };
 
@@ -129,6 +130,8 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       deviceId,
     });
   },
+
+  endRest: () => set({ phase: 'active' }),
 
   reset: () => set({ phase: 'idle', session: null, sets: {}, tenantId: '', deviceId: '' }),
 }));
