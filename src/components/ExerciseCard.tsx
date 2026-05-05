@@ -1,21 +1,69 @@
-import React from 'react';
+import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { Bookmark, ChevronRight, HelpCircle } from 'lucide-react';
 
-export default function ExerciseCard({ exercise }: { exercise: any }) {
+type ExerciseCardProps = {
+  exercise: any;
+  view?: 'list' | 'grid';
+  thumbnailSrc?: string;
+  muscleLabel?: string;
+  detailLabel?: string;
+};
+
+function ExerciseThumbnail({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5" />;
+  }
+
+  return <Image src={src} alt={alt} fill unoptimized className="object-contain p-2" onError={() => setFailed(true)} sizes="(max-width: 768px) 100vw, 33vw" />;
+}
+
+export default function ExerciseCard({
+  exercise,
+  view = 'list',
+  thumbnailSrc,
+  muscleLabel,
+  detailLabel,
+}: ExerciseCardProps) {
+  const src = thumbnailSrc ?? `/exercise-media/${exercise.id}.gif`;
+  const subtitle = detailLabel ?? muscleLabel ?? exercise.bodyPart ?? exercise.target ?? '';
+
   return (
     <Link href={`/explore/${exercise.id}`} className="block">
-      <article className="glass-panel p-3 flex items-center gap-3 hover:scale-[1.01] transition-transform">
-        <div className="w-14 h-14 rounded-md bg-white/6 flex items-center justify-center text-sm font-semibold text-white/70">
-          {exercise.id}
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-white truncate">{exercise.name}</h3>
-            <ChevronRight size={16} className="text-white/30" />
-          </div>
-          <p className="text-xs text-white/30 mt-1 truncate">{exercise.bodyPart} • {exercise.target}</p>
-        </div>
+      <article className={view === 'grid' ? 'glass-panel overflow-hidden' : 'glass-panel p-3 flex items-center gap-3 hover:scale-[1.01] transition-transform'}>
+        {view === 'grid' ? (
+          <>
+            <div className="relative aspect-[4/5] bg-white/5 overflow-hidden">
+              <div className="absolute left-3 top-3 z-10 rounded-full bg-black/25 p-1.5 backdrop-blur-sm">
+                <Bookmark size={14} className="text-white/80" />
+              </div>
+              <div className="absolute right-3 top-3 z-10 rounded-full bg-black/25 p-1.5 backdrop-blur-sm">
+                <HelpCircle size={14} className="text-white/80" />
+              </div>
+              <ExerciseThumbnail src={src} alt={exercise.name} />
+            </div>
+            <div className="border-t border-white/10 p-3">
+              <h3 className="text-sm font-semibold text-white leading-tight line-clamp-2">{exercise.name}</h3>
+              <p className="text-xs text-white/40 mt-1 truncate">{subtitle}</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="relative h-14 w-14 shrink-0 rounded-xl bg-white/6 overflow-hidden border border-white/10">
+              <ExerciseThumbnail src={src} alt={exercise.name} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="truncate text-sm font-medium text-white">{exercise.name}</h3>
+                <ChevronRight size={16} className="text-white/30" />
+              </div>
+              <p className="mt-1 truncate text-xs text-white/30">{subtitle}</p>
+            </div>
+          </>
+        )}
       </article>
     </Link>
   );
