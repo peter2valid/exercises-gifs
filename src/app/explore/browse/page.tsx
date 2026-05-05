@@ -36,6 +36,7 @@ import CardioIcon from '@/assets/icons/bodyparts/cardio icon.png';
 import ChestIcon from '@/assets/icons/bodyparts/gym.png';
 import ShoulderIcon from '@/assets/icons/bodyparts/shoulder.png';
 import TricepsIcon from '@/assets/icons/bodyparts/strength.png';
+import { searchExercises } from '@/lib/search';
 
 type Exercise = any;
 type ExploreView = 'list' | 'grid';
@@ -188,12 +189,6 @@ function formatBodyPartLabel(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function matchesQuery(exercise: Exercise, query: string) {
-  if (!query) return true;
-  const haystack = [exercise.name, exercise.bodyPart, exercise.target, exercise.equipment].join(' ').toLowerCase();
-  return haystack.includes(query);
-}
-
 function CompactTile({
   group,
   active,
@@ -300,15 +295,22 @@ function BrowsePageContent() {
 
   const filteredExercises = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return exercises.filter((exercise) => {
-      if (!matchesQuery(exercise, q)) return false;
-      if (activeMuscle) {
-        const group = bodyGroups.find((item) => item.key === activeMuscle);
-        if (group && !group.match(exercise)) return false;
+    let results = q ? searchExercises(exercises, q) : exercises;
+    
+    // Apply muscle filter
+    if (activeMuscle) {
+      const group = bodyGroups.find((item) => item.key === activeMuscle);
+      if (group) {
+        results = results.filter((exercise) => group.match(exercise));
       }
-      if (activeEquipment && (exercise.equipment || '').toLowerCase() !== activeEquipment) return false;
-      return true;
-    });
+    }
+    
+    // Apply equipment filter
+    if (activeEquipment) {
+      results = results.filter((exercise) => (exercise.equipment || '').toLowerCase() === activeEquipment);
+    }
+    
+    return results;
   }, [activeEquipment, activeMuscle, exercises, search]);
 
   const activeMuscleLabel = activeMuscle ? bodyGroups.find((group) => group.key === activeMuscle)?.label : null;

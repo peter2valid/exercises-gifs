@@ -36,6 +36,7 @@ import CardioIcon from '@/assets/icons/bodyparts/cardio icon.png';
 import ChestIcon from '@/assets/icons/bodyparts/gym.png';
 import ShoulderIcon from '@/assets/icons/bodyparts/shoulder.png';
 import TricepsIcon from '@/assets/icons/bodyparts/strength.png';
+import { searchExercises } from '@/lib/search';
 
 type Exercise = any;
 type ExploreView = 'list' | 'grid';
@@ -186,12 +187,6 @@ function formatBodyPartLabel(value: string) {
   if (value === 'lower legs') return 'Calves';
   if (value === 'lower arms') return 'Forearms';
   return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function matchesQuery(exercise: Exercise, query: string) {
-  if (!query) return true;
-  const haystack = [exercise.name, exercise.bodyPart, exercise.target, exercise.equipment].join(' ').toLowerCase();
-  return haystack.includes(query);
 }
 
 function CompactTile({

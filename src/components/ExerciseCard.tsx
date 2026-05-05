@@ -40,11 +40,10 @@ function ExerciseThumbnail({ src, alt, priority = false, exerciseId }: { src: st
           fill
           onError={() => setFailed(true)}
           onLoad={() => setGifLoaded(true)}
-          className={`object-contain p-2 transition-opacity ${gifLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`object-contain p-2 transition-opacity duration-300 ${gifLoaded ? 'opacity-100' : 'opacity-0'}`}
           sizes="(max-width: 768px) 100vw, 33vw"
-          loading="lazy"
+          loading={priority ? 'eager' : 'lazy'}
           decoding="async"
-          priority={priority && gifLoaded}
         />
       )}
       {/* Skeleton loader while GIF is fetching */}
