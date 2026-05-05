@@ -282,7 +282,7 @@ export default function ExplorePage() {
   };
 
   const handleAllExercises = () => {
-    router.push('/explore/browse');
+    router.push('/explore/browse?muscle=all');
   };
 
   return (

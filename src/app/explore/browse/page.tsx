@@ -261,6 +261,7 @@ function BrowsePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const muscleParam = searchParams.get('muscle');
+  const explicitBrowse = searchParams.has('muscle');
 
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<ExploreTab>('exercises');
@@ -431,7 +432,7 @@ function BrowsePageContent() {
                 {/* When a muscle is selected we hide the large "Browse categories" grid
                     to avoid repeating icons. The compact rail above remains visible and
                     filtered exercises will appear below. */}
-                {!activeMuscle && (
+                {!activeMuscle && !explicitBrowse && (
                   <>
                     <div className="mb-3 flex items-center justify-between">
                       <div>
