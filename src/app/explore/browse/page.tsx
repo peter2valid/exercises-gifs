@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useMemo, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   Bookmark,
   ChevronRight,
+  ChevronLeft,
   Dumbbell,
   Grid2X2,
   LayoutGrid,
@@ -13,11 +14,10 @@ import {
   Search,
   UserRound,
   CalendarRange,
-  Zap,
 } from 'lucide-react';
 import { Input } from '@/components/ui';
 import ExerciseCard from '@/components/ExerciseCard';
-import exercisesData from '../../../data/exercises.json';
+import exercisesData from '../../../../data/exercises.json';
 import BackIcon from '@/assets/icons/bodyparts/Back_muscle_Icon.webp';
 import BicepsIcon from '@/assets/icons/bodyparts/Biceps_muscle_Icon.webp';
 import CalvesIcon from '@/assets/icons/bodyparts/Calves_Icon.webp';
@@ -257,12 +257,32 @@ function MuscleTile({
   );
 }
 
-export default function ExplorePage() {
+function BrowsePageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const muscleParam = searchParams.get('muscle');
+
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<ExploreTab>('exercises');
+  const [mode, setMode] = useState<ExploreMode>('muscles');
+  const [activeMuscle, setActiveMuscle] = useState<BodyGroupKey | null>(
+    muscleParam && muscleParam !== 'all' ? (muscleParam as BodyGroupKey) : null
+  );
+  const [activeEquipment, setActiveEquipment] = useState<string | null>(null);
+  const [view, setView] = useState<ExploreView>('grid');
 
   const exercises = exercisesData as Exercise[];
+
+  const equipmentGroups = useMemo(() => {
+    const items = new Map<string, number>();
+    for (const exercise of exercises) {
+      const key = (exercise.equipment || 'other').toLowerCase();
+      items.set(key, (items.get(key) || 0) + 1);
+    }
+    return Array.from(items.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([key, count]) => ({ key, label: formatEquipmentLabel(key), count }));
+  }, [exercises]);
 
   const muscleCounts = useMemo(() => {
     const counts = new Map<BodyGroupKey, number>();
@@ -277,23 +297,37 @@ export default function ExplorePage() {
     return counts;
   }, [exercises]);
 
-  const handleMuscleClick = (muscleKey: BodyGroupKey) => {
-    router.push(`/explore/browse?muscle=${muscleKey}`);
-  };
+  const filteredExercises = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return exercises.filter((exercise) => {
+      if (!matchesQuery(exercise, q)) return false;
+      if (activeMuscle) {
+        const group = bodyGroups.find((item) => item.key === activeMuscle);
+        if (group && !group.match(exercise)) return false;
+      }
+      if (activeEquipment && (exercise.equipment || '').toLowerCase() !== activeEquipment) return false;
+      return true;
+    });
+  }, [activeEquipment, activeMuscle, exercises, search]);
 
-  const handleAllExercises = () => {
-    router.push('/explore/browse');
-  };
+  const activeMuscleLabel = activeMuscle ? bodyGroups.find((group) => group.key === activeMuscle)?.label : null;
+  const activeEquipmentLabel = activeEquipment ? formatEquipmentLabel(activeEquipment) : null;
+  const activeFilterLabel = activeMuscleLabel || activeEquipmentLabel || 'All exercises';
 
   return (
     <div className="dashboard-bg min-h-screen pb-24 pt-5">
       <div className="mx-auto max-w-md px-4">
         <div className="mb-4 flex items-center justify-between">
-          <button type="button" className="text-white/75">
-            <CalendarRange size={22} />
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="text-white/75 hover:text-white transition-colors"
+            aria-label="Go back"
+          >
+            <ChevronLeft size={22} />
           </button>
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.25em] text-white/35">Explore</p>
+            <p className="text-xs font-medium uppercase tracking-[0.25em] text-white/35">Browse</p>
             <h1 className="text-2xl font-semibold text-white">Exercises</h1>
           </div>
           <div className="flex items-center gap-3 text-white/75">
@@ -344,33 +378,171 @@ export default function ExplorePage() {
         </div>
 
         {activeTab === 'exercises' && (
-          <div className="mb-3 grid grid-cols-3 gap-3">
-            {/* All Exercises Tile */}
-            <button
-              type="button"
-              onClick={handleAllExercises}
-              className="glass-panel overflow-hidden text-left transition-transform hover:scale-[1.01]"
-            >
-              <div className="relative aspect-[0.95] bg-gradient-to-br from-indigo-500/30 to-white/5 overflow-hidden flex flex-col items-center justify-center">
-                <Zap size={32} className="text-indigo-300 mb-2" />
-                <span className="text-xs font-medium text-white/70">All Exercises</span>
-              </div>
-              <div className="border-t border-white/10 px-3 py-3">
-                <p className="text-center text-sm font-semibold text-white">Browse All</p>
-              </div>
-            </button>
+          <>
+            <div className="mb-6 flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMuscle(null);
+                  setActiveEquipment(null);
+                }}
+                className={`flex w-20 shrink-0 flex-col items-center gap-2 rounded-2xl border px-2 py-2 transition-all ${
+                  !activeMuscle && !activeEquipment ? 'border-white/25 bg-white/10' : 'border-white/5 bg-white/[0.03]'
+                }`}
+              >
+                <div className="flex h-12 w-full items-center justify-center rounded-xl bg-black/20 text-xs font-semibold text-white/80">
+                  All
+                </div>
+                <span className="text-[11px] font-medium text-white/80">Filters</span>
+              </button>
 
-            {/* Muscle Group Tiles */}
-            {bodyGroups.map((group) => (
-              <MuscleTile
-                key={group.key}
-                group={group}
-                active={false}
-                count={muscleCounts.get(group.key) || 0}
-                onClick={() => handleMuscleClick(group.key)}
-              />
-            ))}
-          </div>
+              {bodyGroups.map((group) => (
+                <CompactTile
+                  key={group.key}
+                  group={group}
+                  active={activeMuscle === group.key}
+                  onClick={() => {
+                    setMode('muscles');
+                    setActiveMuscle(group.key);
+                    setActiveEquipment(null);
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/30">Selected</p>
+                <h2 className="text-lg font-semibold text-white">{activeFilterLabel}</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMode(mode === 'muscles' ? 'equipment' : 'muscles')}
+                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium text-white/80"
+              >
+                <Grid2X2 size={14} />
+                {mode === 'muscles' ? 'Muscles' : 'Equipment'}
+                <ChevronRight size={14} />
+              </button>
+            </div>
+
+            {mode === 'muscles' ? (
+              <>
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/30">By muscle</p>
+                    <h3 className="text-xl font-semibold text-white">Browse categories</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveMuscle(null)}
+                    className="rounded-full border border-white/10 px-3 py-2 text-xs font-medium text-white/70"
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                <div className="mb-8 grid grid-cols-3 gap-3">
+                  {bodyGroups.map((group) => (
+                    <MuscleTile
+                      key={group.key}
+                      group={group}
+                      active={activeMuscle === group.key}
+                      count={muscleCounts.get(group.key) || 0}
+                      onClick={() => {
+                        setActiveMuscle(group.key);
+                        setActiveEquipment(null);
+                      }}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/30">By equipment</p>
+                    <h3 className="text-xl font-semibold text-white">Gear filters</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveEquipment(null)}
+                    className="rounded-full border border-white/10 px-3 py-2 text-xs font-medium text-white/70"
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                <div className="mb-8 grid grid-cols-3 gap-3">
+                  {equipmentGroups.map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => {
+                        setActiveEquipment(item.key);
+                        setActiveMuscle(null);
+                      }}
+                      className={`glass-panel flex flex-col items-center justify-center gap-2 px-2 py-5 text-center transition-all ${
+                        activeEquipment === item.key ? 'ring-1 ring-white/30' : ''
+                      }`}
+                    >
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-white/80">
+                        <Dumbbell size={24} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-white">{item.label}</p>
+                        <p className="text-[11px] text-white/35">{item.count} exercises</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/30">All exercises</p>
+                <h3 className="text-xl font-semibold text-white">{filteredExercises.length} results</h3>
+              </div>
+              <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1">
+                <button
+                  type="button"
+                  onClick={() => setView('list')}
+                  className={`rounded-full p-2 transition-all ${view === 'list' ? 'bg-white text-black' : 'text-white/60'}`}
+                  aria-label="List view"
+                >
+                  <List size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView('grid')}
+                  className={`rounded-full p-2 transition-all ${view === 'grid' ? 'bg-white text-black' : 'text-white/60'}`}
+                  aria-label="Grid view"
+                >
+                  <LayoutGrid size={15} />
+                </button>
+              </div>
+            </div>
+
+            <div className={view === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
+              {filteredExercises.length === 0 ? (
+                <div className="col-span-full rounded-3xl border border-white/10 bg-white/[0.03] px-6 py-12 text-center text-sm text-white/40">
+                  No exercises found.
+                </div>
+              ) : (
+                filteredExercises.map((exercise) => (
+                  <ExerciseCard
+                    key={exercise.id}
+                    exercise={exercise}
+                    view={view}
+                    thumbnailSrc={`/exercise-media/${exercise.id}.gif`}
+                    muscleLabel={formatBodyPartLabel(exercise.bodyPart || 'other')}
+                    detailLabel={`${formatBodyPartLabel(exercise.bodyPart || 'other')} • ${formatEquipmentLabel(exercise.equipment || 'other')}`}
+                  />
+                ))
+              )}
+            </div>
+          </>
         )}
 
         {activeTab !== 'exercises' && (
@@ -380,5 +552,13 @@ export default function ExplorePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function BrowsePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+      <BrowsePageContent />
+    </Suspense>
   );
 }
