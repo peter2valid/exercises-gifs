@@ -9,16 +9,29 @@ type ExerciseCardProps = {
   thumbnailSrc?: string;
   muscleLabel?: string;
   detailLabel?: string;
+  index?: number;
 };
 
-function ExerciseThumbnail({ src, alt }: { src: string; alt: string }) {
+function ExerciseThumbnail({ src, alt, priority = false }: { src: string; alt: string; priority?: boolean }) {
   const [failed, setFailed] = useState(false);
 
   if (failed) {
     return <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5" />;
   }
 
-  return <Image src={src} alt={alt} fill unoptimized className="object-contain p-2" onError={() => setFailed(true)} sizes="(max-width: 768px) 100vw, 33vw" />;
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      onError={() => setFailed(true)}
+      className="object-contain p-2"
+      sizes="(max-width: 768px) 100vw, 33vw"
+      loading={priority ? 'eager' : 'lazy'}
+      decoding="async"
+      priority={priority}
+    />
+  );
 }
 
 export default function ExerciseCard({
@@ -27,6 +40,7 @@ export default function ExerciseCard({
   thumbnailSrc,
   muscleLabel,
   detailLabel,
+  index = 999,
 }: ExerciseCardProps) {
   const src = thumbnailSrc ?? `/exercise-media/${exercise.id}.gif`;
   const subtitle = detailLabel ?? muscleLabel ?? exercise.bodyPart ?? exercise.target ?? '';
@@ -43,7 +57,7 @@ export default function ExerciseCard({
               <div className="absolute right-3 top-3 z-10 rounded-full bg-black/25 p-1.5 backdrop-blur-sm">
                 <HelpCircle size={14} className="text-white/80" />
               </div>
-              <ExerciseThumbnail src={src} alt={exercise.name} />
+              <ExerciseThumbnail src={src} alt={exercise.name} priority={index < 6} />
             </div>
             <div className="border-t border-white/10 p-3">
               <h3 className="text-sm font-semibold text-white leading-tight line-clamp-2">{exercise.name}</h3>
@@ -53,7 +67,7 @@ export default function ExerciseCard({
         ) : (
           <>
             <div className="relative h-14 w-14 shrink-0 rounded-xl bg-white/6 overflow-hidden border border-white/10">
-              <ExerciseThumbnail src={src} alt={exercise.name} />
+              <ExerciseThumbnail src={src} alt={exercise.name} priority={index < 6} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-3">

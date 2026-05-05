@@ -538,9 +538,10 @@ function BrowsePageContent() {
                   No exercises found.
                 </div>
               ) : (
-                filteredExercises.map((exercise) => (
+                filteredExercises.map((exercise, i) => (
                   <ExerciseCard
                     key={exercise.id}
+                    index={i}
                     exercise={exercise}
                     view={view}
                     thumbnailSrc={`/exercise-media/${exercise.id}.gif`}
