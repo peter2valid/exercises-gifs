@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "prebuild": "node scripts/prepare-public-media.mjs",
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "dev:fresh": "rm -rf .next && next dev --port 3000",
     "build": "next build",
     "start": "next start",

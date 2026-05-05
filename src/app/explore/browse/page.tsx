@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -259,6 +259,7 @@ function BrowsePageContent() {
   const explicitBrowse = searchParams.has('muscle');
 
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeTab, setActiveTab] = useState<ExploreTab>('exercises');
   const [mode, setMode] = useState<ExploreMode>('muscles');
   const [activeMuscle, setActiveMuscle] = useState<BodyGroupKey | null>(
@@ -266,6 +267,11 @@ function BrowsePageContent() {
   );
   const [activeEquipment, setActiveEquipment] = useState<string | null>(null);
   const [view, setView] = useState<ExploreView>('grid');
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 150);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const exercises = exercisesData as Exercise[];
 
@@ -294,24 +300,29 @@ function BrowsePageContent() {
   }, [exercises]);
 
   const filteredExercises = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     let results = q ? searchExercises(exercises, q) : exercises;
-    
-    // Apply muscle filter
+
     if (activeMuscle) {
       const group = bodyGroups.find((item) => item.key === activeMuscle);
-      if (group) {
-        results = results.filter((exercise) => group.match(exercise));
-      }
+      if (group) results = results.filter((exercise) => group.match(exercise));
     }
-    
-    // Apply equipment filter
+
     if (activeEquipment) {
       results = results.filter((exercise) => (exercise.equipment || '').toLowerCase() === activeEquipment);
     }
-    
+
     return results;
-  }, [activeEquipment, activeMuscle, exercises, search]);
+  }, [activeEquipment, activeMuscle, exercises, debouncedSearch]);
+
+  // Cap unfiltered renders — browsing all 1323 cards at once kills responsiveness.
+  // When the user applies any filter or search, show everything.
+  const visibleExercises = useMemo(() => {
+    if (!debouncedSearch && !activeMuscle && !activeEquipment) {
+      return filteredExercises.slice(0, 50);
+    }
+    return filteredExercises;
+  }, [filteredExercises, debouncedSearch, activeMuscle, activeEquipment]);
 
   const activeMuscleLabel = activeMuscle ? bodyGroups.find((group) => group.key === activeMuscle)?.label : null;
   const activeEquipmentLabel = activeEquipment ? formatEquipmentLabel(activeEquipment) : null;
@@ -512,7 +523,12 @@ function BrowsePageContent() {
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/30">All exercises</p>
-                <h3 className="text-xl font-semibold text-white">{filteredExercises.length} results</h3>
+                <h3 className="text-xl font-semibold text-white">
+                  {filteredExercises.length} results
+                  {visibleExercises.length < filteredExercises.length && (
+                    <span className="text-sm font-normal text-white/30 ml-2">showing {visibleExercises.length}</span>
+                  )}
+                </h3>
               </div>
               <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1">
                 <button
@@ -540,7 +556,7 @@ function BrowsePageContent() {
                   No exercises found.
                 </div>
               ) : (
-                filteredExercises.map((exercise, i) => (
+                visibleExercises.map((exercise, i) => (
                   <ExerciseCard
                     key={exercise.id}
                     index={i}
