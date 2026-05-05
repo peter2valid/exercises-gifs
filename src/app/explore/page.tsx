@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -255,7 +255,22 @@ function MuscleTile({
 export default function ExplorePage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<ExploreTab>('exercises');
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      startTransition(() => setDebouncedSearch(search));
+    }, 150);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    if (debouncedSearch.trim()) {
+      router.push(`/explore/browse?q=${encodeURIComponent(debouncedSearch.trim())}`);
+    }
+  }, [debouncedSearch, router]);
 
   const exercises = exercisesData as Exercise[];
 
@@ -301,9 +316,9 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        <div className="mb-4 rounded-[30px] border border-white/10 bg-white px-4 py-3 text-black shadow-[0_18px_45px_rgba(0,0,0,0.16)]">
+        <div className={`mb-4 rounded-[30px] border border-white/10 bg-white px-4 py-3 text-black shadow-[0_18px_45px_rgba(0,0,0,0.16)] transition-opacity duration-200 ${isPending ? 'opacity-70' : 'opacity-100'}`}>
           <div className="flex items-center gap-3 text-black/70">
-            <Search size={18} />
+            <Search size={18} className={isPending ? 'animate-pulse' : ''} />
             <input
               type="text"
               placeholder="Search exercises..."

@@ -1,6 +1,7 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { FixedSizeList } from 'react-window';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -252,14 +253,53 @@ function MuscleTile({
   );
 }
 
+const LIST_ITEM_HEIGHT = 94;  // glass-panel p-3 + h-14 + border + 12px gap
+const GRID_ROW_HEIGHT = 320;  // aspect-[4/5] card + footer + 12px gap
+
+interface VirtualData { exercises: Exercise[] }
+
+function ListItem({ index, style, data }: { index: number; style: React.CSSProperties; data: VirtualData }) {
+  const ex = data.exercises[index];
+  if (!ex) return null;
+  return (
+    <div style={{ ...style, paddingBottom: 12 }}>
+      <ExerciseCard
+        index={index}
+        exercise={ex}
+        view="list"
+        thumbnailSrc={`/exercise-media/${ex.id}.gif`}
+        muscleLabel={formatBodyPartLabel(ex.bodyPart || 'other')}
+        detailLabel={`${formatBodyPartLabel(ex.bodyPart || 'other')} • ${formatEquipmentLabel(ex.equipment || 'other')}`}
+      />
+    </div>
+  );
+}
+
+function GridRow({ index, style, data }: { index: number; style: React.CSSProperties; data: VirtualData }) {
+  const a = data.exercises[index * 2];
+  const b = data.exercises[index * 2 + 1];
+  return (
+    <div style={{ ...style, display: 'flex', gap: 12, paddingBottom: 12 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {a && <ExerciseCard index={index * 2} exercise={a} view="grid" thumbnailSrc={`/exercise-media/${a.id}.gif`} muscleLabel={formatBodyPartLabel(a.bodyPart || 'other')} detailLabel={`${formatBodyPartLabel(a.bodyPart || 'other')} • ${formatEquipmentLabel(a.equipment || 'other')}`} />}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {b && <ExerciseCard index={index * 2 + 1} exercise={b} view="grid" thumbnailSrc={`/exercise-media/${b.id}.gif`} muscleLabel={formatBodyPartLabel(b.bodyPart || 'other')} detailLabel={`${formatBodyPartLabel(b.bodyPart || 'other')} • ${formatEquipmentLabel(b.equipment || 'other')}`} />}
+      </div>
+    </div>
+  );
+}
+
 function BrowsePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const muscleParam = searchParams.get('muscle');
-  const explicitBrowse = searchParams.has('muscle');
+  const queryParam = searchParams.get('q');
+  const explicitBrowse = searchParams.has('muscle') || searchParams.has('q');
 
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [search, setSearch] = useState(queryParam || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(queryParam || '');
+  const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<ExploreTab>('exercises');
   const [mode, setMode] = useState<ExploreMode>('muscles');
   const [activeMuscle, setActiveMuscle] = useState<BodyGroupKey | null>(
@@ -267,11 +307,21 @@ function BrowsePageContent() {
   );
   const [activeEquipment, setActiveEquipment] = useState<string | null>(null);
   const [view, setView] = useState<ExploreView>('grid');
+  const listContainerRef = useRef<HTMLDivElement>(null);
+  const [listHeight, setListHeight] = useState(500);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 150);
+    const t = setTimeout(() => {
+      startTransition(() => setDebouncedSearch(search));
+    }, 150);
     return () => clearTimeout(t);
   }, [search]);
+
+  useLayoutEffect(() => {
+    if (!listContainerRef.current) return;
+    const rect = listContainerRef.current.getBoundingClientRect();
+    setListHeight(Math.max(300, window.innerHeight - rect.top - 96));
+  }, [activeMuscle, activeEquipment, mode, explicitBrowse, activeTab]);
 
   const exercises = exercisesData as Exercise[];
 
@@ -315,14 +365,7 @@ function BrowsePageContent() {
     return results;
   }, [activeEquipment, activeMuscle, exercises, debouncedSearch]);
 
-  // Cap unfiltered renders — browsing all 1323 cards at once kills responsiveness.
-  // When the user applies any filter or search, show everything.
-  const visibleExercises = useMemo(() => {
-    if (!debouncedSearch && !activeMuscle && !activeEquipment) {
-      return filteredExercises.slice(0, 50);
-    }
-    return filteredExercises;
-  }, [filteredExercises, debouncedSearch, activeMuscle, activeEquipment]);
+  const itemData = useMemo(() => ({ exercises: filteredExercises }), [filteredExercises]);
 
   const activeMuscleLabel = activeMuscle ? bodyGroups.find((group) => group.key === activeMuscle)?.label : null;
   const activeEquipmentLabel = activeEquipment ? formatEquipmentLabel(activeEquipment) : null;
@@ -523,11 +566,8 @@ function BrowsePageContent() {
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/30">All exercises</p>
-                <h3 className="text-xl font-semibold text-white">
+                <h3 className={`text-xl font-semibold text-white transition-opacity duration-200 ${isPending ? 'opacity-50' : 'opacity-100'}`}>
                   {filteredExercises.length} results
-                  {visibleExercises.length < filteredExercises.length && (
-                    <span className="text-sm font-normal text-white/30 ml-2">showing {visibleExercises.length}</span>
-                  )}
                 </h3>
               </div>
               <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1">
@@ -550,23 +590,22 @@ function BrowsePageContent() {
               </div>
             </div>
 
-            <div className={view === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
+            <div ref={listContainerRef} className="min-h-[300px]">
               {filteredExercises.length === 0 ? (
-                <div className="col-span-full rounded-3xl border border-white/10 bg-white/[0.03] px-6 py-12 text-center text-sm text-white/40">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] px-6 py-12 text-center text-sm text-white/40">
                   No exercises found.
                 </div>
               ) : (
-                visibleExercises.map((exercise, i) => (
-                  <ExerciseCard
-                    key={exercise.id}
-                    index={i}
-                    exercise={exercise}
-                    view={view}
-                    thumbnailSrc={`/exercise-media/${exercise.id}.gif`}
-                    muscleLabel={formatBodyPartLabel(exercise.bodyPart || 'other')}
-                    detailLabel={`${formatBodyPartLabel(exercise.bodyPart || 'other')} • ${formatEquipmentLabel(exercise.equipment || 'other')}`}
-                  />
-                ))
+                <FixedSizeList
+                  height={listHeight}
+                  itemCount={view === 'grid' ? Math.ceil(filteredExercises.length / 2) : filteredExercises.length}
+                  itemSize={view === 'grid' ? GRID_ROW_HEIGHT : LIST_ITEM_HEIGHT}
+                  width="100%"
+                  itemData={itemData}
+                  className="scrollbar-hide"
+                >
+                  {view === 'grid' ? GridRow : ListItem}
+                </FixedSizeList>
               )}
             </div>
           </>

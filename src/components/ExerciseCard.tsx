@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { memo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Bookmark, ChevronRight, HelpCircle } from 'lucide-react';
@@ -12,7 +12,7 @@ type ExerciseCardProps = {
   index?: number;
 };
 
-function ExerciseThumbnail({ src, alt, priority = false, exerciseId }: { src: string; alt: string; priority?: boolean; exerciseId: string }) {
+const ExerciseThumbnail = memo(function ExerciseThumbnail({ src, alt, priority = false, exerciseId }: { src: string; alt: string; priority?: boolean; exerciseId: string }) {
   const [failed, setFailed] = useState(false);
   const [gifLoaded, setGifLoaded] = useState(false);
   const posterSrc = `/exercise-posters/${exerciseId}.jpg`;
@@ -52,9 +52,9 @@ function ExerciseThumbnail({ src, alt, priority = false, exerciseId }: { src: st
       )}
     </>
   );
-}
+});
 
-export default function ExerciseCard({
+const ExerciseCard = memo(function ExerciseCard({
   exercise,
   view = 'list',
   thumbnailSrc,
@@ -101,4 +101,6 @@ export default function ExerciseCard({
       </article>
     </Link>
   );
-}
+});
+
+export default ExerciseCard;
