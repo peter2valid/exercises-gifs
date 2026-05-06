@@ -1,6 +1,7 @@
-// src/components/ui/Button.tsx
+// src/components/ui/index.tsx
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { Loader2 } from 'lucide-react';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -27,7 +28,6 @@ export function Button({ className, variant = 'primary', size = 'md', ...props }
   return <button className={cn(baseStyles, variants[variant], sizes[size], className)} {...props} />;
 }
 
-// src/components/ui/Input.tsx
 export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input 
@@ -40,4 +40,18 @@ export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInp
   );
 }
 
+export function Loading({ size = 32, className = "" }: { size?: number; className?: string }) {
+  return (
+    <div className={cn("flex items-center justify-center", className)}>
+      <Loader2 className="animate-spin text-white/20" size={size} />
+    </div>
+  );
+}
 
+export function LoadingPage() {
+  return (
+    <div className="dashboard-bg min-h-screen flex items-center justify-center">
+      <Loading size={32} />
+    </div>
+  );
+}

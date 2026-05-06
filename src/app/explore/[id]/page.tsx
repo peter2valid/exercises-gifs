@@ -1,18 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import { getExerciseById } from '@/lib/db/exerciseQueries';
 import { seedExercises } from '@/lib/db/seed';
-import { Button } from '@/components/ui';
+import { Button, LoadingPage } from '@/components/ui';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { type Exercise } from '@/lib/db/schema';
+import { bodyGroups } from '@/lib/explore/constants';
 
 import { ExerciseThumbnail } from '@/components/ExerciseCard';
 
 export default function ExerciseDetail({ params }: any) {
   const id = params?.id;
+  const router = useRouter();
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -26,21 +28,39 @@ export default function ExerciseDetail({ params }: any) {
     load();
   }, [id]);
 
-  if (loading) return (
-    <div className="dashboard-bg min-h-screen flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-white/10 border-t-white/80 rounded-full animate-spin" />
-    </div>
-  );
+  if (loading) return <LoadingPage />;
 
   if (!exercise) return notFound();
+
+  const handleBack = () => {
+    // If we have history, use back() to preserve exact scroll/filter state
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    // Fallback: Smart redirect based on exercise category
+    if (exercise) {
+      const muscleKey = exercise.body_part || exercise.target;
+      // Map body part to muscle group keys used in constants
+      const validGroups = bodyGroups.map(g => g.key);
+      const targetKey = validGroups.find(k => k === muscleKey) || 'all';
+      router.push(`/explore/browse?muscle=${targetKey}`);
+    } else {
+      router.push('/explore');
+    }
+  };
 
   return (
     <div className="dashboard-bg min-h-screen pb-24 pt-8">
       <div className="max-w-md mx-auto px-4">
         <div className="mb-6">
-          <Link href="/explore" className="inline-flex items-center gap-2 text-white/60 mb-4">
+          <button 
+            onClick={handleBack}
+            className="inline-flex items-center gap-2 text-white/60 mb-4 hover:text-white transition-colors"
+          >
             <ChevronLeft size={18} /> Back
-          </Link>
+          </button>
           
           {/* Hero Media Section */}
           <div className="relative aspect-square glass-panel overflow-hidden mb-6 bg-white/5 border border-white/10 rounded-2xl">

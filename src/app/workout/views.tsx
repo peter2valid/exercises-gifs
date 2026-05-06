@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { Button, Input } from '@/components/ui';
+import { Button, Input, Loading } from '@/components/ui';
 import { Play, Pause, RotateCcw, CheckCircle, Plus, Minus, Search, X, RefreshCw } from 'lucide-react';
 import type { Exercise, SetLog } from '@/lib/db/schema';
 import { searchExercises } from '@/lib/search';
@@ -25,7 +25,7 @@ function groupByMuscle(exercises: Exercise[]): [string, Exercise[]][] {
 export function RestoringView() {
   return (
     <div className="dashboard-bg min-h-screen flex items-center justify-center">
-      <span className="text-white/20 text-xs tracking-[0.3em] uppercase">Loading</span>
+      <Loading size={32} />
     </div>
   );
 }

@@ -15,7 +15,7 @@ import {
   CalendarRange,
   Zap,
 } from 'lucide-react';
-import { Input } from '@/components/ui';
+import { Input, Loading, LoadingPage } from '@/components/ui';
 import ExerciseCard from '@/components/ExerciseCard';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { seedExercises } from '@/lib/db/seed';
@@ -88,6 +88,8 @@ export default function ExplorePage() {
     router.push('/explore/browse?muscle=all');
   };
 
+  if (loading) return <LoadingPage />;
+
   return (
     <div className="dashboard-bg min-h-screen pb-24 pt-5">
       <div className="mx-auto max-w-md px-4">
@@ -149,8 +151,8 @@ export default function ExplorePage() {
         {activeTab === 'exercises' && (
           <div className="mb-3 grid grid-cols-3 gap-3">
             {loading ? (
-              <div className="col-span-3 flex items-center justify-center py-20">
-                <div className="w-8 h-8 border-2 border-white/10 border-t-white/80 rounded-full animate-spin" />
+              <div className="col-span-3 py-20">
+                <Loading />
               </div>
             ) : (
               <>

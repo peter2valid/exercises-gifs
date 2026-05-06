@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui';
+import { Button, LoadingPage } from '@/components/ui';
 import { runSyncSimulation } from '@/lib/simulation/syncSimulation';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2 } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
@@ -26,11 +25,7 @@ export default function HomePage() {
   }, [router]);
 
   if (loading) {
-    return (
-      <div className="dashboard-bg min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-white/20" size={32} />
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   return (
