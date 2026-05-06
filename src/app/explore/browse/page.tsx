@@ -168,8 +168,9 @@ function BrowsePageContent() {
   const Row = ({ index, style }: any) => {
     if (index === 0) {
       return (
-        <div style={style} className="px-4 pt-5 pb-4">
-          <div ref={headerRef}>
+        <div style={style}>
+          <div className="mx-auto max-w-md px-4 pt-5 pb-4">
+            <div ref={headerRef}>
             <div className="mb-4 flex items-center justify-between">
               <button
                 type="button"
@@ -298,6 +299,7 @@ function BrowsePageContent() {
             )}
           </div>
         </div>
+        </div>
       );
     }
 
@@ -307,12 +309,14 @@ function BrowsePageContent() {
       const a = filteredExercises[dataIndex * 2];
       const b = filteredExercises[dataIndex * 2 + 1];
       return (
-        <div style={style} className="flex gap-3 px-4 pb-3">
-          <div className="flex-1 min-w-0">
-            {a && <ExerciseCard index={dataIndex * 2} exercise={a} view="grid" muscleLabel={formatBodyPartLabel(a.body_part || 'other')} detailLabel={`${formatBodyPartLabel(a.body_part || 'other')} • ${formatEquipmentLabel(a.equipment || 'other')}`} />}
-          </div>
-          <div className="flex-1 min-w-0">
-            {b && <ExerciseCard index={dataIndex * 2 + 1} exercise={b} view="grid" muscleLabel={formatBodyPartLabel(b.body_part || 'other')} detailLabel={`${formatBodyPartLabel(b.body_part || 'other')} • ${formatEquipmentLabel(b.equipment || 'other')}`} />}
+        <div style={style}>
+          <div className="mx-auto max-w-md flex gap-3 px-4 pb-3">
+            <div className="flex-1 min-w-0">
+              {a && <ExerciseCard index={dataIndex * 2} exercise={a} view="grid" muscleLabel={formatBodyPartLabel(a.body_part || 'other')} detailLabel={`${formatBodyPartLabel(a.body_part || 'other')} • ${formatEquipmentLabel(a.equipment || 'other')}`} />}
+            </div>
+            <div className="flex-1 min-w-0">
+              {b && <ExerciseCard index={dataIndex * 2 + 1} exercise={b} view="grid" muscleLabel={formatBodyPartLabel(b.body_part || 'other')} detailLabel={`${formatBodyPartLabel(b.body_part || 'other')} • ${formatEquipmentLabel(b.equipment || 'other')}`} />}
+            </div>
           </div>
         </div>
       );
@@ -321,14 +325,16 @@ function BrowsePageContent() {
     const ex = filteredExercises[dataIndex];
     if (!ex) return null;
     return (
-      <div style={style} className="px-4 pb-3">
-        <ExerciseCard
-          index={dataIndex}
-          exercise={ex}
-          view="list"
-          muscleLabel={formatBodyPartLabel(ex.body_part || 'other')}
-          detailLabel={`${formatBodyPartLabel(ex.body_part || 'other')} • ${formatEquipmentLabel(ex.equipment || 'other')}`}
-        />
+      <div style={style}>
+        <div className="mx-auto max-w-md px-4 pb-3">
+          <ExerciseCard
+            index={dataIndex}
+            exercise={ex}
+            view="list"
+            muscleLabel={formatBodyPartLabel(ex.body_part || 'other')}
+            detailLabel={`${formatBodyPartLabel(ex.body_part || 'other')} • ${formatEquipmentLabel(ex.equipment || 'other')}`}
+          />
+        </div>
       </div>
     );
   };
