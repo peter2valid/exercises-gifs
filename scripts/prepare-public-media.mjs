@@ -23,13 +23,24 @@ async function main() {
     throw new Error(`Source assets directory missing: ${sourceDir}`);
   }
 
+  const mp4SourceDir = path.join(root, 'assets_mp4');
+  const mp4SourceType = await pathType(mp4SourceDir);
+
   const targetType = await pathType(targetDir);
   if (targetType !== 'missing') {
     await rm(targetDir, { recursive: true, force: true });
   }
 
   await mkdir(path.dirname(targetDir), { recursive: true });
+  
+  // Copy GIFs
   await cp(sourceDir, targetDir, { recursive: true });
+  
+  // Copy MP4s if they exist
+  if (mp4SourceType === 'directory') {
+    console.log(`Copying MP4s from ${mp4SourceDir} to ${targetDir}...`);
+    await cp(mp4SourceDir, targetDir, { recursive: true });
+  }
 
   console.log(`Prepared public media at ${targetDir}`);
 

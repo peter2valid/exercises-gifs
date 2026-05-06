@@ -17,10 +17,14 @@ type WorkoutStore = {
   deviceId: string;
   userId: string;
 
+  // Transient UI state
+  activeRest: { startedAt: string; durationSeconds: number } | null;
+
   // Actions
   startSession: (sessionId: string, userId: string, tenantId: string, deviceId: string) => Promise<void>;
   logSet: (setId: string, exerciseId: string, weight: number, reps: number) => Promise<void>;
   startRest: (setId: string, durationSeconds: number) => Promise<void>;
+  adjustRest: (seconds: number) => void;
   editSet: (setId: string, weight: number, reps: number) => Promise<void>;
   deleteSet: (setId: string) => Promise<void>;
   completeSession: () => Promise<void>;
@@ -44,6 +48,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   tenantId: '',
   deviceId: '',
   userId: '',
+  activeRest: null,
 
   startSession: async (sessionId, userId, tenantId, deviceId) => {
     await createEvent({
@@ -74,15 +79,27 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   startRest: async (setId, durationSeconds) => {
     const { session, tenantId, deviceId, userId } = get();
     if (!session) throw new Error('startRest called with no active session');
+    const startedAt = new Date().toISOString();
     await createEvent({
       type: 'REST_STARTED',
       tenant_id: tenantId,
       device_id: deviceId,
       user_id: userId,
-      payload: { session_id: session.id, set_id: setId, duration_seconds: durationSeconds, started_at: new Date().toISOString() },
+      payload: { session_id: session.id, set_id: setId, duration_seconds: durationSeconds, started_at: startedAt },
     });
     // REST_STARTED has no projection — only phase changes
-    set({ phase: 'resting' });
+    set({ phase: 'resting', activeRest: { startedAt, durationSeconds } });
+  },
+
+  adjustRest: (seconds) => {
+    const { activeRest } = get();
+    if (!activeRest) return;
+    set({ 
+      activeRest: { 
+        ...activeRest, 
+        durationSeconds: Math.max(0, activeRest.durationSeconds + seconds) 
+      } 
+    });
   },
 
   editSet: async (setId, weight, reps) => {
@@ -140,7 +157,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     });
   },
 
-  endRest: () => set({ phase: 'active' }),
+  endRest: () => set({ phase: 'active', activeRest: null }),
 
-  reset: () => set({ phase: 'idle', session: null, sets: {}, tenantId: '', deviceId: '', userId: '' }),
+  reset: () => set({ phase: 'idle', session: null, sets: {}, tenantId: '', deviceId: '', userId: '', activeRest: null }),
 }));
