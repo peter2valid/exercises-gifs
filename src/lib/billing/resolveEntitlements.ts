@@ -20,18 +20,13 @@ const CACHE_STALE_MS  = 48 * 60 * 60 * 1000; // 48 hours
 function grantsAccess(
   status: string,
   gracePeriodEnd: string | null,
-  periodEnd: string | null,
+  periodEnd: string | null, // Kept for signature compatibility if needed
 ): boolean {
   if (status === 'active' || status === 'trialing') return true;
 
-  if (status === 'past_due') {
-    // Grace period end is set by the webhook handler; fall back to periodEnd + 7d
-    const graceTs = gracePeriodEnd
-      ? new Date(gracePeriodEnd).getTime()
-      : periodEnd
-        ? new Date(periodEnd).getTime() + 7 * 24 * 60 * 60 * 1000
-        : null;
-    return graceTs !== null && Date.now() < graceTs;
+  if (status === 'past_due' && gracePeriodEnd) {
+    const graceTs = new Date(gracePeriodEnd).getTime();
+    return Date.now() < graceTs;
   }
 
   return false;

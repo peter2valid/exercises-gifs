@@ -43,24 +43,26 @@ export async function fetchAndCacheEntitlements(userId: string): Promise<Effecti
     // ── Step 1: Gym membership and gym subscription ──────────────────────────
     let gym: GymSubscriptionState | null = null;
 
-    const { data: membership } = await supabase
+    const { data: memberships } = await supabase
       .from('gym_memberships')
       .select('gym_id')
       .eq('user_id', userId)
-      .maybeSingle();
+      .limit(1);
+      
+    const primaryGymId = memberships?.[0]?.gym_id;
 
-    if (membership?.gym_id) {
+    if (primaryGymId) {
       const { data: gymSub } = await supabase
         .from('gym_subscriptions')
         .select('plan, status, current_period_end, grace_period_end')
-        .eq('gym_id', membership.gym_id)
+        .eq('gym_id', primaryGymId)
         .maybeSingle();
 
       if (gymSub) {
         gym = {
-          gymId: membership.gym_id,
-          plan: gymSub.plan,
-          status: gymSub.status,
+          gymId: primaryGymId,
+          plan: gymSub.plan as any,
+          status: gymSub.status as any,
           periodEnd: gymSub.current_period_end,
           gracePeriodEnd: gymSub.grace_period_end,
         };
@@ -79,9 +81,9 @@ export async function fetchAndCacheEntitlements(userId: string): Promise<Effecti
     if (userSub) {
       member = {
         userId,
-        plan: userSub.plan,
-        billingPeriod: userSub.billing_period,
-        status: userSub.status,
+        plan: userSub.plan as any || 'plus',
+        billingPeriod: userSub.billing_period as any || 'monthly',
+        status: userSub.status as any,
         periodEnd: userSub.current_period_end,
         gracePeriodEnd: userSub.grace_period_end,
         trialEndsAt: userSub.trial_ends_at,

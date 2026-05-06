@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useEntitlementStore } from '@/store/entitlementStore';
 import { UpgradeBottomSheet } from './UpgradeBottomSheet';
@@ -19,40 +19,65 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
   const initEntitlements = useEntitlementStore(s => s.initEntitlements);
   const refreshEntitlements = useEntitlementStore(s => s.refreshEntitlements);
   const clearEntitlements = useEntitlementStore(s => s.clearEntitlements);
+  
+  const currentUserIdRef = useRef<string | null>(null);
+  const realtimeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  // Zustand actions are referentially stable — safe to include in deps
   useEffect(() => {
-    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
-
     const setupForUser = async (userId: string) => {
+      // Prevent duplicate setup if same user
+      if (currentUserIdRef.current === userId) return;
+      currentUserIdRef.current = userId;
+
+      // Clean up previous channel if it exists
+      if (realtimeChannelRef.current) {
+        supabase.removeChannel(realtimeChannelRef.current);
+        realtimeChannelRef.current = null;
+      }
+
       await initEntitlements(userId);
 
-      // Listen for subscription changes and refresh entitlements in realtime
-      realtimeChannel = supabase
-        .channel(`entitlements-${userId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'user_subscriptions',
-            filter: `user_id=eq.${userId}`,
-          },
-          () => refreshEntitlements(),
-        )
-        .on(
+      // We need to know the gymId to filter gym_subscriptions and prevent fan-out storms.
+      // fetchAndCacheEntitlements (called by initEntitlements) updates Dexie.
+      const { data: membership } = await supabase
+        .from('gym_memberships')
+        .select('gym_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const channel = supabase.channel(`entitlements-${userId}`);
+      
+      // 1. Listen for personal subscription changes
+      channel.on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_subscriptions',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => refreshEntitlements(),
+      );
+
+      // 2. Listen for gym subscription changes (ONLY if member of a gym)
+      if (membership?.gym_id) {
+        channel.on(
           'postgres_changes',
           {
             event: '*',
             schema: 'public',
             table: 'gym_subscriptions',
+            filter: `gym_id=eq.${membership.gym_id}`,
           },
           () => refreshEntitlements(),
-        )
-        .subscribe();
+        );
+      }
+
+      channel.subscribe();
+      realtimeChannelRef.current = channel;
     };
 
-    // Initialise for current session
+    // Initialize for current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) setupForUser(session.user.id);
     });
@@ -64,16 +89,17 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
       }
 
       if (event === 'SIGNED_OUT') {
+        currentUserIdRef.current = null;
         clearEntitlements();
-        if (realtimeChannel) {
-          supabase.removeChannel(realtimeChannel);
-          realtimeChannel = null;
+        if (realtimeChannelRef.current) {
+          supabase.removeChannel(realtimeChannelRef.current);
+          realtimeChannelRef.current = null;
         }
       }
     });
 
     return () => {
-      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+      if (realtimeChannelRef.current) supabase.removeChannel(realtimeChannelRef.current);
       authListener.subscription.unsubscribe();
     };
   }, [initEntitlements, refreshEntitlements, clearEntitlements]);

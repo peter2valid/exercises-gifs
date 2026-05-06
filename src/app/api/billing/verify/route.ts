@@ -14,9 +14,6 @@ const adminSupabase = createClient(SUPABASE_URL, SERVICE_KEY);
  *
  * Paystack redirects the user here after payment (success or failure).
  * We verify server-side before granting any entitlement.
- *
- * This is the fallback confirm path. The webhook is the primary path.
- * Both are idempotent — double-processing is safe.
  */
 export async function GET(req: Request): Promise<NextResponse> {
   const url = new URL(req.url);
@@ -47,7 +44,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     return redirectWithStatus('failed');
   }
 
-  const { metadata } = verifyData.data;
+  const { metadata, id: providerId } = verifyData.data;
   const now = new Date();
 
   // ── Activate the correct subscription ────────────────────────────────────
@@ -55,25 +52,34 @@ export async function GET(req: Request): Promise<NextResponse> {
     const { user_id, period } = metadata;
     const periodEnd = addPeriod(now, period);
 
-    await adminSupabase.from('user_subscriptions').upsert(
-      {
-        user_id,
-        plan: 'plus',
-        billing_period: period,
-        status: 'active',
-        current_period_start: now.toISOString(),
-        current_period_end: periodEnd.toISOString(),
-        grace_period_end: null,
-        updated_at: now.toISOString(),
-      },
-      { onConflict: 'user_id' },
-    );
+    // Safety: check if user already has a subscription that ends LATER than this one
+    const { data: current } = await adminSupabase
+      .from('user_subscriptions')
+      .select('current_period_end')
+      .eq('user_id', user_id)
+      .maybeSingle();
+    
+    if (!current?.current_period_end || new Date(current.current_period_end) <= periodEnd) {
+      await adminSupabase.from('user_subscriptions').upsert(
+        {
+          user_id,
+          plan: 'plus',
+          billing_period: period,
+          status: 'active',
+          current_period_start: now.toISOString(),
+          current_period_end: periodEnd.toISOString(),
+          grace_period_end: new Date(periodEnd.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          updated_at: now.toISOString(),
+        },
+        { onConflict: 'user_id' },
+      );
+    }
   }
 
   if (metadata?.type === 'gym_subscription') {
     const { gym_id, plan } = metadata;
     const periodEnd = new Date(now);
-    periodEnd.setMonth(periodEnd.getMonth() + 1); // Gym plans are monthly
+    periodEnd.setMonth(periodEnd.getMonth() + 1);
 
     await adminSupabase.from('gym_subscriptions').upsert(
       {
@@ -82,7 +88,7 @@ export async function GET(req: Request): Promise<NextResponse> {
         status: 'active',
         current_period_start: now.toISOString(),
         current_period_end: periodEnd.toISOString(),
-        grace_period_end: null,
+        grace_period_end: new Date(periodEnd.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         updated_at: now.toISOString(),
       },
       { onConflict: 'gym_id' },
@@ -92,7 +98,12 @@ export async function GET(req: Request): Promise<NextResponse> {
   // Mark payment as verified
   await adminSupabase
     .from('payments')
-    .update({ status: 'success', verified_at: now.toISOString(), updated_at: now.toISOString() })
+    .update({ 
+      status: 'success', 
+      verified_at: now.toISOString(), 
+      updated_at: now.toISOString(),
+      paystack_reference: providerId?.toString()
+    })
     .eq('reference', reference);
 
   return redirectWithStatus('success');

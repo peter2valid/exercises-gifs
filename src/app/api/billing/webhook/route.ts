@@ -16,14 +16,6 @@ const adminSupabase = createClient(SUPABASE_URL, SERVICE_KEY);
  * - Confirming payments (charge.success)
  * - Disabling subscriptions (subscription.disable)
  * - Handling failed renewals (invoice.payment_failed)
- *
- * Security:
- * - HMAC-SHA512 signature verified before any DB writes
- * - Idempotency enforced via webhook_events.event_id UNIQUE constraint
- * - Uses service role — never trusts payload alone without signature
- *
- * Webhook URL to configure in Paystack dashboard:
- *   https://<your-domain>/api/billing/webhook
  */
 export async function POST(req: Request): Promise<NextResponse> {
   // ── 1. Verify Paystack signature ─────────────────────────────────────────
@@ -58,7 +50,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     .maybeSingle();
 
   if (existing) {
-    return NextResponse.json({ received: true }); // Already processed — safe no-op
+    return NextResponse.json({ received: true });
   }
 
   // ── 4. Record event (audit log) ───────────────────────────────────────────
@@ -78,9 +70,8 @@ export async function POST(req: Request): Promise<NextResponse> {
       .update({ processed_at: new Date().toISOString() })
       .eq('event_id', eventId);
   } catch (err) {
-    // Log but return 200 — Paystack retries on non-2xx which can cause loops.
-    // Failed events are flagged via missing processed_at for manual reconciliation.
     console.error('[webhook] Event processing error:', err, { eventId });
+    // Return 200 to prevent Paystack retry loops
   }
 
   return NextResponse.json({ received: true });
@@ -91,19 +82,36 @@ async function handleEvent(event: { event: string; data: Record<string, any> }):
   const now = new Date();
 
   switch (type) {
-    // ── Successful payment (one-time or recurring renewal) ──────────────────
     case 'charge.success': {
       const reference = data.reference as string;
       const metadata  = data.metadata ?? {};
 
+      // Mark payment as success
       await adminSupabase
         .from('payments')
-        .update({ status: 'success', verified_at: now.toISOString(), updated_at: now.toISOString() })
-        .eq('paystack_reference', reference);
+        .update({ 
+          status: 'success', 
+          verified_at: now.toISOString(), 
+          updated_at: now.toISOString(),
+          paystack_reference: data.id?.toString() // ensure we store provider ref
+        })
+        .eq('reference', reference);
 
       if (metadata.type === 'member_subscription') {
         const { user_id, period } = metadata;
         const periodEnd = addPeriod(now, period);
+
+        // Safety: check if user already has a subscription that ends LATER than this one
+        const { data: current } = await adminSupabase
+          .from('user_subscriptions')
+          .select('current_period_end')
+          .eq('user_id', user_id)
+          .maybeSingle();
+        
+        if (current?.current_period_end && new Date(current.current_period_end) > periodEnd) {
+          console.log(`[webhook] Skipping downgrade for user ${user_id}`);
+          return;
+        }
 
         await adminSupabase.from('user_subscriptions').upsert(
           {
@@ -113,7 +121,7 @@ async function handleEvent(event: { event: string; data: Record<string, any> }):
             status: 'active',
             current_period_start: now.toISOString(),
             current_period_end: periodEnd.toISOString(),
-            grace_period_end: null,
+            grace_period_end: new Date(periodEnd.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
             updated_at: now.toISOString(),
           },
           { onConflict: 'user_id' },
@@ -132,7 +140,7 @@ async function handleEvent(event: { event: string; data: Record<string, any> }):
             status: 'active',
             current_period_start: now.toISOString(),
             current_period_end: periodEnd.toISOString(),
-            grace_period_end: null,
+            grace_period_end: new Date(periodEnd.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
             updated_at: now.toISOString(),
           },
           { onConflict: 'gym_id' },
@@ -141,7 +149,6 @@ async function handleEvent(event: { event: string; data: Record<string, any> }):
       break;
     }
 
-    // ── Subscription explicitly disabled (cancellation) ────────────────────
     case 'subscription.disable': {
       const userId = data.metadata?.user_id;
       const gymId  = data.metadata?.gym_id;
@@ -162,12 +169,11 @@ async function handleEvent(event: { event: string; data: Record<string, any> }):
       break;
     }
 
-    // ── Failed renewal — enter grace period ────────────────────────────────
     case 'invoice.payment_failed': {
       const userId = data.metadata?.user_id;
       const gymId  = data.metadata?.gym_id;
       const gracePeriodEnd = new Date(now);
-      gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 7); // 7-day grace
+      gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 7);
 
       if (userId) {
         await adminSupabase
@@ -189,18 +195,6 @@ async function handleEvent(event: { event: string; data: Record<string, any> }):
             updated_at: now.toISOString(),
           })
           .eq('gym_id', gymId);
-      }
-      break;
-    }
-
-    // ── Subscription created (for recurring billing) ───────────────────────
-    case 'subscription.create': {
-      const userId = data.metadata?.user_id;
-      if (userId) {
-        await adminSupabase
-          .from('user_subscriptions')
-          .update({ paystack_subscription_code: data.subscription_code, updated_at: now.toISOString() })
-          .eq('user_id', userId);
       }
       break;
     }

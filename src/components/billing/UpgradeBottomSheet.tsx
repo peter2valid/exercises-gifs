@@ -42,15 +42,15 @@ export function UpgradeBottomSheet() {
     setError(null);
 
     try {
-      const res = await fetch('/api/paystack/checkout', {
+      const res = await fetch('/api/billing/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'member', planId: period }),
+        body: JSON.stringify({ type: 'member', period }),
       });
 
       if (!res.ok) throw new Error('Payment initialisation failed');
 
-      const data = await res.json();
+      const { data } = await res.json();
       window.location.href = data.authorization_url;
     } catch {
       setError('Connection failed. Please check your network.');
