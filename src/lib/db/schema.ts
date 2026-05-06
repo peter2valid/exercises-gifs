@@ -104,3 +104,18 @@ export interface Exercise {
   updated_at: string;
   version: number;
 }
+
+// Singleton row (id = 'current') — offline cache for resolved entitlements.
+// Written after every server refresh; read on startup for instant offline access.
+export interface EntitlementCache {
+  id: 'current';
+  user_id: string;
+  effective_features: string[];       // Feature[] serialised as string[]
+  gym_plan: string | null;            // GymPlan | null
+  gym_plan_status: string | null;     // SubscriptionStatus | null
+  has_member_premium: boolean;
+  member_plan_status: string | null;  // SubscriptionStatus | null
+  active_promotions: string[];
+  cached_at: string;                  // ISO timestamp of last server fetch
+  version: number;
+}

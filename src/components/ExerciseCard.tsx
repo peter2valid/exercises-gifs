@@ -37,7 +37,7 @@ export const ExerciseThumbnail = memo(function ExerciseThumbnail({
         src={posterSrc}
         alt={`${alt} poster`}
         fill
-        className="object-contain p-2"
+        className="object-contain p-2 grayscale"
         sizes="(max-width: 768px) 100vw, 33vw"
         priority={priority}
         onError={() => setFailed(true)}
@@ -53,7 +53,7 @@ export const ExerciseThumbnail = memo(function ExerciseThumbnail({
           preload={priority ? "auto" : "metadata"}
           onLoadedData={() => setVideoLoaded(true)}
           onError={() => setFailed(true)}
-          className={`absolute inset-0 w-full h-full object-contain p-2 transition-opacity duration-300 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 w-full h-full object-contain p-2 grayscale transition-opacity duration-300 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
         />
       )}
       {/* Skeleton loader while video is fetching */}

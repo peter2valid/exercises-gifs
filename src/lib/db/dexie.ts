@@ -8,6 +8,7 @@ import type {
   Template,
   TemplateExercise,
   Exercise,
+  EntitlementCache,
 } from './schema';
 
 export class SupafastDB extends Dexie {
@@ -19,9 +20,11 @@ export class SupafastDB extends Dexie {
   templates!: Table<Template, string>;
   template_exercises!: Table<TemplateExercise, string>;
   exercises!: Table<Exercise, string>;
+  entitlement_cache!: Table<EntitlementCache, string>;
 
   constructor() {
     super('SupafastDB');
+    
     this.version(1).stores({
       events: 'id, tenant_id, created_at, sync_state',
       workout_sessions: 'id, tenant_id, user_id, status, started_at',
@@ -43,6 +46,19 @@ export class SupafastDB extends Dexie {
       templates: 'id, tenant_id, user_id',
       template_exercises: 'id, template_id, exercise_id',
       exercises: 'id, tenant_id, name, body_part, equipment, is_active',
+    });
+
+    // v4: added entitlement_cache for offline-first billing
+    this.version(4).stores({
+      events: 'id, session_id, tenant_id, created_at, sync_state',
+      workout_sessions: 'id, tenant_id, user_id, status, started_at',
+      set_logs: 'id, session_id, exercise_id, [session_id+logged_at]',
+      sync_queue: 'id, event_id, status, next_retry_at',
+      snapshots: 'id, session_id, tenant_id',
+      templates: 'id, tenant_id, user_id',
+      template_exercises: 'id, template_id, exercise_id',
+      exercises: 'id, tenant_id, name, body_part, equipment, is_active',
+      entitlement_cache: 'id, user_id',
     });
   }
 }

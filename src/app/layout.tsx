@@ -5,6 +5,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { SyncInitializer } from '@/components/SyncInitializer';
 import { SyncStatus } from '@/components/SyncStatus';
+import { EntitlementProvider } from '@/components/billing/EntitlementProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,14 +21,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-black text-white`}>
-        <ServiceWorkerRegister />
-        <SyncInitializer />
-        <SyncStatus />
-        <div className="min-h-screen relative">
-          <main>{children}</main>
-        </div>
-        <BottomNav />
+      <body className={`${inter.className} bg-black text-white selection:bg-emerald-500/30`}>
+        <div className="fixed inset-0 z-[9999] pointer-events-none opacity-[0.03] grain-overlay" />
+        <EntitlementProvider>
+          <ServiceWorkerRegister />
+          <SyncInitializer />
+          <SyncStatus />
+          <div className="min-h-screen relative">
+            <main>{children}</main>
+          </div>
+          <BottomNav />
+        </EntitlementProvider>
       </body>
     </html>
   );
