@@ -6,9 +6,9 @@ export type EventType =
   | 'SET_EDITED'
   | 'SET_DELETED';
 
-export type SyncState = 'pending' | 'synced' | 'failed';
+export type SyncState = 'pending' | 'syncing' | 'synced' | 'failed';
 
-export type QueueStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type QueueStatus = 'pending' | 'syncing' | 'completed' | 'failed';
 
 export type SessionStatus = 'active' | 'completed' | 'abandoned';
 

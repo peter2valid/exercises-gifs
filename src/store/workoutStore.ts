@@ -15,6 +15,7 @@ type WorkoutStore = {
   // Context — set once per session, used by all subsequent actions
   tenantId: string;
   deviceId: string;
+  userId: string;
 
   // Actions
   startSession: (sessionId: string, userId: string, tenantId: string, deviceId: string) => Promise<void>;
@@ -23,7 +24,7 @@ type WorkoutStore = {
   editSet: (setId: string, weight: number, reps: number) => Promise<void>;
   deleteSet: (setId: string) => Promise<void>;
   completeSession: () => Promise<void>;
-  loadSession: (sessionId: string, tenantId: string, deviceId: string) => Promise<void>;
+  loadSession: (sessionId: string, tenantId: string, deviceId: string, userId: string) => Promise<void>;
   endRest: () => void;
   reset: () => void;
 };
@@ -42,25 +43,28 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   sets: {},
   tenantId: '',
   deviceId: '',
+  userId: '',
 
   startSession: async (sessionId, userId, tenantId, deviceId) => {
     await createEvent({
       type: 'SESSION_STARTED',
       tenant_id: tenantId,
       device_id: deviceId,
+      user_id: userId,
       payload: { session_id: sessionId, user_id: userId, started_at: new Date().toISOString() },
     });
     const engineState = await projectFromEvents(sessionId);
-    set({ phase: 'active', session: engineState.session, sets: engineState.sets, tenantId, deviceId });
+    set({ phase: 'active', session: engineState.session, sets: engineState.sets, tenantId, deviceId, userId });
   },
 
   logSet: async (setId, exerciseId, weight, reps) => {
-    const { session, tenantId, deviceId } = get();
+    const { session, tenantId, deviceId, userId } = get();
     if (!session) throw new Error('logSet called with no active session');
     await createEvent({
       type: 'SET_LOGGED',
       tenant_id: tenantId,
       device_id: deviceId,
+      user_id: userId,
       payload: { session_id: session.id, set_id: setId, exercise_id: exerciseId, weight, reps, logged_at: new Date().toISOString() },
     });
     const engineState = await projectFromEvents(session.id);
@@ -68,12 +72,13 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   },
 
   startRest: async (setId, durationSeconds) => {
-    const { session, tenantId, deviceId } = get();
+    const { session, tenantId, deviceId, userId } = get();
     if (!session) throw new Error('startRest called with no active session');
     await createEvent({
       type: 'REST_STARTED',
       tenant_id: tenantId,
       device_id: deviceId,
+      user_id: userId,
       payload: { session_id: session.id, set_id: setId, duration_seconds: durationSeconds, started_at: new Date().toISOString() },
     });
     // REST_STARTED has no projection — only phase changes
@@ -81,12 +86,13 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   },
 
   editSet: async (setId, weight, reps) => {
-    const { session, tenantId, deviceId } = get();
+    const { session, tenantId, deviceId, userId } = get();
     if (!session) throw new Error('editSet called with no active session');
     await createEvent({
       type: 'SET_EDITED',
       tenant_id: tenantId,
       device_id: deviceId,
+      user_id: userId,
       payload: { session_id: session.id, set_id: setId, weight, reps, edited_at: new Date().toISOString() },
     });
     const engineState = await projectFromEvents(session.id);
@@ -94,12 +100,13 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   },
 
   deleteSet: async (setId) => {
-    const { session, tenantId, deviceId } = get();
+    const { session, tenantId, deviceId, userId } = get();
     if (!session) throw new Error('deleteSet called with no active session');
     await createEvent({
       type: 'SET_DELETED',
       tenant_id: tenantId,
       device_id: deviceId,
+      user_id: userId,
       payload: { session_id: session.id, set_id: setId, deleted_at: new Date().toISOString() },
     });
     const engineState = await projectFromEvents(session.id);
@@ -107,19 +114,20 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   },
 
   completeSession: async () => {
-    const { session, tenantId, deviceId } = get();
+    const { session, tenantId, deviceId, userId } = get();
     if (!session) throw new Error('completeSession called with no active session');
     await createEvent({
       type: 'SESSION_COMPLETED',
       tenant_id: tenantId,
       device_id: deviceId,
+      user_id: userId,
       payload: { session_id: session.id, finished_at: new Date().toISOString() },
     });
     const engineState = await projectFromEvents(session.id);
     set({ phase: 'finished', session: engineState.session, sets: engineState.sets });
   },
 
-  loadSession: async (sessionId, tenantId, deviceId) => {
+  loadSession: async (sessionId, tenantId, deviceId, userId) => {
     const engineState = await projectFromEvents(sessionId);
     if (!engineState.session) return;
     set({
@@ -128,10 +136,11 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       sets: engineState.sets,
       tenantId,
       deviceId,
+      userId,
     });
   },
 
   endRest: () => set({ phase: 'active' }),
 
-  reset: () => set({ phase: 'idle', session: null, sets: {}, tenantId: '', deviceId: '' }),
+  reset: () => set({ phase: 'idle', session: null, sets: {}, tenantId: '', deviceId: '', userId: '' }),
 }));

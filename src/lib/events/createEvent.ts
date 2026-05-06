@@ -6,6 +6,7 @@ import { deterministicId, generateIdempotencyKey } from './id';
 export type CreateEventInput = EventPayload & {
   tenant_id: string;
   device_id: string;
+  user_id: string;
 };
 
 export async function createEvent(input: CreateEventInput): Promise<GymEvent> {
@@ -23,6 +24,7 @@ export async function createEvent(input: CreateEventInput): Promise<GymEvent> {
     type: input.type,
     payload: input.payload,
     session_id: input.payload.session_id,
+    user_id: input.user_id,
     tenant_id: input.tenant_id,
     device_id: input.device_id,
     idempotency_key,

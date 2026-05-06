@@ -1,16 +1,34 @@
-import { useMemo } from 'react';
+'use client';
+
+import { useEffect, useState } from 'react';
 import { notFound } from 'next/navigation';
-import exercisesData from '../../../../data/exercises.json';
+import { getExerciseById } from '@/lib/db/exerciseQueries';
+import { seedExercises } from '@/lib/db/seed';
 import { Button } from '@/components/ui';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { type Exercise } from '@/lib/db/schema';
 
 export default function ExerciseDetail({ params }: any) {
   const id = params?.id;
+  const [exercise, setExercise] = useState<Exercise | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const exercise = useMemo(() => {
-    return (exercisesData as any[]).find((e) => String(e.id) === String(id));
+  useEffect(() => {
+    async function load() {
+      await seedExercises();
+      const data = await getExerciseById(String(id));
+      setExercise(data || null);
+      setLoading(false);
+    }
+    load();
   }, [id]);
+
+  if (loading) return (
+    <div className="dashboard-bg min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-white/10 border-t-white/80 rounded-full animate-spin" />
+    </div>
+  );
 
   if (!exercise) return notFound();
 
@@ -22,7 +40,7 @@ export default function ExerciseDetail({ params }: any) {
             <ChevronLeft size={18} /> Back
           </Link>
           <h1 className="text-3xl font-bold text-white tracking-tight">{exercise.name}</h1>
-          <p className="text-sm text-white/30 mt-1">{exercise.bodyPart} • {exercise.target}</p>
+          <p className="text-sm text-white/30 mt-1">{exercise.body_part} • {exercise.target}</p>
         </div>
 
         <div className="glass-panel p-4 mb-4">

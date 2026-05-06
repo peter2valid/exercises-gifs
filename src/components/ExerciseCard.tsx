@@ -63,7 +63,7 @@ const ExerciseCard = memo(function ExerciseCard({
   index = 999,
 }: ExerciseCardProps) {
   const src = thumbnailSrc ?? `/exercise-media/${exercise.id}.gif`;
-  const subtitle = detailLabel ?? muscleLabel ?? exercise.bodyPart ?? exercise.target ?? '';
+  const subtitle = detailLabel ?? muscleLabel ?? exercise.body_part ?? exercise.target ?? '';
 
   return (
     <Link href={`/explore/${exercise.id}`} className="block">

@@ -142,10 +142,10 @@ export function searchExercises(exercises: Exercise[], query: string): Exercise[
     }
 
     // Weight: body part (medium priority)
-    const bodyPartScore = scoreField(exercise.bodyPart, q, 40);
-    if (bodyPartScore.matched) {
-      totalScore += bodyPartScore.score;
-      matches.push('bodyPart');
+    const body_partScore = scoreField(exercise.body_part, q, 40);
+    if (body_partScore.matched) {
+      totalScore += body_partScore.score;
+      matches.push('body_part');
     }
 
     // Weight: equipment (lower priority)
@@ -175,7 +175,7 @@ export function matchesQuery(exercise: Exercise, query: string): boolean {
   const q = query.toLowerCase();
   const fields = [
     exercise.name,
-    exercise.bodyPart,
+    exercise.body_part,
     exercise.target,
     exercise.equipment,
     exercise.instructions,

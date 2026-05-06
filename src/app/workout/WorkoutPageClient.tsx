@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useWorkoutStore } from '@/store/workoutStore';
-import { getAllExercises } from '@/lib/db/queries';
+import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { seedExercises } from '@/lib/db/seed';
 import {
   getDeviceUserId,
@@ -12,13 +12,15 @@ import {
 } from '@/lib/device/identity';
 import { TENANT_ID } from '@/lib/config';
 import { Button, Input } from '@/components/ui';
-import { Play, Pause, RotateCcw, CheckCircle } from 'lucide-react';
+import { Play, Pause, RotateCcw, CheckCircle, Loader2 } from 'lucide-react';
 import type { Exercise, SetLog } from '@/lib/db/schema';
+import { supabase } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 function groupByMuscle(exercises: Exercise[]): [string, Exercise[]][] {
   const map: Record<string, Exercise[]> = {};
   for (const ex of exercises) {
-    const g = ex.muscle_group ?? 'other';
+    const g = ex.body_part ?? 'other';
     if (!map[g]) map[g] = [];
     map[g].push(ex);
   }
@@ -26,6 +28,7 @@ function groupByMuscle(exercises: Exercise[]): [string, Exercise[]][] {
 }
 
 export default function WorkoutPageClient({ initialExerciseId }: { initialExerciseId: string }) {
+  const router = useRouter();
   const phase = useWorkoutStore((s) => s.phase);
   const sets = useWorkoutStore((s) => s.sets);
 
@@ -41,28 +44,40 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
   const [lastSetId, setLastSetId] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    seedExercises().catch(console.error);
-    getAllExercises().then(setExercises).catch(console.error);
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/auth');
+        return;
+      }
+      setUserId(session.user.id);
 
-    const savedId = getSavedSessionId();
-    if (savedId) {
-      loadSession(savedId, TENANT_ID, getDeviceUserId())
-        .catch(console.error)
-        .finally(() => setIsRestoring(false));
-    } else {
-      setIsRestoring(false);
+      await seedExercises().catch(console.error);
+      const exs = await getAllExercises().catch(() => []);
+      setExercises(exs);
+
+      const savedId = getSavedSessionId();
+      if (savedId) {
+        // deviceId should be stable per browser session
+        await loadSession(savedId, TENANT_ID, 'local-browser', session.user.id)
+          .catch(console.error)
+          .finally(() => setIsRestoring(false));
+      } else {
+        setIsRestoring(false);
+      }
     }
+    init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleStart = () => {
-    if (isStarting) return;
+    if (isStarting || !userId) return;
     const sessionId = crypto.randomUUID();
-    const userId = getDeviceUserId();
     setIsStarting(true);
-    startSession(sessionId, userId, TENANT_ID, userId)
+    startSession(sessionId, userId, TENANT_ID, 'local-browser')
       .then(() => saveSessionId(sessionId))
       .catch(console.error)
       .finally(() => setIsStarting(false));
@@ -92,7 +107,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
   const setList = useMemo(() => Object.values(sets), [sets]);
   const exMap = useMemo(() => Object.fromEntries(exercises.map((e) => [e.id, e])), [exercises]);
 
-  if (isRestoring) return <RestoringView />;
+  if (isRestoring || !userId) return <RestoringView />;
 
   return (
     <div className="dashboard-bg min-h-screen flex flex-col">

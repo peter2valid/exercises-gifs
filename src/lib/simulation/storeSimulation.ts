@@ -138,7 +138,7 @@ export async function runStoreSimulation(): Promise<boolean> {
     check('sets empty after reset',            Object.keys(afterReset.sets).length === 0),
   ];
 
-  await store.loadSession(SESSION, TENANT, DEVICE);
+  await store.loadSession(SESSION, TENANT, DEVICE, USER);
   log('  loadSession() — restoring from events');
 
   const afterLoad = useWorkoutStore.getState();

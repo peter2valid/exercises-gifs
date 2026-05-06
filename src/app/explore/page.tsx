@@ -17,7 +17,9 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui';
 import ExerciseCard from '@/components/ExerciseCard';
-import exercisesData from '../../../data/exercises.json';
+import { getAllExercises } from '@/lib/db/exerciseQueries';
+import { seedExercises } from '@/lib/db/seed';
+import { type Exercise } from '@/lib/db/schema';
 import BackIcon from '@/assets/icons/bodyparts/Back_muscle_Icon.webp';
 import BicepsIcon from '@/assets/icons/bodyparts/Biceps_muscle_Icon.webp';
 import CalvesIcon from '@/assets/icons/bodyparts/Calves_Icon.webp';
@@ -38,7 +40,7 @@ import ShoulderIcon from '@/assets/icons/bodyparts/shoulder.png';
 import TricepsIcon from '@/assets/icons/bodyparts/strength.png';
 import { searchExercises } from '@/lib/search';
 
-type Exercise = any;
+
 type ExploreView = 'list' | 'grid';
 type ExploreTab = 'programs' | 'exercises' | 'coaches';
 type ExploreMode = 'muscles' | 'equipment';
@@ -72,7 +74,7 @@ const bodyGroups: GroupTile[] = [
     label: 'Chest',
     iconSrc: ChestIcon.src,
     thumbnailSrc: '/exercise-media/3294.gif',
-    match: (exercise) => exercise.bodyPart === 'chest' || exercise.target === 'pectorals',
+    match: (exercise) => exercise.body_part === 'chest' || exercise.target === 'pectorals',
     accent: 'from-rose-500/30 to-white/5',
   },
   {
@@ -80,7 +82,7 @@ const bodyGroups: GroupTile[] = [
     label: 'Biceps',
     iconSrc: BicepsIcon.src,
     thumbnailSrc: '/exercise-media/0968.gif',
-    match: (exercise) => exercise.target === 'biceps' || (exercise.bodyPart === 'upper arms' && exercise.target === 'biceps'),
+    match: (exercise) => exercise.target === 'biceps' || (exercise.body_part === 'upper arms' && exercise.target === 'biceps'),
     accent: 'from-orange-400/25 to-white/5',
   },
   {
@@ -88,7 +90,7 @@ const bodyGroups: GroupTile[] = [
     label: 'Triceps',
     iconSrc: TricepsIcon.src,
     thumbnailSrc: '/exercise-media/0018.gif',
-    match: (exercise) => exercise.target === 'triceps' || (exercise.bodyPart === 'upper arms' && exercise.target === 'triceps'),
+    match: (exercise) => exercise.target === 'triceps' || (exercise.body_part === 'upper arms' && exercise.target === 'triceps'),
     accent: 'from-fuchsia-500/25 to-white/5',
   },
   {
@@ -96,7 +98,7 @@ const bodyGroups: GroupTile[] = [
     label: 'Back',
     iconSrc: BackIcon.src,
     thumbnailSrc: '/exercise-media/0007.gif',
-    match: (exercise) => exercise.bodyPart === 'back' || ['lats', 'lower back', 'upper back'].includes(exercise.target),
+    match: (exercise) => exercise.body_part === 'back' || ['lats', 'lower back', 'upper back'].includes(exercise.target),
     accent: 'from-sky-500/25 to-white/5',
   },
   {
@@ -104,7 +106,7 @@ const bodyGroups: GroupTile[] = [
     label: 'Shoulders',
     iconSrc: ShoulderIcon.src,
     thumbnailSrc: '/exercise-media/0977.gif',
-    match: (exercise) => exercise.bodyPart === 'shoulders' || exercise.target === 'delts',
+    match: (exercise) => exercise.body_part === 'shoulders' || exercise.target === 'delts',
     accent: 'from-cyan-500/25 to-white/5',
   },
   {
@@ -112,7 +114,7 @@ const bodyGroups: GroupTile[] = [
     label: 'Abs',
     iconSrc: AbsIcon.src,
     thumbnailSrc: '/exercise-media/0001.gif',
-    match: (exercise) => exercise.bodyPart === 'waist' || exercise.target === 'abs',
+    match: (exercise) => exercise.body_part === 'waist' || exercise.target === 'abs',
     accent: 'from-emerald-500/25 to-white/5',
   },
   {
@@ -120,7 +122,7 @@ const bodyGroups: GroupTile[] = [
     label: 'Quadriceps',
     iconSrc: LowerLegIcon.src,
     thumbnailSrc: '/exercise-media/1512.gif',
-    match: (exercise) => exercise.bodyPart === 'upper legs' && ['quads', 'quadriceps', 'thighs'].includes(exercise.target),
+    match: (exercise) => exercise.body_part === 'upper legs' && ['quads', 'quadriceps', 'thighs'].includes(exercise.target),
     accent: 'from-violet-500/25 to-white/5',
   },
   {
@@ -144,7 +146,7 @@ const bodyGroups: GroupTile[] = [
     label: 'Calves',
     iconSrc: CalvesIcon.src,
     thumbnailSrc: '/exercise-media/1368.gif',
-    match: (exercise) => exercise.bodyPart === 'lower legs' || exercise.target === 'calves',
+    match: (exercise) => exercise.body_part === 'lower legs' || exercise.target === 'calves',
     accent: 'from-amber-400/25 to-white/5',
   },
   {
@@ -152,7 +154,7 @@ const bodyGroups: GroupTile[] = [
     label: 'Forearms',
     iconSrc: ForearmsIcon.src,
     thumbnailSrc: '/exercise-media/0994.gif',
-    match: (exercise) => exercise.bodyPart === 'lower arms' || exercise.target === 'forearms',
+    match: (exercise) => exercise.body_part === 'lower arms' || exercise.target === 'forearms',
     accent: 'from-lime-500/25 to-white/5',
   },
   {
@@ -160,7 +162,7 @@ const bodyGroups: GroupTile[] = [
     label: 'Neck',
     iconSrc: NeckIcon.src,
     thumbnailSrc: '/exercise-media/1403.gif',
-    match: (exercise) => exercise.bodyPart === 'neck',
+    match: (exercise) => exercise.body_part === 'neck',
     accent: 'from-white/15 to-white/5',
   },
   {
@@ -168,7 +170,7 @@ const bodyGroups: GroupTile[] = [
     label: 'Cardio',
     iconSrc: CardioIcon.src,
     thumbnailSrc: '/exercise-media/3220.gif',
-    match: (exercise) => exercise.bodyPart === 'cardio',
+    match: (exercise) => exercise.body_part === 'cardio',
     accent: 'from-emerald-400/25 to-white/5',
   },
 ];
@@ -258,6 +260,16 @@ export default function ExplorePage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<ExploreTab>('exercises');
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+
+  useEffect(() => {
+    async function load() {
+      await seedExercises();
+      const data = await getAllExercises();
+      setExercises(data);
+    }
+    load();
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -271,8 +283,6 @@ export default function ExplorePage() {
       router.push(`/explore/browse?q=${encodeURIComponent(debouncedSearch.trim())}`);
     }
   }, [debouncedSearch, router]);
-
-  const exercises = exercisesData as Exercise[];
 
   const muscleCounts = useMemo(() => {
     const counts = new Map<BodyGroupKey, number>();

@@ -41,51 +41,51 @@ export async function runSimulation(): Promise<boolean> {
   // ── PHASE 1: Build the full workout ──────────────────────────
   log('── PHASE 1: BUILDING WORKOUT ──────────────\n');
 
-  await createEvent({ type: 'SESSION_STARTED', tenant_id: TENANT, device_id: DEVICE,
+  await createEvent({ type: 'SESSION_STARTED', tenant_id: TENANT, device_id: DEVICE, user_id: USER,
     payload: { session_id: SESSION, user_id: USER, started_at: new Date().toISOString() } });
   log('  SESSION_STARTED');
 
-  await createEvent({ type: 'SET_LOGGED', tenant_id: TENANT, device_id: DEVICE,
+  await createEvent({ type: 'SET_LOGGED', tenant_id: TENANT, device_id: DEVICE, user_id: USER,
     payload: { session_id: SESSION, set_id: SET_1, exercise_id: SQUAT, weight: 60, reps: 5, logged_at: new Date().toISOString() } });
   log('  SET_LOGGED    squat   60kg × 5');
 
-  await createEvent({ type: 'REST_STARTED', tenant_id: TENANT, device_id: DEVICE,
+  await createEvent({ type: 'REST_STARTED', tenant_id: TENANT, device_id: DEVICE, user_id: USER,
     payload: { session_id: SESSION, set_id: SET_1, duration_seconds: 90, started_at: new Date().toISOString() } });
   log('  REST_STARTED  90s');
 
-  await createEvent({ type: 'SET_LOGGED', tenant_id: TENANT, device_id: DEVICE,
+  await createEvent({ type: 'SET_LOGGED', tenant_id: TENANT, device_id: DEVICE, user_id: USER,
     payload: { session_id: SESSION, set_id: SET_2, exercise_id: SQUAT, weight: 65, reps: 5, logged_at: new Date().toISOString() } });
   log('  SET_LOGGED    squat   65kg × 5');
 
-  await createEvent({ type: 'REST_STARTED', tenant_id: TENANT, device_id: DEVICE,
+  await createEvent({ type: 'REST_STARTED', tenant_id: TENANT, device_id: DEVICE, user_id: USER,
     payload: { session_id: SESSION, set_id: SET_2, duration_seconds: 90, started_at: new Date().toISOString() } });
   log('  REST_STARTED  90s');
 
-  await createEvent({ type: 'SET_LOGGED', tenant_id: TENANT, device_id: DEVICE,
+  await createEvent({ type: 'SET_LOGGED', tenant_id: TENANT, device_id: DEVICE, user_id: USER,
     payload: { session_id: SESSION, set_id: SET_3, exercise_id: SQUAT, weight: 70, reps: 3, logged_at: new Date().toISOString() } });
   log('  SET_LOGGED    squat   70kg × 3  ← wrong reps');
 
-  await createEvent({ type: 'SET_EDITED', tenant_id: TENANT, device_id: DEVICE,
+  await createEvent({ type: 'SET_EDITED', tenant_id: TENANT, device_id: DEVICE, user_id: USER,
     payload: { session_id: SESSION, set_id: SET_3, weight: 70, reps: 5, edited_at: new Date().toISOString() } });
   log('  SET_EDITED    squat   70kg × 3 → 5  ← corrected');
 
-  await createEvent({ type: 'REST_STARTED', tenant_id: TENANT, device_id: DEVICE,
+  await createEvent({ type: 'REST_STARTED', tenant_id: TENANT, device_id: DEVICE, user_id: USER,
     payload: { session_id: SESSION, set_id: SET_3, duration_seconds: 120, started_at: new Date().toISOString() } });
   log('  REST_STARTED  120s');
 
-  await createEvent({ type: 'SET_LOGGED', tenant_id: TENANT, device_id: DEVICE,
+  await createEvent({ type: 'SET_LOGGED', tenant_id: TENANT, device_id: DEVICE, user_id: USER,
     payload: { session_id: SESSION, set_id: SET_4, exercise_id: BENCH, weight: 80, reps: 8, logged_at: new Date().toISOString() } });
   log('  SET_LOGGED    bench   80kg × 8  ← wrong exercise');
 
-  await createEvent({ type: 'SET_DELETED', tenant_id: TENANT, device_id: DEVICE,
+  await createEvent({ type: 'SET_DELETED', tenant_id: TENANT, device_id: DEVICE, user_id: USER,
     payload: { session_id: SESSION, set_id: SET_4, deleted_at: new Date().toISOString() } });
   log('  SET_DELETED   bench   80kg × 8  ← removed');
 
-  await createEvent({ type: 'SET_LOGGED', tenant_id: TENANT, device_id: DEVICE,
+  await createEvent({ type: 'SET_LOGGED', tenant_id: TENANT, device_id: DEVICE, user_id: USER,
     payload: { session_id: SESSION, set_id: SET_5, exercise_id: BENCH, weight: 100, reps: 5, logged_at: new Date().toISOString() } });
   log('  SET_LOGGED    bench  100kg × 5');
 
-  await createEvent({ type: 'SESSION_COMPLETED', tenant_id: TENANT, device_id: DEVICE,
+  await createEvent({ type: 'SESSION_COMPLETED', tenant_id: TENANT, device_id: DEVICE, user_id: USER,
     payload: { session_id: SESSION, finished_at: new Date().toISOString() } });
   log('  SESSION_COMPLETED\n');
 

@@ -12,6 +12,7 @@ export interface GymEvent {
   type: EventType;
   payload: AnyEventPayload;
   session_id: string;       // top-level copy for Dexie indexing
+  user_id: string;          // top-level copy for auth/sync
   tenant_id: string;
   device_id: string;
   idempotency_key: string;
@@ -92,9 +93,13 @@ export interface TemplateExercise {
 export interface Exercise {
   id: string;
   name: string;
-  muscle_group: string | null;
-  equipment: string | null;
+  body_part: string;
+  equipment: string;
+  target: string;
+  instructions: string[];
+  secondaryMuscles: string[];
   tenant_id: string;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
   version: number;
