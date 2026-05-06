@@ -7,10 +7,9 @@ import { type Exercise } from './schema';
  */
 
 export async function getAllExercises(): Promise<Exercise[]> {
-  return db.exercises
-    .where('is_active')
-    .equals(1) // Dexie boolean index stores true as 1
-    .toArray();
+  const exercises = await db.exercises.toArray();
+  // Filter for active exercises in-memory for maximum reliability across browsers/versions
+  return exercises.filter((ex) => ex.is_active !== false);
 }
 
 export async function getExerciseById(id: string): Promise<Exercise | undefined> {

@@ -39,12 +39,17 @@ export default function ExplorePage() {
   const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<ExploreTab>('exercises');
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      await seedExercises();
-      const data = await getAllExercises();
-      setExercises(data);
+      try {
+        await seedExercises();
+        const data = await getAllExercises();
+        setExercises(data);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -87,7 +92,7 @@ export default function ExplorePage() {
     <div className="dashboard-bg min-h-screen pb-24 pt-5">
       <div className="mx-auto max-w-md px-4">
         <div className="mb-4 flex items-center justify-between">
-          <button type="button" className="text-white/75">
+          <button type="button" className="text-white/75" aria-label="Workout Programs">
             <CalendarRange size={22} />
           </button>
           <div>
@@ -95,10 +100,10 @@ export default function ExplorePage() {
             <h1 className="text-2xl font-semibold text-white">Exercises</h1>
           </div>
           <div className="flex items-center gap-3 text-white/75">
-            <button type="button">
+            <button type="button" aria-label="Search">
               <Search size={21} />
             </button>
-            <button type="button">
+            <button type="button" aria-label="Exercise Equipment">
               <Dumbbell size={21} />
             </button>
           </div>
@@ -143,31 +148,39 @@ export default function ExplorePage() {
 
         {activeTab === 'exercises' && (
           <div className="mb-3 grid grid-cols-3 gap-3">
-            {/* All Exercises Tile */}
-            <button
-              type="button"
-              onClick={handleAllExercises}
-              className="glass-panel overflow-hidden text-left transition-transform hover:scale-[1.01]"
-            >
-              <div className="relative aspect-[0.95] bg-gradient-to-br from-indigo-500/30 to-white/5 overflow-hidden flex flex-col items-center justify-center">
-                <Zap size={32} className="text-indigo-300 mb-2" />
-                <span className="text-xs font-medium text-white/70">All Exercises</span>
+            {loading ? (
+              <div className="col-span-3 flex items-center justify-center py-20">
+                <div className="w-8 h-8 border-2 border-white/10 border-t-white/80 rounded-full animate-spin" />
               </div>
-              <div className="border-t border-white/10 px-3 py-3">
-                <p className="text-center text-sm font-semibold text-white">Browse All</p>
-              </div>
-            </button>
+            ) : (
+              <>
+                {/* All Exercises Tile */}
+                <button
+                  type="button"
+                  onClick={handleAllExercises}
+                  className="glass-panel overflow-hidden text-left transition-transform hover:scale-[1.01]"
+                >
+                  <div className="relative aspect-[0.95] bg-gradient-to-br from-indigo-500/30 to-white/5 overflow-hidden flex flex-col items-center justify-center">
+                    <Zap size={32} className="text-indigo-300 mb-2" />
+                    <span className="text-xs font-medium text-white/70">All Exercises</span>
+                  </div>
+                  <div className="border-t border-white/10 px-3 py-3">
+                    <p className="text-center text-sm font-semibold text-white">Browse All</p>
+                  </div>
+                </button>
 
-            {/* Muscle Group Tiles */}
-            {bodyGroups.map((group) => (
-              <MuscleTile
-                key={group.key}
-                group={group}
-                active={false}
-                count={muscleCounts.get(group.key) || 0}
-                onClick={() => handleMuscleClick(group.key)}
-              />
-            ))}
+                {/* Muscle Group Tiles */}
+                {bodyGroups.map((group) => (
+                  <MuscleTile
+                    key={group.key}
+                    group={group}
+                    active={false}
+                    count={muscleCounts.get(group.key) || 0}
+                    onClick={() => handleMuscleClick(group.key)}
+                  />
+                ))}
+              </>
+            )}
           </div>
         )}
 

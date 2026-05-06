@@ -12,10 +12,19 @@ type ExerciseCardProps = {
   index?: number;
 };
 
-const ExerciseThumbnail = memo(function ExerciseThumbnail({ src, alt, priority = false, exerciseId }: { src: string; alt: string; priority?: boolean; exerciseId: string }) {
+export const ExerciseThumbnail = memo(function ExerciseThumbnail({ 
+  alt, 
+  priority = false, 
+  exerciseId 
+}: { 
+  alt: string; 
+  priority?: boolean; 
+  exerciseId: string 
+}) {
   const [failed, setFailed] = useState(false);
-  const [gifLoaded, setGifLoaded] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const posterSrc = `/exercise-posters/${exerciseId}.jpg`;
+  const videoSrc = `/exercise-media/${exerciseId}.mp4`;
 
   if (failed) {
     return <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5" />;
@@ -30,24 +39,25 @@ const ExerciseThumbnail = memo(function ExerciseThumbnail({ src, alt, priority =
         fill
         className="object-contain p-2"
         sizes="(max-width: 768px) 100vw, 33vw"
+        priority={priority}
         onError={() => setFailed(true)}
       />
-      {/* GIF loads behind poster; when ready, we swap via opacity */}
+      {/* MP4 video loads over poster; when ready, we swap via opacity */}
       {!failed && (
-        <Image
-          src={src}
-          alt={alt}
-          fill
+        <video
+          src={videoSrc}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload={priority ? "auto" : "metadata"}
+          onLoadedData={() => setVideoLoaded(true)}
           onError={() => setFailed(true)}
-          onLoad={() => setGifLoaded(true)}
-          className={`object-contain p-2 transition-opacity duration-300 ${gifLoaded ? 'opacity-100' : 'opacity-0'}`}
-          sizes="(max-width: 768px) 100vw, 33vw"
-          loading={priority ? 'eager' : 'lazy'}
-          decoding="async"
+          className={`absolute inset-0 w-full h-full object-contain p-2 transition-opacity duration-300 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
         />
       )}
-      {/* Skeleton loader while GIF is fetching */}
-      {!gifLoaded && !failed && (
+      {/* Skeleton loader while video is fetching */}
+      {!videoLoaded && !failed && (
         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent animate-pulse" />
       )}
     </>
@@ -57,12 +67,10 @@ const ExerciseThumbnail = memo(function ExerciseThumbnail({ src, alt, priority =
 const ExerciseCard = memo(function ExerciseCard({
   exercise,
   view = 'list',
-  thumbnailSrc,
   muscleLabel,
   detailLabel,
   index = 999,
 }: ExerciseCardProps) {
-  const src = thumbnailSrc ?? `/exercise-media/${exercise.id}.gif`;
   const subtitle = detailLabel ?? muscleLabel ?? exercise.body_part ?? exercise.target ?? '';
 
   return (
@@ -77,7 +85,7 @@ const ExerciseCard = memo(function ExerciseCard({
               <div className="absolute right-3 top-3 z-10 rounded-full bg-black/25 p-1.5 backdrop-blur-sm">
                 <HelpCircle size={14} className="text-white/80" />
               </div>
-              <ExerciseThumbnail src={src} alt={exercise.name} priority={index < 6} exerciseId={exercise.id} />
+              <ExerciseThumbnail alt={exercise.name} priority={index < 6} exerciseId={exercise.id} />
             </div>
             <div className="border-t border-white/10 p-3">
               <h3 className="text-sm font-semibold text-white leading-tight line-clamp-2">{exercise.name}</h3>
@@ -87,7 +95,7 @@ const ExerciseCard = memo(function ExerciseCard({
         ) : (
           <>
             <div className="relative h-14 w-14 shrink-0 rounded-xl bg-white/6 overflow-hidden border border-white/10">
-              <ExerciseThumbnail src={src} alt={exercise.name} priority={index < 6} exerciseId={exercise.id} />
+              <ExerciseThumbnail alt={exercise.name} priority={index < 6} exerciseId={exercise.id} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-3">

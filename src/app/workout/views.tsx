@@ -6,6 +6,8 @@ import { Play, Pause, RotateCcw, CheckCircle, Plus, Minus, Search, X, RefreshCw 
 import type { Exercise, SetLog } from '@/lib/db/schema';
 import { searchExercises } from '@/lib/search';
 
+import { ExerciseThumbnail } from '@/components/ExerciseCard';
+
 // --- Shared Utilities ---
 
 function groupByMuscle(exercises: Exercise[]): [string, Exercise[]][] {
@@ -129,12 +131,14 @@ export function RestingView({
             <button 
               onClick={() => onAdjustRest(-15)}
               className="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-white/60 hover:bg-white/10 active:scale-95 transition-all"
+              aria-label="Subtract 15 seconds"
             >
               -15s
             </button>
             <button 
               onClick={() => onAdjustRest(30)}
               className="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-white/60 hover:bg-white/10 active:scale-95 transition-all"
+              aria-label="Add 30 seconds"
             >
               +30s
             </button>
@@ -266,15 +270,25 @@ export function ActiveView({
               <label className="text-[10px] text-white/30 tracking-[0.2em] uppercase font-bold ml-1">Current Exercise</label>
               <button
                 onClick={() => setShowPicker(true)}
-                className="w-full h-14 flex items-center justify-between px-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/15 transition-all active:scale-[0.98]"
+                className="w-full h-16 flex items-center justify-between px-3 rounded-2xl bg-white/5 border border-white/5 hover:border-white/15 transition-all active:scale-[0.98]"
               >
-                <div className="flex flex-col items-start text-left truncate pr-4">
-                  <span className="text-sm font-bold text-white truncate w-full">
-                    {selectedExercise?.name || 'Select Exercise'}
-                  </span>
-                  <span className="text-[10px] text-white/30 uppercase tracking-wider font-medium">
-                    {selectedExercise?.body_part || 'Category'}
-                  </span>
+                <div className="flex items-center gap-3 overflow-hidden pr-4">
+                  <div className="w-10 h-10 shrink-0 relative rounded-lg bg-black/20 overflow-hidden border border-white/5">
+                    {exerciseId && (
+                      <ExerciseThumbnail 
+                        alt={selectedExercise?.name || 'Exercise'} 
+                        exerciseId={exerciseId} 
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-col items-start text-left truncate">
+                    <span className="text-sm font-bold text-white truncate w-full">
+                      {selectedExercise?.name || 'Select Exercise'}
+                    </span>
+                    <span className="text-[10px] text-white/30 uppercase tracking-wider font-medium">
+                      {selectedExercise?.body_part || 'Category'}
+                    </span>
+                  </div>
                 </div>
                 <Search size={18} className="text-white/30 shrink-0" />
               </button>
@@ -284,27 +298,51 @@ export function ActiveView({
               <div className="space-y-3">
                 <label className="text-[10px] text-white/30 tracking-[0.2em] uppercase font-bold text-center block">Weight (kg)</label>
                 <div className="flex items-center gap-1 bg-white/5 rounded-2xl p-1 border border-white/5">
-                  <button onClick={() => setWeight(w => Math.max(0, w - 2.5))} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white/40"><Minus size={18} /></button>
+                  <button 
+                    onClick={() => setWeight(w => Math.max(0, w - 2.5))} 
+                    className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white/40"
+                    aria-label="Decrease weight"
+                  >
+                    <Minus size={18} />
+                  </button>
                   <input
                     type="number"
                     value={weight}
                     onChange={(e) => setWeight(Number(e.target.value))}
                     className="w-full bg-transparent text-center text-xl font-bold text-white outline-none"
                   />
-                  <button onClick={() => setWeight(w => w + 2.5)} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white/40"><Plus size={18} /></button>
+                  <button 
+                    onClick={() => setWeight(w => w + 2.5)} 
+                    className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white/40"
+                    aria-label="Increase weight"
+                  >
+                    <Plus size={18} />
+                  </button>
                 </div>
               </div>
               <div className="space-y-3">
                 <label className="text-[10px] text-white/30 tracking-[0.2em] uppercase font-bold text-center block">Repetitions</label>
                 <div className="flex items-center gap-1 bg-white/5 rounded-2xl p-1 border border-white/5">
-                  <button onClick={() => setReps(r => Math.max(1, r - 1))} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white/40"><Minus size={18} /></button>
+                  <button 
+                    onClick={() => setReps(r => Math.max(1, r - 1))} 
+                    className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white/40"
+                    aria-label="Decrease repetitions"
+                  >
+                    <Minus size={18} />
+                  </button>
                   <input
                     type="number"
                     value={reps}
                     onChange={(e) => setReps(Number(e.target.value))}
                     className="w-full bg-transparent text-center text-xl font-bold text-white outline-none"
                   />
-                  <button onClick={() => setReps(r => r + 1)} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white/40"><Plus size={18} /></button>
+                  <button 
+                    onClick={() => setReps(r => r + 1)} 
+                    className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white/40"
+                    aria-label="Increase repetitions"
+                  >
+                    <Plus size={18} />
+                  </button>
                 </div>
               </div>
             </div>
@@ -357,7 +395,13 @@ export function ActiveView({
                 className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 text-white text-lg font-medium outline-none focus:border-white/30 transition-all"
               />
             </div>
-            <button onClick={() => setShowPicker(false)} className="w-12 h-14 flex items-center justify-center text-white/40 hover:text-white"><X size={24} /></button>
+            <button 
+              onClick={() => setShowPicker(false)} 
+              className="w-12 h-14 flex items-center justify-center text-white/40 hover:text-white"
+              aria-label="Close picker"
+            >
+              <X size={24} />
+            </button>
           </div>
           
           <div className="flex-1 overflow-y-auto px-6 pb-12 space-y-2 custom-scrollbar">

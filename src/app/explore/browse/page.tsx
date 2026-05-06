@@ -48,7 +48,6 @@ function ListItem({ index, style, data }: { index: number; style: React.CSSPrope
         index={index}
         exercise={ex}
         view="list"
-        thumbnailSrc={`/exercise-media/${ex.id}.gif`}
         muscleLabel={formatBodyPartLabel(ex.body_part || 'other')}
         detailLabel={`${formatBodyPartLabel(ex.body_part || 'other')} • ${formatEquipmentLabel(ex.equipment || 'other')}`}
       />
@@ -62,10 +61,10 @@ function GridRow({ index, style, data }: { index: number; style: React.CSSProper
   return (
     <div style={{ ...style, display: 'flex', gap: 12, paddingBottom: 12 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        {a && <ExerciseCard index={index * 2} exercise={a} view="grid" thumbnailSrc={`/exercise-media/${a.id}.gif`} muscleLabel={formatBodyPartLabel(a.body_part || 'other')} detailLabel={`${formatBodyPartLabel(a.body_part || 'other')} • ${formatEquipmentLabel(a.equipment || 'other')}`} />}
+        {a && <ExerciseCard index={index * 2} exercise={a} view="grid" muscleLabel={formatBodyPartLabel(a.body_part || 'other')} detailLabel={`${formatBodyPartLabel(a.body_part || 'other')} • ${formatEquipmentLabel(a.equipment || 'other')}`} />}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        {b && <ExerciseCard index={index * 2 + 1} exercise={b} view="grid" thumbnailSrc={`/exercise-media/${b.id}.gif`} muscleLabel={formatBodyPartLabel(b.body_part || 'other')} detailLabel={`${formatBodyPartLabel(b.body_part || 'other')} • ${formatEquipmentLabel(b.equipment || 'other')}`} />}
+        {b && <ExerciseCard index={index * 2 + 1} exercise={b} view="grid" muscleLabel={formatBodyPartLabel(b.body_part || 'other')} detailLabel={`${formatBodyPartLabel(b.body_part || 'other')} • ${formatEquipmentLabel(b.equipment || 'other')}`} />}
       </div>
     </div>
   );
@@ -91,12 +90,17 @@ function BrowsePageContent() {
   const listContainerRef = useRef<HTMLDivElement>(null);
   const [listHeight, setListHeight] = useState(500);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      await seedExercises();
-      const data = await getAllExercises();
-      setExercises(data);
+      try {
+        await seedExercises();
+        const data = await getAllExercises();
+        setExercises(data);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -177,10 +181,10 @@ function BrowsePageContent() {
             <h1 className="text-2xl font-semibold text-white">Exercises</h1>
           </div>
           <div className="flex items-center gap-3 text-white/75">
-            <button type="button">
+            <button type="button" aria-label="Search">
               <Search size={21} />
             </button>
-            <button type="button">
+            <button type="button" aria-label="Equipment filters">
               <Dumbbell size={21} />
             </button>
           </div>
@@ -380,7 +384,11 @@ function BrowsePageContent() {
             </div>
 
             <div ref={listContainerRef} className="min-h-[300px]">
-              {filteredExercises.length === 0 ? (
+              {loading ? (
+                <div className="flex items-center justify-center py-20">
+                  <div className="w-8 h-8 border-2 border-white/10 border-t-white/80 rounded-full animate-spin" />
+                </div>
+              ) : filteredExercises.length === 0 ? (
                 <div className="rounded-3xl border border-white/10 bg-white/[0.03] px-6 py-12 text-center text-sm text-white/40">
                   No exercises found.
                 </div>

@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { type GroupTile } from '@/lib/explore/constants';
+import { ExerciseThumbnail } from './ExerciseCard';
 
 export function CompactTile({
   group,
@@ -22,7 +23,7 @@ export function CompactTile({
         {group.iconSrc ? (
           <Image src={group.iconSrc} alt={group.label} fill unoptimized className="object-contain p-1.5" sizes="80px" />
         ) : (
-          <Image src={group.thumbnailSrc} alt={group.label} fill unoptimized className="object-contain p-1" sizes="80px" />
+          <ExerciseThumbnail alt={group.label} exerciseId={group.exerciseId} />
         )}
       </div>
       <span className="text-[11px] font-medium leading-tight text-white/80">{group.label}</span>
@@ -54,7 +55,7 @@ export function MuscleTile({
         {group.iconSrc ? (
           <Image src={group.iconSrc} alt={group.label} fill unoptimized className="object-contain p-2" sizes="33vw" />
         ) : (
-          <Image src={group.thumbnailSrc} alt={group.label} fill unoptimized className="object-contain p-2" sizes="33vw" />
+          <ExerciseThumbnail alt={group.label} exerciseId={group.exerciseId} />
         )}
       </div>
       <div className="border-t border-white/10 px-3 py-3">
