@@ -37,6 +37,21 @@ import {
   Zap,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { LoadingPage } from '@/components/ui';
+import ExerciseCard from '@/components/ExerciseCard';
+import { getAllExercises } from '@/lib/db/exerciseQueries';
+import { seedExercises } from '@/lib/db/seed';
+import { type Exercise } from '@/lib/db/schema';
+import {
+  ExploreView,
+  ExploreMode,
+  BodyGroupKey,
+  bodyGroups,
+  formatEquipmentLabel,
+  formatBodyPartLabel,
+} from '@/lib/explore/constants';
+import { searchExercises } from '@/lib/search';
+import { CompactTile, MuscleTile, EquipmentTile } from '@/components/ExploreTiles';
 
 type EquipmentMeta = { icon: LucideIcon; color: string };
 
@@ -70,21 +85,6 @@ const EQUIPMENT_ICON_MAP: Record<string, EquipmentMeta> = {
   'weighted':             { icon: Scale,            color: 'text-orange-300'  },
   'wheel roller':         { icon: RefreshCw,        color: 'text-rose-300'    },
 };
-import { LoadingPage } from '@/components/ui';
-import ExerciseCard from '@/components/ExerciseCard';
-import { getAllExercises } from '@/lib/db/exerciseQueries';
-import { seedExercises } from '@/lib/db/seed';
-import { type Exercise } from '@/lib/db/schema';
-import {
-  ExploreView,
-  ExploreMode,
-  BodyGroupKey,
-  bodyGroups,
-  formatEquipmentLabel,
-  formatBodyPartLabel,
-} from '@/lib/explore/constants';
-import { searchExercises } from '@/lib/search';
-import { CompactTile, MuscleTile, EquipmentTile } from '@/components/ExploreTiles';
 
 const LIST_ITEM_HEIGHT = 94;
 const GRID_ROW_HEIGHT = 310;

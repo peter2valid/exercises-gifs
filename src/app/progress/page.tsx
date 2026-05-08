@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, TrendingUp, Calendar, Dumbbell, Flame } from 'lucide-react';
 import { db } from '@/lib/db/dexie';
+import { getAllExercises } from '@/lib/db/exerciseQueries';
+import { usesVolumeExercise } from '@/lib/workout/exerciseClassification';
 
 function fmtDate(iso?: string | null) {
   if (!iso) return '—';
@@ -43,20 +45,19 @@ export default function ProgressPage() {
         weekStart.setHours(0, 0, 0, 0);
         const weekStartIso = weekStart.toISOString();
 
-        const [sessions, allSets] = await Promise.all([
+        const [sessions, allSets, exercises] = await Promise.all([
           db.workout_sessions.where('status').equals('completed').toArray(),
           db.set_logs.toArray(),
+          getAllExercises(),
         ]);
 
+        const exerciseMap = Object.fromEntries(exercises.map((exercise) => [exercise.id, exercise]));
         const totalSessions = sessions.length;
-        const thisWeekSessions = sessions.filter((s) => s.started_at >= weekStartIso).length;
-
+        const thisWeekSessions = sessions.filter((session) => session.started_at >= weekStartIso).length;
         const sorted = [...sessions].sort((a, b) => b.started_at.localeCompare(a.started_at));
         const lastSessionDate = sorted[0]?.started_at ?? null;
-
-        // Exclude cardio sets (weight === 0) from volume calc
-        const strengthSets = allSets.filter((s) => s.weight > 0);
-        const totalVolume = strengthSets.reduce((acc, s) => acc + s.weight * s.reps, 0);
+        const strengthSets = allSets.filter((set) => usesVolumeExercise(exerciseMap[set.exercise_id]));
+        const totalVolume = strengthSets.reduce((acc, set) => acc + set.weight * set.reps, 0);
         const totalSets = allSets.length;
 
         const avgSetsPerSession = totalSessions > 0
@@ -88,7 +89,6 @@ export default function ProgressPage() {
           <h1 className="text-3xl font-bold text-white tracking-tight">Your Stats</h1>
         </div>
 
-        {/* Hero stat */}
         <div className="glass-panel p-6 mb-4 animate-slide-up">
           <div className="flex items-start justify-between mb-2">
             <div>
@@ -104,7 +104,6 @@ export default function ProgressPage() {
           <p className="text-xs text-white/25">All time, strength sets only</p>
         </div>
 
-        {/* Stats grid */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="glass-panel p-4">
             <div className="flex items-center gap-2 mb-2">

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useWorkoutStore } from '@/store/workoutStore';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { seedExercises } from '@/lib/db/seed';
@@ -11,7 +12,6 @@ import {
 } from '@/lib/device/identity';
 import { TENANT_ID } from '@/lib/config';
 import { supabase } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
 
 import {
   RestoringView,
@@ -24,6 +24,7 @@ import {
 export default function WorkoutPageClient({ initialExerciseId }: { initialExerciseId: string }) {
   const router = useRouter();
   const phase = useWorkoutStore((s) => s.phase);
+  const session = useWorkoutStore((s) => s.session);
   const sets = useWorkoutStore((s) => s.sets);
 
   const startSession = useWorkoutStore((s) => s.startSession);
@@ -45,12 +46,12 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
 
   useEffect(() => {
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      if (!authSession) {
         router.push('/auth');
         return;
       }
-      setUserId(session.user.id);
+      setUserId(authSession.user.id);
 
       await seedExercises().catch(console.error);
       const exs = await getAllExercises().catch(() => []);
@@ -58,7 +59,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
 
       const savedId = getSavedSessionId();
       if (savedId) {
-        await loadSession(savedId, TENANT_ID, 'local-browser', session.user.id)
+        await loadSession(savedId, TENANT_ID, 'local-browser', authSession.user.id)
           .catch(console.error)
           .finally(() => setIsRestoring(false));
       } else {
@@ -69,7 +70,6 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-start session when arriving from exercise detail with an exerciseId
   useEffect(() => {
     if (
       !isRestoring &&
@@ -120,8 +120,8 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
     autoStarted.current = false;
   };
 
-  const setList = useMemo(() => Object.values(sets), [sets]);
-  const exMap = useMemo(() => Object.fromEntries(exercises.map((e) => [e.id, e])), [exercises]);
+  const setList = Object.values(sets);
+  const exMap = Object.fromEntries(exercises.map((exercise) => [exercise.id, exercise]));
   const preselectedExercise = initialExerciseId ? (exMap[initialExerciseId] ?? null) : null;
 
   if (isRestoring || !userId) return <RestoringView />;
@@ -131,6 +131,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
       {phase === 'idle' && (
         <IdleView
           onStart={handleStart}
+          onBrowseLibrary={() => router.push('/explore')}
           isLoading={isStarting}
           preselectedExercise={preselectedExercise}
         />
@@ -141,6 +142,8 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
           exercises={exercises}
           exMap={exMap}
           initialExerciseId={initialExerciseId}
+          sessionId={session?.id ?? ''}
+          sessionStartedAt={session?.started_at ?? null}
           onLogSet={handleLogSet}
           onStartRest={handleStartRest}
           onComplete={handleComplete}

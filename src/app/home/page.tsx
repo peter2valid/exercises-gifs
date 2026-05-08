@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Button, LoadingPage } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
 import { db } from '@/lib/db/dexie';
+import { getAllExercises } from '@/lib/db/exerciseQueries';
+import { usesVolumeExercise } from '@/lib/workout/exerciseClassification';
 
 export default function HomePage() {
   const router = useRouter();
@@ -34,19 +36,18 @@ export default function HomePage() {
         weekStart.setHours(0, 0, 0, 0);
         const weekStartIso = weekStart.toISOString();
 
-        const completedSessions = await db.workout_sessions
-          .where('status').equals('completed')
-          .toArray();
+        const [completedSessions, allSets, exercises] = await Promise.all([
+          db.workout_sessions.where('status').equals('completed').toArray(),
+          db.set_logs.toArray(),
+          getAllExercises(),
+        ]);
 
-        const weekCount = completedSessions.filter(
-          (s) => s.started_at >= weekStartIso
-        ).length;
-
-        const allSets = await db.set_logs.toArray();
-        const vol = allSets.reduce(
-          (acc, s) => acc + (s.weight || 0) * (s.reps || 0),
-          0
-        );
+        const exerciseMap = Object.fromEntries(exercises.map((exercise) => [exercise.id, exercise]));
+        const weekCount = completedSessions.filter((session) => session.started_at >= weekStartIso).length;
+        const vol = allSets.reduce((acc, set) => {
+          const exercise = exerciseMap[set.exercise_id];
+          return usesVolumeExercise(exercise) ? acc + (set.weight || 0) * (set.reps || 0) : acc;
+        }, 0);
 
         setThisWeek(weekCount);
         setTotalVolume(Math.round(vol));
