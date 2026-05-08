@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { type LucideIcon } from 'lucide-react';
 import { type GroupTile } from '@/lib/explore/constants';
 import { ExerciseThumbnail } from './ExerciseCard';
 
@@ -60,6 +61,40 @@ export function MuscleTile({
       </div>
       <div className="border-t border-white/10 px-3 py-3">
         <p className="text-center text-sm font-semibold text-white">{group.label}</p>
+      </div>
+    </button>
+  );
+}
+
+export function EquipmentTile({
+  icon: Icon,
+  label,
+  count,
+  active,
+  color,
+  onClick,
+}: {
+  icon: LucideIcon;
+  label: string;
+  count: number;
+  active: boolean;
+  color: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`glass-panel overflow-hidden transition-transform active:scale-[0.97] touch-manipulation ${active ? 'ring-1 ring-white/30' : ''}`}
+    >
+      <div className={`relative aspect-[0.95] overflow-hidden flex flex-col items-center justify-center gap-4 p-4 bg-gradient-to-br from-white/5 to-white/[0.02]`}>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 ${color}`}>
+          <Icon size={24} />
+        </div>
+        <div className="text-center">
+          <p className="text-[11px] font-bold text-white uppercase tracking-tight">{label}</p>
+          <p className="text-[9px] font-medium text-white/40 uppercase mt-1">{count} items</p>
+        </div>
       </div>
     </button>
   );

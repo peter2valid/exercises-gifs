@@ -87,7 +87,7 @@ import {
   formatBodyPartLabel,
 } from '@/lib/explore/constants';
 import { searchExercises } from '@/lib/search';
-import { CompactTile, MuscleTile } from '@/components/ExploreTiles';
+import { CompactTile, MuscleTile, EquipmentTile } from '@/components/ExploreTiles';
 
 const LIST_ITEM_HEIGHT = 94;
 const GRID_ROW_HEIGHT = 310;
@@ -382,22 +382,16 @@ function BrowsePageContent() {
               <div className="grid grid-cols-3 gap-3">
                 {equipmentGroups.map((item) => {
                   const meta = EQUIPMENT_ICON_MAP[item.key] ?? { icon: Dumbbell, color: 'text-white/80' };
-                  const Icon = meta.icon;
                   return (
-                    <button
+                    <EquipmentTile
                       key={item.key}
-                      type="button"
+                      icon={meta.icon}
+                      label={item.label}
+                      count={item.count}
+                      active={activeEquipment === item.key}
+                      color={meta.color}
                       onClick={() => { setActiveEquipment(item.key); setActiveMuscle(null); }}
-                      className={`glass-panel flex flex-col items-center justify-center gap-2 px-2 py-5 text-center transition-all active:scale-[0.97] touch-manipulation ${activeEquipment === item.key ? 'ring-2 ring-white/40 bg-white/10' : ''}`}
-                    >
-                      <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 ${meta.color}`}>
-                        <Icon size={22} />
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-bold text-white uppercase tracking-tight">{item.label}</p>
-                        <p className="text-[9px] font-medium text-white/30 uppercase">{item.count} items</p>
-                      </div>
-                    </button>
+                    />
                   );
                 })}
               </div>
