@@ -4,16 +4,74 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { VariableSizeList as List } from 'react-window';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
+  Accessibility,
+  Activity,
+  Bike,
+  Cable,
   ChevronLeft,
+  Circle,
+  CircleDashed,
+  CircleDot,
+  Disc,
+  Disc2,
   Dumbbell,
+  Frame,
   Grid2X2,
+  Hammer,
+  Layers,
   LayoutGrid,
+  Link,
   List as ListIcon,
+  Minus,
+  PersonStanding,
+  RefreshCw,
+  RotateCcw,
+  RotateCw,
+  Scale,
   Search,
+  Settings2,
+  TrendingUp,
+  Truck,
   UserRound,
   CalendarRange,
+  Wind,
   X,
+  Zap,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+type EquipmentMeta = { icon: LucideIcon; color: string };
+
+const EQUIPMENT_ICON_MAP: Record<string, EquipmentMeta> = {
+  'assisted':             { icon: Accessibility,   color: 'text-emerald-400' },
+  'band':                 { icon: Minus,            color: 'text-yellow-400'  },
+  'barbell':              { icon: Dumbbell,         color: 'text-white/80'    },
+  'body weight':          { icon: PersonStanding,   color: 'text-sky-400'     },
+  'bosu ball':            { icon: Disc,             color: 'text-purple-400'  },
+  'cable':                { icon: Cable,            color: 'text-orange-400'  },
+  'dumbbell':             { icon: Dumbbell,         color: 'text-white/80'    },
+  'elliptical machine':   { icon: Activity,         color: 'text-cyan-400'    },
+  'ez barbell':           { icon: Dumbbell,         color: 'text-white/60'    },
+  'hammer':               { icon: Hammer,           color: 'text-rose-400'    },
+  'kettlebell':           { icon: Disc2,            color: 'text-amber-400'   },
+  'leverage machine':     { icon: Settings2,        color: 'text-slate-400'   },
+  'medicine ball':        { icon: CircleDot,        color: 'text-teal-400'    },
+  'olympic barbell':      { icon: Dumbbell,         color: 'text-white/80'    },
+  'resistance band':      { icon: Zap,              color: 'text-yellow-300'  },
+  'roller':               { icon: RotateCcw,        color: 'text-lime-400'    },
+  'rope':                 { icon: Link,             color: 'text-amber-300'   },
+  'skierg machine':       { icon: Wind,             color: 'text-sky-300'     },
+  'sled machine':         { icon: Truck,            color: 'text-zinc-400'    },
+  'smith machine':        { icon: Layers,           color: 'text-violet-400'  },
+  'stability ball':       { icon: Circle,           color: 'text-pink-400'    },
+  'stationary bike':      { icon: Bike,             color: 'text-emerald-300' },
+  'stepmill machine':     { icon: TrendingUp,       color: 'text-indigo-400'  },
+  'tire':                 { icon: CircleDashed,     color: 'text-zinc-300'    },
+  'trap bar':             { icon: Frame,            color: 'text-lime-300'    },
+  'upper body ergometer': { icon: RotateCw,         color: 'text-blue-400'    },
+  'weighted':             { icon: Scale,            color: 'text-orange-300'  },
+  'wheel roller':         { icon: RefreshCw,        color: 'text-rose-300'    },
+};
 import { LoadingPage } from '@/components/ui';
 import ExerciseCard from '@/components/ExerciseCard';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
@@ -322,20 +380,26 @@ function BrowsePageContent() {
             )}
             {showEquipGrid && (
               <div className="grid grid-cols-3 gap-3">
-                {equipmentGroups.map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => { setActiveEquipment(item.key); setActiveMuscle(null); }}
-                    className={`glass-panel flex flex-col items-center justify-center gap-2 px-2 py-5 text-center transition-all active:scale-[0.97] touch-manipulation ${activeEquipment === item.key ? 'ring-2 ring-white/40 bg-white/10' : ''}`}
-                  >
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-white/80"><Dumbbell size={22} /></div>
-                    <div>
-                      <p className="text-[11px] font-bold text-white uppercase tracking-tight">{item.label}</p>
-                      <p className="text-[9px] font-medium text-white/30 uppercase">{item.count} items</p>
-                    </div>
-                  </button>
-                ))}
+                {equipmentGroups.map((item) => {
+                  const meta = EQUIPMENT_ICON_MAP[item.key] ?? { icon: Dumbbell, color: 'text-white/80' };
+                  const Icon = meta.icon;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => { setActiveEquipment(item.key); setActiveMuscle(null); }}
+                      className={`glass-panel flex flex-col items-center justify-center gap-2 px-2 py-5 text-center transition-all active:scale-[0.97] touch-manipulation ${activeEquipment === item.key ? 'ring-2 ring-white/40 bg-white/10' : ''}`}
+                    >
+                      <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 ${meta.color}`}>
+                        <Icon size={22} />
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-bold text-white uppercase tracking-tight">{item.label}</p>
+                        <p className="text-[9px] font-medium text-white/30 uppercase">{item.count} items</p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
