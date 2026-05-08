@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, LoadingPage } from '@/components/ui';
-import { runSyncSimulation } from '@/lib/simulation/syncSimulation';
 import { supabase } from '@/lib/supabase/client';
 
 export default function HomePage() {
@@ -70,20 +69,6 @@ export default function HomePage() {
           </Button>
         </div>
 
-        {/* Diagnostics (Debug only) */}
-        <div className="mt-12 pt-8 border-t border-white/5">
-          <p className="text-[10px] text-white/20 uppercase tracking-[0.2em] font-medium mb-4 text-center">Diagnostics</p>
-          <Button
-            onClick={async () => {
-              const ok = await runSyncSimulation();
-              alert(ok ? 'Sync Simulation Passed!' : 'Sync Simulation Failed! Check console.');
-            }}
-            className="w-full h-10 text-xs opacity-50 hover:opacity-100 transition-opacity"
-            variant="ghost"
-          >
-            Run Sync Simulation
-          </Button>
-        </div>
       </div>
     </div>
   );

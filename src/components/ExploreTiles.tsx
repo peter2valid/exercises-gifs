@@ -46,7 +46,7 @@ export function MuscleTile({
     <button
       type="button"
       onClick={onClick}
-      className={`glass-panel overflow-hidden text-left transition-transform hover:scale-[1.01] ${active ? 'ring-1 ring-white/30' : ''}`}
+      className={`glass-panel overflow-hidden text-left transition-transform active:scale-[0.97] touch-manipulation ${active ? 'ring-1 ring-white/30' : ''}`}
     >
       <div className={`relative aspect-[0.95] bg-gradient-to-br ${group.accent} overflow-hidden`}>
         <div className="absolute left-3 top-3 rounded-full bg-black/20 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-white/70 backdrop-blur-sm">

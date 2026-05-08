@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkoutStore } from '@/store/workoutStore';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { seedExercises } from '@/lib/db/seed';
@@ -41,6 +41,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
   const [isStarting, setIsStarting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const autoStarted = useRef(false);
 
   useEffect(() => {
     async function init() {
@@ -57,7 +58,6 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
 
       const savedId = getSavedSessionId();
       if (savedId) {
-        // deviceId should be stable per browser session
         await loadSession(savedId, TENANT_ID, 'local-browser', session.user.id)
           .catch(console.error)
           .finally(() => setIsRestoring(false));
@@ -68,6 +68,25 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-start session when arriving from exercise detail with an exerciseId
+  useEffect(() => {
+    if (
+      !isRestoring &&
+      userId &&
+      initialExerciseId &&
+      phase === 'idle' &&
+      !autoStarted.current
+    ) {
+      autoStarted.current = true;
+      const sessionId = crypto.randomUUID();
+      setIsStarting(true);
+      startSession(sessionId, userId, TENANT_ID, 'local-browser')
+        .then(() => saveSessionId(sessionId))
+        .catch(console.error)
+        .finally(() => setIsStarting(false));
+    }
+  }, [isRestoring, userId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStart = () => {
     if (isStarting || !userId) return;
@@ -98,16 +117,24 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
     reset();
     clearSessionId();
     setLastSetId(null);
+    autoStarted.current = false;
   };
 
   const setList = useMemo(() => Object.values(sets), [sets]);
   const exMap = useMemo(() => Object.fromEntries(exercises.map((e) => [e.id, e])), [exercises]);
+  const preselectedExercise = initialExerciseId ? (exMap[initialExerciseId] ?? null) : null;
 
   if (isRestoring || !userId) return <RestoringView />;
 
   return (
     <div className="dashboard-bg min-h-screen flex flex-col">
-      {phase === 'idle' && <IdleView onStart={handleStart} isLoading={isStarting} />}
+      {phase === 'idle' && (
+        <IdleView
+          onStart={handleStart}
+          isLoading={isStarting}
+          preselectedExercise={preselectedExercise}
+        />
+      )}
       {phase === 'active' && (
         <ActiveView
           sets={setList}
