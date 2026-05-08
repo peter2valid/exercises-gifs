@@ -202,6 +202,7 @@ function BrowsePageContent() {
 
   const showMuscleGrid = mode === 'muscles' && !activeMuscle && !explicitBrowse && !search.trim() && activeTab === 'exercises';
   const showEquipGrid = mode === 'equipment' && !activeEquipment && activeTab === 'exercises';
+  const showExerciseList = !showMuscleGrid && !showEquipGrid;
 
   const getItemSize = () => view === 'grid' ? GRID_ROW_HEIGHT : LIST_ITEM_HEIGHT;
   const itemCount = view === 'grid' ? Math.ceil(filteredExercises.length / 2) : filteredExercises.length;
@@ -401,7 +402,7 @@ function BrowsePageContent() {
       )}
 
       {/* Results count when exercises are shown */}
-      {activeTab === 'exercises' && !showMuscleGrid && !showEquipGrid && (
+      {activeTab === 'exercises' && showExerciseList && (
         <div className="flex-none px-5 pb-2 max-w-md mx-auto w-full">
           <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/25">
             {filteredExercises.length} Results
@@ -409,23 +410,35 @@ function BrowsePageContent() {
         </div>
       )}
 
+      {activeTab === 'exercises' && showEquipGrid && (
+        <div className="flex-none px-5 pb-3 max-w-md mx-auto w-full">
+          <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-center text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
+            Pick equipment to reveal exercises
+          </div>
+        </div>
+      )}
+
       {/* ─── VIRTUAL LIST — only exercise rows, search is above so focus is stable ─── */}
-      <div ref={listContainerRef} className="flex-1 min-h-0">
-        {filteredExercises.length === 0 && !loading ? (
-          <div className="flex items-center justify-center h-full text-white/25 text-sm">No exercises found</div>
-        ) : (
-          <List
-            ref={listRef}
-            height={listHeight}
-            itemCount={itemCount}
-            itemSize={getItemSize}
-            width="100%"
-            className="scrollbar-hide"
-          >
-            {Row}
-          </List>
-        )}
-      </div>
+      {showExerciseList ? (
+        <div ref={listContainerRef} className="flex-1 min-h-0">
+          {filteredExercises.length === 0 && !loading ? (
+            <div className="flex items-center justify-center h-full text-white/25 text-sm">No exercises found</div>
+          ) : (
+            <List
+              ref={listRef}
+              height={listHeight}
+              itemCount={itemCount}
+              itemSize={getItemSize}
+              width="100%"
+              className="scrollbar-hide"
+            >
+              {Row}
+            </List>
+          )}
+        </div>
+      ) : (
+        <div className="flex-1 min-h-0" />
+      )}
     </div>
   );
 }
