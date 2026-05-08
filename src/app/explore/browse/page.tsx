@@ -32,7 +32,7 @@ import { searchExercises } from '@/lib/search';
 import { CompactTile, MuscleTile } from '@/components/ExploreTiles';
 
 const LIST_ITEM_HEIGHT = 94;
-const GRID_ROW_HEIGHT = 320;
+const GRID_ROW_HEIGHT = 310;
 
 function BrowsePageContent() {
   const router = useRouter();

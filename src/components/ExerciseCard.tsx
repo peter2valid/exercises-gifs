@@ -78,7 +78,7 @@ const ExerciseCard = memo(function ExerciseCard({
       <article className={view === 'grid' ? 'glass-panel overflow-hidden' : 'glass-panel p-3 flex items-center gap-3 hover:scale-[1.01] transition-transform'}>
         {view === 'grid' ? (
           <>
-            <div className="relative aspect-[4/5] bg-white/5 overflow-hidden">
+            <div className="relative h-[200px] bg-white/5 overflow-hidden">
               <ExerciseThumbnail alt={exercise.name} priority={index < 6} exerciseId={exercise.id} />
             </div>
             <div className="border-t border-white/10 p-3">
