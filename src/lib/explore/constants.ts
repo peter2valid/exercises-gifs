@@ -14,7 +14,6 @@ import NeckIcon from '@/assets/icons/bodyparts/Neck_muscle_Icon.webp';
 import CardioIcon from '@/assets/icons/bodyparts/cardio icon.png';
 
 export type ExploreView = 'list' | 'grid';
-export type ExploreTab = 'programs' | 'exercises' | 'coaches';
 export type ExploreMode = 'muscles' | 'equipment';
 export type BodyGroupKey =
   | 'chest'

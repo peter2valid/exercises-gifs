@@ -32,8 +32,6 @@ import {
   Settings2,
   TrendingUp,
   Truck,
-  UserRound,
-  CalendarRange,
   Wind,
   X,
   Zap,
@@ -79,7 +77,6 @@ import { seedExercises } from '@/lib/db/seed';
 import { type Exercise } from '@/lib/db/schema';
 import {
   ExploreView,
-  ExploreTab,
   ExploreMode,
   BodyGroupKey,
   bodyGroups,
@@ -98,15 +95,16 @@ function BrowsePageContent() {
   const muscleParam = searchParams.get('muscle');
   const queryParam = searchParams.get('q');
   const modeParam = searchParams.get('mode');
+  const equipmentParam = searchParams.get('equipment');
   const explicitBrowse = searchParams.has('muscle') || searchParams.has('q');
 
   const [search, setSearch] = useState(queryParam || '');
-  const [activeTab, setActiveTab] = useState<ExploreTab>('exercises');
+  const activeTab = 'exercises' as const;
   const [mode, setMode] = useState<ExploreMode>(modeParam === 'equipment' ? 'equipment' : 'muscles');
   const [activeMuscle, setActiveMuscle] = useState<BodyGroupKey | null>(
     muscleParam && muscleParam !== 'all' ? (muscleParam as BodyGroupKey) : null
   );
-  const [activeEquipment, setActiveEquipment] = useState<string | null>(null);
+  const [activeEquipment, setActiveEquipment] = useState<string | null>(equipmentParam || null);
   const [view, setView] = useState<ExploreView>('grid');
 
   const listRef = useRef<any>(null);
@@ -154,7 +152,7 @@ function BrowsePageContent() {
 
   useEffect(() => {
     if (listRef.current) listRef.current.resetAfterIndex(0);
-  }, [activeMuscle, activeEquipment, mode, view, activeTab, loading, exercises, search]);
+  }, [activeMuscle, activeEquipment, mode, view, loading, exercises, search]);
 
   const equipmentGroups = useMemo(() => {
     const items = new Map<string, number>();
@@ -289,27 +287,6 @@ function BrowsePageContent() {
                 </button>
               )}
             </div>
-          </div>
-
-          {/* Tab bar */}
-          <div className="mb-4 grid grid-cols-3 gap-2 rounded-2xl border border-white/5 bg-white/[0.02] p-1.5">
-            {['programs', 'exercises', 'coaches'].map((tab) => {
-              const Icon = tab === 'programs' ? CalendarRange : tab === 'exercises' ? Dumbbell : UserRound;
-              const active = activeTab === tab;
-              return (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActiveTab(tab as ExploreTab)}
-                  className={`flex items-center justify-center gap-2 rounded-xl py-2.5 transition-all active:scale-[0.97] ${
-                    active ? 'bg-white text-black shadow-lg' : 'text-white/40'
-                  }`}
-                >
-                  <Icon size={16} />
-                  <span className="text-[11px] font-bold uppercase tracking-wider">{tab}</span>
-                </button>
-              );
-            })}
           </div>
 
           {activeTab === 'exercises' && (
