@@ -1,30 +1,21 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { getServerSupabase } from '@/lib/supabase/server';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { getUserFromRequest, getAdminSupabase } from '@/lib/supabase/server';
 
 export async function POST(req: Request) {
   try {
-    const supabase = getServerSupabase();
-    
-    // 1. Authenticate the user
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    if (authError || !session) {
+    const user = await getUserFromRequest(req);
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
     const { events } = await req.json();
-    
+
     if (!Array.isArray(events)) {
       return NextResponse.json({ error: 'Events must be an array' }, { status: 400 });
     }
 
-    // 2. High-privilege client for batch upsert
-    // We still use service role for batching, but we enforce the user_id from the session
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+    const adminClient = getAdminSupabase();
 
     const eventsToInsert = events.map(e => ({
       id: e.id,

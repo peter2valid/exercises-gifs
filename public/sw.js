@@ -40,8 +40,8 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET, external requests
-  if (request.method !== 'GET' || !url.origin.includes(self.location.origin)) {
+  // Skip non-GET, external requests, and API routes (auth-sensitive, never cache)
+  if (request.method !== 'GET' || !url.origin.includes(self.location.origin) || url.pathname.startsWith('/api/')) {
     return;
   }
 
@@ -53,8 +53,8 @@ self.addEventListener('fetch', (event) => {
         return fetch(request)
           .then((response) => {
             if (!response || response.status !== 200) return response;
-            const cache = caches.open(IMAGE_CACHE);
-            cache.then((c) => c.put(request, response.clone()));
+            const responseToCache = response.clone();
+            caches.open(IMAGE_CACHE).then((c) => c.put(request, responseToCache));
             return response;
           })
           .catch(() => {
@@ -72,8 +72,8 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((response) => {
           if (!response || response.status !== 200) return response;
-          const cache = caches.open(CACHE_NAME);
-          cache.then((c) => c.put(request, response.clone()));
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(request, responseToCache));
           return response;
         })
         .catch(() => caches.match(request))
@@ -86,8 +86,8 @@ self.addEventListener('fetch', (event) => {
     caches.match(request).then((cached) => {
       const fetchPromise = fetch(request).then((response) => {
         if (!response || response.status !== 200) return response;
-        const cache = caches.open(CACHE_NAME);
-        cache.then((c) => c.put(request, response.clone()));
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME).then((c) => c.put(request, responseToCache));
         return response;
       });
       return cached || fetchPromise;

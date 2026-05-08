@@ -90,8 +90,8 @@ export class SyncWorker {
     this.isProcessing = true;
 
     try {
-      await this.processUpstream();
-      await this.processDownstream();
+      await this.processUpstream(session.access_token);
+      await this.processDownstream(session.access_token);
       await this.pruneQueue();
     } catch (err) {
       console.error('[SyncWorker] cycle error:', err);
@@ -100,7 +100,7 @@ export class SyncWorker {
     }
   }
 
-  private async processUpstream() {
+  private async processUpstream(accessToken: string) {
     const now = new Date().toISOString();
     
     const readyToSync = await db.sync_queue
@@ -135,7 +135,10 @@ export class SyncWorker {
     try {
       const res = await fetch('/api/sync/push', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({ events: batch }),
       });
 
@@ -155,11 +158,13 @@ export class SyncWorker {
     }
   }
 
-  private async processDownstream() {
+  private async processDownstream(accessToken: string) {
     try {
-      const deviceId = 'local-browser'; 
+      const deviceId = 'local-browser';
 
-      const res = await fetch(`/api/sync/pull?since=${this.lastPullSequence}&exclude_device_id=${deviceId}`);
+      const res = await fetch(`/api/sync/pull?since=${this.lastPullSequence}&exclude_device_id=${deviceId}`, {
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+      });
       if (!res.ok) return;
 
       const { events }: { events: any[] } = await res.json();

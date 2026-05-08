@@ -1,17 +1,15 @@
 import { NextResponse } from 'next/server';
-import { getServerSupabase } from '@/lib/supabase/server';
+import { getUserFromRequest, getAdminSupabase } from '@/lib/supabase/server';
 
 export async function GET(req: Request) {
   try {
-    const supabase = getServerSupabase();
-    
-    // 1. Authenticate the user
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    if (authError || !session) {
+    const user = await getUserFromRequest(req);
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
+    const supabase = getAdminSupabase();
     const { searchParams } = new URL(req.url);
     const since = parseInt(searchParams.get('since') || '0', 10);
     const excludeDeviceId = searchParams.get('exclude_device_id') || '';
