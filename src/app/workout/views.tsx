@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Play,
@@ -380,6 +380,7 @@ export function ActiveView({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
+  const deferredPickerSearch = useDeferredValue(pickerSearch);
   const [pickerSelection, setPickerSelection] = useState<string[]>([]);
   const [roster, setRoster] = useState<string[]>(() => (initialExerciseId ? [initialExerciseId] : []));
   const [activeExerciseId, setActiveExerciseId] = useState(initialExerciseId || '');
@@ -489,11 +490,11 @@ export function ActiveView({
   }, [activeExerciseId, selectedExercise, selectedSets]);
 
   const filteredPicker = useMemo(() => {
-    const query = pickerSearch.trim();
+    const query = deferredPickerSearch.trim();
     const nextExercises = query ? searchExercises(exercises, query) : exercises;
     const rosterSet = new Set(roster);
     return nextExercises.filter((exercise) => !rosterSet.has(exercise.id));
-  }, [exercises, pickerSearch, roster]);
+  }, [exercises, deferredPickerSearch, roster]);
   const pickerItems = filteredPicker;
 
   const openPicker = () => {

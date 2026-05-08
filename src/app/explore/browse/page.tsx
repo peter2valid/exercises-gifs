@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { VariableSizeList as List } from 'react-window';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -99,6 +99,7 @@ function BrowsePageContent() {
   const explicitBrowse = searchParams.has('muscle') || searchParams.has('q');
 
   const [search, setSearch] = useState(queryParam || '');
+  const deferredSearch = useDeferredValue(search);
   const activeTab = 'exercises' as const;
   const [mode, setMode] = useState<ExploreMode>(modeParam === 'equipment' ? 'equipment' : 'muscles');
   const [activeMuscle, setActiveMuscle] = useState<BodyGroupKey | null>(
@@ -152,7 +153,7 @@ function BrowsePageContent() {
 
   useEffect(() => {
     if (listRef.current) listRef.current.resetAfterIndex(0);
-  }, [activeMuscle, activeEquipment, mode, view, loading, exercises, search]);
+  }, [activeMuscle, activeEquipment, mode, view, loading, exercises, deferredSearch]);
 
   const equipmentGroups = useMemo(() => {
     const items = new Map<string, number>();
@@ -179,7 +180,7 @@ function BrowsePageContent() {
   }, [exercises]);
 
   const filteredExercises = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = deferredSearch.trim().toLowerCase();
     let results = q ? searchExercises(exercises, q) : exercises;
 
     if (activeMuscle) {
@@ -192,13 +193,13 @@ function BrowsePageContent() {
     }
 
     return results;
-  }, [activeEquipment, activeMuscle, exercises, search]);
+  }, [activeEquipment, activeMuscle, deferredSearch, exercises]);
 
   const activeMuscleLabel = activeMuscle ? bodyGroups.find((g) => g.key === activeMuscle)?.label : null;
   const activeEquipmentLabel = activeEquipment ? formatEquipmentLabel(activeEquipment) : null;
   const activeFilterLabel = activeMuscleLabel || activeEquipmentLabel || 'All exercises';
 
-  const showMuscleGrid = mode === 'muscles' && !activeMuscle && !explicitBrowse && !search.trim() && activeTab === 'exercises';
+  const showMuscleGrid = mode === 'muscles' && !activeMuscle && !explicitBrowse && !deferredSearch.trim() && activeTab === 'exercises';
   const showEquipGrid = mode === 'equipment' && !activeEquipment && activeTab === 'exercises';
   const showExerciseList = !showMuscleGrid && !showEquipGrid;
 

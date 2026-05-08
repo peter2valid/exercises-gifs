@@ -14,6 +14,13 @@ interface SearchScore {
   matches: string[];
 }
 
+interface NormalizedField {
+  lower: string;
+  words: string[];
+}
+
+const FIELD_CACHE = new Map<string, NormalizedField>();
+
 // Simple Levenshtein distance for typo tolerance
 function levenshteinDistance(a: string, b: string): number {
   const matrix: number[][] = [];
@@ -59,12 +66,26 @@ function getWords(text: string): string[] {
     .filter((w) => w.length > 0);
 }
 
+function getNormalizedField(fieldValue: string | undefined): NormalizedField {
+  const value = fieldValue?.trim();
+  if (!value) return { lower: '', words: [] };
+
+  const cached = FIELD_CACHE.get(value);
+  if (cached) return cached;
+
+  const normalized = {
+    lower: value.toLowerCase(),
+    words: getWords(value),
+  };
+  FIELD_CACHE.set(value, normalized);
+  return normalized;
+}
+
 // Score a single field
 function scoreField(fieldValue: string | undefined, query: string, weight: number): { score: number; matched: boolean; text: string } {
   if (!fieldValue) return { score: 0, matched: false, text: '' };
 
-  const fieldLower = fieldValue.toLowerCase();
-  const words = getWords(fieldValue);
+  const { lower: fieldLower, words } = getNormalizedField(fieldValue);
   let score = 0;
   let matched = false;
 
