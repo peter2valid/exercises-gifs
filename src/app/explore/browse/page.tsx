@@ -39,11 +39,12 @@ function BrowsePageContent() {
   const searchParams = useSearchParams();
   const muscleParam = searchParams.get('muscle');
   const queryParam = searchParams.get('q');
+  const modeParam = searchParams.get('mode');
   const explicitBrowse = searchParams.has('muscle') || searchParams.has('q');
 
   const [search, setSearch] = useState(queryParam || '');
   const [activeTab, setActiveTab] = useState<ExploreTab>('exercises');
-  const [mode, setMode] = useState<ExploreMode>('muscles');
+  const [mode, setMode] = useState<ExploreMode>(modeParam === 'equipment' ? 'equipment' : 'muscles');
   const [activeMuscle, setActiveMuscle] = useState<BodyGroupKey | null>(
     muscleParam && muscleParam !== 'all' ? (muscleParam as BodyGroupKey) : null
   );

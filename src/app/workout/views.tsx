@@ -27,6 +27,7 @@ function isCardioExercise(exercise: Exercise | undefined): boolean {
 }
 
 function playBeep() {
+  if (typeof window !== 'undefined' && localStorage.getItem('restTimerSound') === 'off') return;
   try {
     const ctx = new AudioContext();
     const osc = ctx.createOscillator();

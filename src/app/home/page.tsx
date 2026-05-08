@@ -4,11 +4,14 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, LoadingPage } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
+import { db } from '@/lib/db/dexie';
 
 export default function HomePage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [thisWeek, setThisWeek] = useState(0);
+  const [totalVolume, setTotalVolume] = useState(0);
 
   useEffect(() => {
     async function checkUser() {
@@ -23,14 +26,42 @@ export default function HomePage() {
     checkUser();
   }, [router]);
 
-  if (loading) {
-    return <LoadingPage />;
-  }
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const weekStart = new Date();
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        weekStart.setHours(0, 0, 0, 0);
+        const weekStartIso = weekStart.toISOString();
+
+        const completedSessions = await db.workout_sessions
+          .where('status').equals('completed')
+          .toArray();
+
+        const weekCount = completedSessions.filter(
+          (s) => s.started_at >= weekStartIso
+        ).length;
+
+        const allSets = await db.set_logs.toArray();
+        const vol = allSets.reduce(
+          (acc, s) => acc + (s.weight || 0) * (s.reps || 0),
+          0
+        );
+
+        setThisWeek(weekCount);
+        setTotalVolume(Math.round(vol));
+      } catch {
+        // Dexie not ready yet — leave at 0
+      }
+    }
+    loadStats();
+  }, []);
+
+  if (loading) return <LoadingPage />;
 
   return (
     <div className="dashboard-bg min-h-screen pb-24 pt-8">
       <div className="max-w-md mx-auto px-4">
-        {/* Header */}
         <div className="mb-12 animate-fade-in">
           <p className="text-xs tracking-[0.3em] text-white/30 uppercase font-medium mb-2">Supafast</p>
           <h1 className="text-4xl font-bold text-white tracking-tight mb-2">
@@ -39,19 +70,19 @@ export default function HomePage() {
           <p className="text-sm text-white/40">Ready for today&apos;s session?</p>
         </div>
 
-        {/* Quick Stats */}
         <div className="space-y-3 mb-12 animate-slide-up">
           <div className="glass-panel p-4">
             <p className="text-xs text-white/40 tracking-[0.1em] uppercase mb-1">This Week</p>
-            <p className="text-2xl font-semibold text-white">0 Workouts</p>
+            <p className="text-2xl font-semibold text-white">
+              {thisWeek} {thisWeek === 1 ? 'Workout' : 'Workouts'}
+            </p>
           </div>
           <div className="glass-panel p-4">
             <p className="text-xs text-white/40 tracking-[0.1em] uppercase mb-1">Total Volume</p>
-            <p className="text-2xl font-semibold text-white">0 kg</p>
+            <p className="text-2xl font-semibold text-white">{totalVolume.toLocaleString()} kg</p>
           </div>
         </div>
 
-        {/* Actions */}
         <div className="space-y-3">
           <Button
             onClick={() => router.push('/workout')}
@@ -68,7 +99,6 @@ export default function HomePage() {
             Browse Exercises
           </Button>
         </div>
-
       </div>
     </div>
   );

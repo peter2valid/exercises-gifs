@@ -24,6 +24,7 @@ export default function ExplorePage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<ExploreTab>('exercises');
+  const [showEquipment, setShowEquipment] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -79,15 +80,25 @@ export default function ExplorePage() {
     <div className="dashboard-bg min-h-screen pb-24 pt-5">
       <div className="mx-auto max-w-md px-4">
         <div className="mb-4 flex items-center justify-between">
-          <button type="button" className="text-white/75" aria-label="Workout Programs">
+          <button
+            type="button"
+            onClick={() => setActiveTab('programs')}
+            className={`transition-colors ${activeTab === 'programs' ? 'text-white' : 'text-white/50'}`}
+            aria-label="Workout Programs"
+          >
             <CalendarRange size={22} />
           </button>
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.25em] text-white/35">Explore</p>
             <h1 className="text-2xl font-semibold text-white">Exercises</h1>
           </div>
-          <div className="flex items-center gap-3 text-white/75">
-            <button type="button" aria-label="Equipment">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => router.push('/explore/browse?mode=equipment')}
+              className="text-white/50 hover:text-white transition-colors"
+              aria-label="Browse by equipment"
+            >
               <Dumbbell size={21} />
             </button>
           </div>

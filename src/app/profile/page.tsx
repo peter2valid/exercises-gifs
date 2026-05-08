@@ -14,10 +14,12 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem('weightUnit') as WeightUnit | null;
-    if (saved === 'kg' || saved === 'lbs') setWeightUnit(saved);
+    const savedUnit = localStorage.getItem('weightUnit') as WeightUnit | null;
+    if (savedUnit === 'kg' || savedUnit === 'lbs') setWeightUnit(savedUnit);
+    setSoundEnabled(localStorage.getItem('restTimerSound') !== 'off');
   }, []);
 
   useEffect(() => {
@@ -42,6 +44,12 @@ export default function ProfilePage() {
   const handleWeightUnit = (unit: WeightUnit) => {
     setWeightUnit(unit);
     localStorage.setItem('weightUnit', unit);
+  };
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    localStorage.setItem('restTimerSound', next ? 'on' : 'off');
   };
 
   if (loading) {
@@ -127,16 +135,21 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="glass-panel p-5 flex items-center gap-3">
-              <Bell size={16} className="text-white/40" />
+            <button
+              onClick={toggleSound}
+              className="w-full glass-panel p-5 flex items-center gap-3 text-left transition-colors hover:bg-white/5 active:scale-[0.98]"
+            >
+              <Bell size={16} className={soundEnabled ? 'text-emerald-400' : 'text-white/25'} />
               <div className="flex-1">
                 <p className="text-sm font-medium text-white">Rest Timer Sound</p>
-                <p className="text-xs text-white/30 mt-0.5">Plays a beep when rest ends</p>
+                <p className="text-xs text-white/30 mt-0.5">
+                  {soundEnabled ? 'Beep plays when rest ends' : 'Sound is off'}
+                </p>
               </div>
-              <div className="w-5 h-5 rounded-full bg-emerald-500/30 border border-emerald-500/50 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-emerald-400" />
+              <div className={`w-11 h-6 rounded-full relative transition-colors duration-200 ${soundEnabled ? 'bg-emerald-500' : 'bg-white/10'}`}>
+                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${soundEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
               </div>
-            </div>
+            </button>
           </div>
         </div>
       )}

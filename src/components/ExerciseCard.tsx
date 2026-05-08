@@ -1,7 +1,7 @@
 import { memo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Bookmark, ChevronRight, HelpCircle } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 type ExerciseCardProps = {
   exercise: any;
@@ -79,12 +79,6 @@ const ExerciseCard = memo(function ExerciseCard({
         {view === 'grid' ? (
           <>
             <div className="relative aspect-[4/5] bg-white/5 overflow-hidden">
-              <div className="absolute left-3 top-3 z-10 rounded-full bg-black/25 p-1.5 backdrop-blur-sm">
-                <Bookmark size={14} className="text-white/80" />
-              </div>
-              <div className="absolute right-3 top-3 z-10 rounded-full bg-black/25 p-1.5 backdrop-blur-sm">
-                <HelpCircle size={14} className="text-white/80" />
-              </div>
               <ExerciseThumbnail alt={exercise.name} priority={index < 6} exerciseId={exercise.id} />
             </div>
             <div className="border-t border-white/10 p-3">
