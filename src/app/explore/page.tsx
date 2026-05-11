@@ -2,33 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Dumbbell,
-  Search,
-  Zap,
-  Accessibility,
-  Minus,
-  PersonStanding,
-  Activity,
-  Disc,
-  Cable,
-  Hammer,
-  Disc2,
-  Settings2,
-  CircleDot,
-  RotateCcw,
-  Link,
-  Wind,
-  Truck,
-  Layers,
-  Circle,
-  TrendingUp,
-  CircleDashed,
-  Frame,
-  RotateCw,
-  Scale,
-  RefreshCw,
-} from 'lucide-react';
+import { Dumbbell, Search, Zap } from 'lucide-react';
 import { LoadingPage } from '@/components/ui';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { seedExercises } from '@/lib/db/seed';
@@ -36,42 +10,11 @@ import { type Exercise } from '@/lib/db/schema';
 import {
   BodyGroupKey,
   bodyGroups,
+  EQUIPMENT_ICON_MAP,
   formatEquipmentLabel,
 } from '@/lib/explore/constants';
 import { CompactTile, MuscleTile, EquipmentTile } from '@/components/ExploreTiles';
 
-type EquipmentMeta = { icon: typeof Dumbbell; color: string };
-
-const EQUIPMENT_ICON_MAP: Record<string, EquipmentMeta> = {
-  assisted: { icon: Accessibility, color: 'text-emerald-400' },
-  band: { icon: Minus, color: 'text-yellow-400' },
-  barbell: { icon: Dumbbell, color: 'text-white/80' },
-  'body weight': { icon: PersonStanding, color: 'text-sky-400' },
-  'bosu ball': { icon: Disc, color: 'text-purple-400' },
-  cable: { icon: Cable, color: 'text-orange-400' },
-  dumbbell: { icon: Dumbbell, color: 'text-white/80' },
-  'elliptical machine': { icon: Activity, color: 'text-cyan-400' },
-  'ez barbell': { icon: Dumbbell, color: 'text-white/60' },
-  hammer: { icon: Hammer, color: 'text-rose-400' },
-  kettlebell: { icon: Disc2, color: 'text-amber-400' },
-  'leverage machine': { icon: Settings2, color: 'text-slate-400' },
-  'medicine ball': { icon: CircleDot, color: 'text-teal-400' },
-  'olympic barbell': { icon: Dumbbell, color: 'text-white/80' },
-  'resistance band': { icon: Zap, color: 'text-yellow-300' },
-  roller: { icon: RotateCcw, color: 'text-lime-400' },
-  rope: { icon: Link, color: 'text-amber-300' },
-  'skierg machine': { icon: Wind, color: 'text-sky-300' },
-  'sled machine': { icon: Truck, color: 'text-zinc-400' },
-  'smith machine': { icon: Layers, color: 'text-violet-400' },
-  'stability ball': { icon: Circle, color: 'text-pink-400' },
-  'stationary bike': { icon: Activity, color: 'text-emerald-300' },
-  'stepmill machine': { icon: TrendingUp, color: 'text-indigo-400' },
-  tire: { icon: CircleDashed, color: 'text-zinc-300' },
-  'trap bar': { icon: Frame, color: 'text-lime-300' },
-  'upper body ergometer': { icon: RotateCw, color: 'text-blue-400' },
-  weighted: { icon: Scale, color: 'text-orange-300' },
-  'wheel roller': { icon: RefreshCw, color: 'text-rose-300' },
-};
 
 export default function ExplorePage() {
   const router = useRouter();

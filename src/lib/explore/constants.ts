@@ -1,3 +1,31 @@
+import type { LucideIcon } from 'lucide-react';
+import {
+  Accessibility,
+  Activity,
+  Bike,
+  Cable,
+  Circle,
+  CircleDashed,
+  CircleDot,
+  Disc,
+  Disc2,
+  Dumbbell,
+  Frame,
+  Hammer,
+  Layers,
+  Link,
+  Minus,
+  PersonStanding,
+  RefreshCw,
+  RotateCcw,
+  RotateCw,
+  Scale,
+  Settings2,
+  TrendingUp,
+  Truck,
+  Wind,
+  Zap,
+} from 'lucide-react';
 import { type Exercise } from '@/lib/db/schema';
 import ChestIcon from '@/assets/icons/bodyparts/gym.png';
 import BicepsIcon from '@/assets/icons/bodyparts/Biceps_muscle_Icon.webp';
@@ -161,3 +189,36 @@ export function formatBodyPartLabel(value: string) {
   if (value === 'lower arms') return 'Forearms';
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
+
+export type EquipmentMeta = { icon: LucideIcon; color: string };
+
+export const EQUIPMENT_ICON_MAP: Record<string, EquipmentMeta> = {
+  'assisted':             { icon: Accessibility,  color: 'text-emerald-400' },
+  'band':                 { icon: Minus,           color: 'text-yellow-400'  },
+  'barbell':              { icon: Dumbbell,        color: 'text-white/80'    },
+  'body weight':          { icon: PersonStanding,  color: 'text-sky-400'     },
+  'bosu ball':            { icon: Disc,            color: 'text-purple-400'  },
+  'cable':                { icon: Cable,           color: 'text-orange-400'  },
+  'dumbbell':             { icon: Dumbbell,        color: 'text-white/80'    },
+  'elliptical machine':   { icon: Activity,        color: 'text-cyan-400'    },
+  'ez barbell':           { icon: Dumbbell,        color: 'text-white/60'    },
+  'hammer':               { icon: Hammer,          color: 'text-rose-400'    },
+  'kettlebell':           { icon: Disc2,           color: 'text-amber-400'   },
+  'leverage machine':     { icon: Settings2,       color: 'text-slate-400'   },
+  'medicine ball':        { icon: CircleDot,       color: 'text-teal-400'    },
+  'olympic barbell':      { icon: Dumbbell,        color: 'text-white/80'    },
+  'resistance band':      { icon: Zap,             color: 'text-yellow-300'  },
+  'roller':               { icon: RotateCcw,       color: 'text-lime-400'    },
+  'rope':                 { icon: Link,            color: 'text-amber-300'   },
+  'skierg machine':       { icon: Wind,            color: 'text-sky-300'     },
+  'sled machine':         { icon: Truck,           color: 'text-zinc-400'    },
+  'smith machine':        { icon: Layers,          color: 'text-violet-400'  },
+  'stability ball':       { icon: Circle,          color: 'text-pink-400'    },
+  'stationary bike':      { icon: Bike,            color: 'text-emerald-300' },
+  'stepmill machine':     { icon: TrendingUp,      color: 'text-indigo-400'  },
+  'tire':                 { icon: CircleDashed,    color: 'text-zinc-300'    },
+  'trap bar':             { icon: Frame,           color: 'text-lime-300'    },
+  'upper body ergometer': { icon: RotateCw,        color: 'text-blue-400'    },
+  'weighted':             { icon: Scale,           color: 'text-orange-300'  },
+  'wheel roller':         { icon: RefreshCw,       color: 'text-rose-300'    },
+};

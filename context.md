@@ -136,13 +136,13 @@ Format: [ ] = not started, [~] = in progress, [x] = complete
     [x] Quick Actions 2x2 grid
     [x] npm run build passes
 
-[ ] STAGE 5 — Explore and browse
-    [ ] EQUIPMENT_ICON_MAP extracted to src/lib/explore/constants.ts (shared)
-    [ ] Stationary bike icon consistent (use Bike, not Activity)
-    [ ] Result count label is contextual ("163 Chest Exercises")
-    [ ] Empty state shows search query in message
-    [ ] Equipment filter verified: dumbbell does not show barbell exercises
-    [ ] npm run build passes
+[x] STAGE 5 — Explore and browse
+    [x] EQUIPMENT_ICON_MAP extracted to src/lib/explore/constants.ts (shared)
+    [x] Stationary bike icon consistent (use Bike, not Activity)
+    [x] Result count label is contextual ("163 Chest Exercises")
+    [x] Empty state shows search query in message
+    [x] Equipment filter verified: dumbbell does not show barbell exercises
+    [x] npm run build passes
 
 [ ] STAGE 6 — Progress page
     [ ] Auth guard added
@@ -713,3 +713,4 @@ Add one row here each time you complete a stage. Keep it short — one line per 
 | 2026-05-11 | claude-sonnet-4-6 | Stage 2 | Deleted CS100 PDF, fixed async params, hid BottomNav on /auth, removed duplicate explore toggle, added auth guard to /progress | ✓ |
 | 2026-05-11 | claude-sonnet-4-6 | Stage 3 | Audited full engine chain (no bugs found); added FixedSizeList virtual scroll to exercise picker; restored lastSetId after session reload | ✓ |
 | 2026-05-11 | claude-sonnet-4-6 | Stage 4 | Home page: clean name greeting, All-Time Volume label, Today's Focus section, Recent Activity (last 3 sessions + empty state), Quick Actions 2x2 grid | ✓ |
+| 2026-05-11 | claude-sonnet-4-6 | Stage 5 | Extracted EQUIPMENT_ICON_MAP to constants.ts; fixed stationary bike icon (Bike not Activity); contextual result count label; empty state shows search query | ✓ |
