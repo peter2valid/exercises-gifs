@@ -7,8 +7,7 @@ import { supabase } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useEntitlementStore } from '@/store/entitlementStore';
-
-type WeightUnit = 'kg' | 'lbs';
+import { type WeightUnit } from '@/lib/settings';
 
 export default function ProfilePage() {
   const router = useRouter();

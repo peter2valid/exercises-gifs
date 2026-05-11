@@ -1,13 +1,11 @@
 import { getServerSupabase, getAdminSupabase } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { 
-  Users, 
-  Activity, 
-  ChevronRight, 
+import {
+  Users,
+  ChevronRight,
   ChevronLeft,
-  Lock, 
-  LayoutDashboard, 
-  CreditCard,
+  Lock,
+  LayoutDashboard,
   ShieldCheck,
   Zap,
   ArrowUpRight
@@ -123,25 +121,16 @@ export default async function AdminPage() {
           </Link>
         </div>
 
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-8 animate-slide-up delay-75">
-          <div className="glass-panel p-5 border border-white/10 rounded-[24px]">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-lg bg-sky-500/10 flex items-center justify-center">
-                <Users size={14} className="text-sky-400" />
-              </div>
-              <p className="text-[10px] text-white/40 tracking-[0.1em] uppercase font-bold">Members</p>
+        {/* Quick Stats */}
+        <div className="mb-8 animate-slide-up delay-75">
+          <div className="glass-panel p-5 border border-white/10 rounded-[24px] flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center shrink-0">
+              <Users size={18} className="text-sky-400" />
             </div>
-            <p className="text-3xl font-black text-white tracking-tight">{members?.length || 0}</p>
-          </div>
-          <div className="glass-panel p-5 border border-white/10 rounded-[24px]">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <Activity size={14} className="text-emerald-400" />
-              </div>
-              <p className="text-[10px] text-white/40 tracking-[0.1em] uppercase font-bold">Activity</p>
+            <div>
+              <p className="text-[10px] text-white/40 tracking-[0.1em] uppercase font-bold mb-0.5">Total Members</p>
+              <p className="text-3xl font-black text-white tracking-tight">{members?.length || 0}</p>
             </div>
-            <p className="text-3xl font-black text-white tracking-tight">High</p>
           </div>
         </div>
 

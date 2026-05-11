@@ -88,7 +88,7 @@ export default function SubscriptionPage() {
                 ))}
               </div>
               <div className="w-full h-12 rounded-xl bg-white text-black flex items-center justify-center font-black text-sm uppercase tracking-tighter group-hover:bg-emerald-400 transition-colors">
-                View Plans <ArrowRight size={16} className="ml-2" />
+                Upgrade Now <ArrowRight size={16} className="ml-2" />
               </div>
             </button>
           </div>
