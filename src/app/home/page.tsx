@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabase/client';
 import { db } from '@/lib/db/dexie';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { usesVolumeExercise } from '@/lib/workout/exerciseClassification';
+import { convertWeight, getWeightUnit } from '@/lib/settings';
 
 function getFirstName(email: string): string {
   const localPart = email.split('@')[0];
@@ -128,6 +129,7 @@ export default function HomePage() {
   if (loading) return <LoadingPage />;
 
   const firstName = user?.email ? getFirstName(user.email) : 'there';
+  const unit = getWeightUnit();
 
   return (
     <div className="dashboard-bg min-h-screen pb-24 pt-8">
@@ -152,7 +154,7 @@ export default function HomePage() {
           </div>
           <div className="glass-panel p-4">
             <p className="text-xs text-white/40 tracking-[0.1em] uppercase mb-1">All-Time Volume</p>
-            <p className="text-2xl font-semibold text-white">{totalVolume.toLocaleString()} kg</p>
+            <p className="text-2xl font-semibold text-white">{Math.round(convertWeight(totalVolume, unit)).toLocaleString()} {unit}</p>
           </div>
         </div>
 
@@ -212,7 +214,7 @@ export default function HomePage() {
                     </p>
                     <p className="text-xs text-white/40 mt-0.5">
                       {session.setCount} {session.setCount === 1 ? 'set' : 'sets'}
-                      {session.volume > 0 ? ` · ${session.volume.toLocaleString()} kg` : ''}
+                      {session.volume > 0 ? ` · ${Math.round(convertWeight(session.volume, unit)).toLocaleString()} ${unit}` : ''}
                     </p>
                   </div>
                   <ChevronRight size={16} className="text-white/20" />

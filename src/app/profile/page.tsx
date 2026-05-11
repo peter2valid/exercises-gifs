@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell } from 'lucide-react';
+import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 type WeightUnit = 'kg' | 'lbs';
 
@@ -77,6 +78,24 @@ export default function ProfilePage() {
         </div>
 
         <div className="space-y-3">
+          <Link
+            href="/subscription"
+            className="w-full glass-panel p-4 flex items-center justify-between hover:bg-white/10 transition-all active:scale-[0.98] group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
+                <ShieldCheck size={20} className="text-sky-400" />
+              </div>
+              <div className="text-left">
+                <span className="block text-sm font-bold text-white">Subscription</span>
+                <span className="block text-[10px] text-white/30 uppercase tracking-wider">Manage your plan</span>
+              </div>
+            </div>
+            <div className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-white/40 uppercase tracking-tighter">
+              Free
+            </div>
+          </Link>
+
           <button
             onClick={() => setShowSettings(true)}
             className="w-full glass-panel p-4 flex items-center gap-3 hover:bg-white/10 transition-all active:scale-[0.98]"

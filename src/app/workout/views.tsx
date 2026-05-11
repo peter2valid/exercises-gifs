@@ -29,6 +29,7 @@ import {
   usesVolumeExercise,
   type WorkoutExerciseMode,
 } from '@/lib/workout/exerciseClassification';
+import { getWeightUnit, convertWeight, toInternalWeight, getWeightSuffix, type WeightUnit } from '@/lib/settings';
 
 function formatTime(seconds: number) {
   const clamped = Math.max(0, Math.floor(seconds));
@@ -151,6 +152,7 @@ function SessionHeader({
   sets: number;
 }) {
   const [now, setNow] = useState(Date.now());
+  const unit = getWeightUnit();
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -158,6 +160,7 @@ function SessionHeader({
   }, []);
 
   const elapsedSeconds = startedAt ? Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000)) : 0;
+  const displayVolume = convertWeight(volume, unit);
 
   return (
     <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4 shadow-2xl">
@@ -168,7 +171,7 @@ function SessionHeader({
         </div>
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">Volume</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-white">{volume.toLocaleString()} kg</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-white">{Math.round(displayVolume).toLocaleString()} {unit}</p>
         </div>
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">Sets</p>
@@ -297,6 +300,7 @@ export function RestingView({
   const isDone = remaining === 0;
   const progress = activeRest && activeRest.durationSeconds > 0 ? (remaining / activeRest.durationSeconds) * 100 : 0;
   const lastExercise = lastSet ? exMap[lastSet.exercise_id] : null;
+  const unit = getWeightUnit();
 
   return (
     <div className="dashboard-bg min-h-screen px-4 pb-24 pt-8">
@@ -333,7 +337,7 @@ export function RestingView({
           <div className="w-full rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/25">Previous set</p>
             <p className="mt-2 truncate text-sm font-semibold text-white">{lastExercise?.name ?? 'Exercise'}</p>
-            <p className="mt-1 text-sm text-white/45">{formatWorkoutSet(lastExercise, lastSet)}</p>
+            <p className="mt-1 text-sm text-white/45">{formatWorkoutSet(lastExercise, lastSet, unit)}</p>
           </div>
         )}
 
@@ -445,6 +449,7 @@ export function ActiveView({
   const [duration, setDuration] = useState(20);
   const [distance, setDistance] = useState(0);
   const [now, setNow] = useState(Date.now());
+  const unit = getWeightUnit();
 
   const rosterKey = sessionId ? rosterStorageKey(sessionId) : '';
 
@@ -517,7 +522,7 @@ export function ActiveView({
     const lastSet = [...selectedSets].reverse()[0];
     if (lastSet) {
       if (mode === 'strength') {
-        setWeight(lastSet.weight || 20);
+        setWeight(Number(convertWeight(lastSet.weight || 20, unit).toFixed(1)));
         setReps(lastSet.reps || 8);
         setDuration(20);
         setDistance(0);
@@ -539,11 +544,15 @@ export function ActiveView({
     }
 
     const draft = defaultDraft(mode);
-    setWeight(draft.weight);
+    if (mode === 'strength') {
+      setWeight(Number(convertWeight(draft.weight, unit).toFixed(1)));
+    } else {
+      setWeight(draft.weight);
+    }
     setReps(draft.reps);
     setDuration(draft.duration);
     setDistance(draft.distance);
-  }, [activeExerciseId, selectedExercise, selectedSets]);
+  }, [activeExerciseId, selectedExercise, selectedSets, unit]);
 
   const filteredPicker = useMemo(() => {
     const query = deferredPickerSearch.trim();
@@ -605,7 +614,7 @@ export function ActiveView({
     try {
       const mode = classifyWorkoutExercise(selectedExercise);
       if (mode === 'strength') {
-        await onLogSet(selectedExercise.id, weight, reps);
+        await onLogSet(selectedExercise.id, toInternalWeight(weight, unit), reps);
       } else if (mode === 'reps') {
         await onLogSet(selectedExercise.id, 0, reps);
       } else if (mode === 'time') {
@@ -693,7 +702,7 @@ export function ActiveView({
                       </div>
                       <p className="mt-2 text-sm text-white/45">
                         {exerciseSets.length > 0 ? `${exerciseSets.length} set${exerciseSets.length === 1 ? '' : 's'} logged` : 'Tap to start logging'}
-                        {lastSet ? ` · ${formatWorkoutSet(exercise, lastSet)}` : ''}
+                        {lastSet ? ` · ${formatWorkoutSet(exercise, lastSet, unit)}` : ''}
                       </p>
                     </div>
                     <ChevronDown className={`shrink-0 text-white/30 transition-transform ${active ? 'rotate-180' : ''}`} size={18} />
@@ -727,7 +736,7 @@ export function ActiveView({
               <div className="grid gap-3 sm:grid-cols-2">
                 {selectedMode === 'strength' && (
                   <>
-                    <NumericControl label="Weight" value={weight} onChange={setWeight} step={2.5} min={0} suffix="kg" />
+                    <NumericControl label="Weight" value={weight} onChange={setWeight} step={unit === 'kg' ? 2.5 : 5} min={0} suffix={unit} />
                     <NumericControl label="Reps" value={reps} onChange={setReps} step={1} min={1} />
                   </>
                 )}
@@ -899,10 +908,13 @@ export function FinishedView({
   exMap: Record<string, Exercise>;
   onReset: () => void;
 }) {
-  const totalVolume = sets.reduce((acc, set) => {
+  const unit = getWeightUnit();
+  const totalVolumeKg = sets.reduce((acc, set) => {
     const exercise = exMap[set.exercise_id];
     return usesVolumeExercise(exercise) ? acc + set.weight * set.reps : acc;
   }, 0);
+
+  const displayVolume = convertWeight(totalVolumeKg, unit);
 
   const timedSets = sets.filter((set) => !usesVolumeExercise(exMap[set.exercise_id]));
   const strengthSets = sets.filter((set) => usesVolumeExercise(exMap[set.exercise_id]));
@@ -923,7 +935,7 @@ export function FinishedView({
           </div>
           <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-left">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/25">Volume</p>
-            <p className="mt-2 text-3xl font-bold text-white">{Math.round(totalVolume).toLocaleString()} kg</p>
+            <p className="mt-2 text-3xl font-bold text-white">{Math.round(displayVolume).toLocaleString()} {unit}</p>
           </div>
         </div>
 
@@ -933,13 +945,13 @@ export function FinishedView({
             {strengthSets.map((set) => (
               <div key={set.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] px-3 py-2">
                 <span className="truncate text-sm text-white/70">{exMap[set.exercise_id]?.name || 'Exercise'}</span>
-                <span className="shrink-0 text-sm font-semibold text-white">{formatWorkoutSet(exMap[set.exercise_id], set)}</span>
+                <span className="shrink-0 text-sm font-semibold text-white">{formatWorkoutSet(exMap[set.exercise_id], set, unit)}</span>
               </div>
             ))}
             {timedSets.map((set) => (
               <div key={set.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] px-3 py-2">
                 <span className="truncate text-sm text-white/70">{exMap[set.exercise_id]?.name || 'Exercise'}</span>
-                <span className="shrink-0 text-sm font-semibold text-white">{formatWorkoutSet(exMap[set.exercise_id], set)}</span>
+                <span className="shrink-0 text-sm font-semibold text-white">{formatWorkoutSet(exMap[set.exercise_id], set, unit)}</span>
               </div>
             ))}
           </div>

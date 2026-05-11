@@ -1,4 +1,5 @@
 import type { Exercise, SetLog } from '@/lib/db/schema';
+import { convertWeight, type WeightUnit } from '@/lib/settings';
 
 export type WorkoutExerciseMode = 'strength' | 'reps' | 'time' | 'cardio';
 
@@ -84,7 +85,7 @@ export function usesVolumeExercise(exercise?: Exercise | null) {
   return classifyWorkoutExercise(exercise) === 'strength';
 }
 
-export function formatWorkoutSet(exercise: Exercise | null | undefined, set: SetLog | undefined) {
+export function formatWorkoutSet(exercise: Exercise | null | undefined, set: SetLog | undefined, unit: WeightUnit = 'kg') {
   if (!set) return '—';
   const mode = classifyWorkoutExercise(exercise);
 
@@ -100,5 +101,10 @@ export function formatWorkoutSet(exercise: Exercise | null | undefined, set: Set
     return `${set.reps} reps`;
   }
 
-  return `${set.weight} kg × ${set.reps}`;
+  const convertedWeight = convertWeight(set.weight, unit);
+  const formattedWeight = Math.abs(convertedWeight - Math.round(convertedWeight)) < 0.01 
+    ? Math.round(convertedWeight) 
+    : convertedWeight.toFixed(1);
+
+  return `${formattedWeight} ${unit} × ${set.reps}`;
 }

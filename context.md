@@ -144,20 +144,20 @@ Format: [ ] = not started, [~] = in progress, [x] = complete
     [x] Equipment filter verified: dumbbell does not show barbell exercises
     [x] npm run build passes
 
-[ ] STAGE 6 — Progress page
-    [ ] Auth guard added
-    [ ] Empty state when no workouts completed
-    [ ] Recent Sessions section (last 10)
-    [ ] Decorative chart icons removed or made useful
-    [ ] npm run build passes
+[x] STAGE 6 — Progress page
+    [x] Auth guard added
+    [x] Empty state when no workouts completed
+    [x] Recent Sessions section (last 10)
+    [x] Decorative chart icons removed or made useful
+    [x] npm run build passes
 
-[ ] STAGE 7 — Profile and settings
-    [ ] src/lib/settings.ts created (getWeightUnit, convertWeight, displayWeight)
-    [ ] Weight unit applies in workout views (suffix, volume display)
-    [ ] Weight unit applies in progress page volume label
-    [ ] Weight unit applies in home page volume label
-    [ ] Subscription card added to profile page
-    [ ] npm run build passes
+[x] STAGE 7 — Profile and settings
+    [x] src/lib/settings.ts created (getWeightUnit, convertWeight, displayWeight)
+    [x] Weight unit applies in workout views (suffix, volume display)
+    [x] Weight unit applies in progress page volume label
+    [x] Weight unit applies in home page volume label
+    [x] Subscription card added to profile page
+    [x] npm run build passes
 
 [ ] STAGE 8 — Subscription UI
     [ ] src/app/subscription/page.tsx created
@@ -714,3 +714,5 @@ Add one row here each time you complete a stage. Keep it short — one line per 
 | 2026-05-11 | claude-sonnet-4-6 | Stage 3 | Audited full engine chain (no bugs found); added FixedSizeList virtual scroll to exercise picker; restored lastSetId after session reload | ✓ |
 | 2026-05-11 | claude-sonnet-4-6 | Stage 4 | Home page: clean name greeting, All-Time Volume label, Today's Focus section, Recent Activity (last 3 sessions + empty state), Quick Actions 2x2 grid | ✓ |
 | 2026-05-11 | claude-sonnet-4-6 | Stage 5 | Extracted EQUIPMENT_ICON_MAP to constants.ts; fixed stationary bike icon (Bike not Activity); contextual result count label; empty state shows search query | ✓ |
+| 2026-05-11 | claude-sonnet-4-6 | Stage 6 | Progress page: empty state when no sessions; Recent Sessions (last 10) with date + sets + volume; removed decorative BarChart3/Dumbbell/Calendar icons from stat rows | ✓ |
+| 2026-05-11 | gemini-cli | Stage 7 | Profile & Settings: Added weight unit utilities (kg/lbs); applied units in workout, home, and progress; added subscription card to profile | ✓ |
