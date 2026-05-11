@@ -9,6 +9,7 @@ import { db } from '@/lib/db/dexie';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { usesVolumeExercise } from '@/lib/workout/exerciseClassification';
 import { convertWeight, getWeightUnit } from '@/lib/settings';
+import { PremiumGate } from '@/components/billing/PremiumGate';
 
 function fmtDate(iso?: string | null) {
   if (!iso) return '—';
@@ -187,23 +188,30 @@ export default function ProgressPage() {
           </div>
         </div>
 
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/30 mb-3">Recent Sessions</p>
-          <div className="space-y-2">
-            {recentSessions.map((session) => (
-              <div key={session.id} className="glass-panel p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-white">{formatRelativeDate(session.startedAt)}</p>
-                  <p className="text-xs text-white/40 mt-0.5">
-                    {session.setCount} {session.setCount === 1 ? 'set' : 'sets'}
-                    {session.volume > 0 ? ` · ${Math.round(convertWeight(session.volume, unit)).toLocaleString()} ${unit}` : ''}
-                  </p>
+        <PremiumGate 
+          feature="workout_history" 
+          mode="blur"
+          title="Workout History"
+          description="Unlock detailed logs of all your past training sessions."
+        >
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/30 mb-3">Recent Sessions</p>
+            <div className="space-y-2">
+              {recentSessions.map((session) => (
+                <div key={session.id} className="glass-panel p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-white">{formatRelativeDate(session.startedAt)}</p>
+                    <p className="text-xs text-white/40 mt-0.5">
+                      {session.setCount} {session.setCount === 1 ? 'set' : 'sets'}
+                      {session.volume > 0 ? ` · ${Math.round(convertWeight(session.volume, unit)).toLocaleString()} ${unit}` : ''}
+                    </p>
+                  </div>
+                  <Calendar size={14} className="text-white/20 shrink-0" />
                 </div>
-                <Calendar size={14} className="text-white/20 shrink-0" />
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        </PremiumGate>
       </div>
     </div>
   );

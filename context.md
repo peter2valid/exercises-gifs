@@ -159,12 +159,12 @@ Format: [ ] = not started, [~] = in progress, [x] = complete
     [x] Subscription card added to profile page
     [x] npm run build passes
 
-[ ] STAGE 8 — Subscription UI
-    [ ] src/app/subscription/page.tsx created
-    [ ] UpgradeBottomSheet wired to /api/billing/initialize
-    [ ] PremiumGate applied to workout history on progress page
-    [ ] Entitlement merge logic verified (gym plan + personal premium)
-    [ ] npm run build passes
+[x] STAGE 8 — Subscription UI
+    [x] src/app/subscription/page.tsx created
+    [x] UpgradeBottomSheet wired to /api/billing/initialize (verified existing)
+    [x] PremiumGate applied to workout history on progress page
+    [x] Entitlement merge logic verified (gym plan + personal premium)
+    [x] npm run build passes
 
 [ ] STAGE 9 — Admin page
     [ ] src/app/admin/page.tsx created
@@ -716,3 +716,4 @@ Add one row here each time you complete a stage. Keep it short — one line per 
 | 2026-05-11 | claude-sonnet-4-6 | Stage 5 | Extracted EQUIPMENT_ICON_MAP to constants.ts; fixed stationary bike icon (Bike not Activity); contextual result count label; empty state shows search query | ✓ |
 | 2026-05-11 | claude-sonnet-4-6 | Stage 6 | Progress page: empty state when no sessions; Recent Sessions (last 10) with date + sets + volume; removed decorative BarChart3/Dumbbell/Calendar icons from stat rows | ✓ |
 | 2026-05-11 | gemini-cli | Stage 7 | Profile & Settings: Added weight unit utilities (kg/lbs); applied units in workout, home, and progress; added subscription card to profile | ✓ |
+| 2026-05-11 | gemini-cli | Stage 8 | Subscription UI: Created /subscription page; gated workout history on /progress with PremiumGate; verified entitlement UI | ✓ |
