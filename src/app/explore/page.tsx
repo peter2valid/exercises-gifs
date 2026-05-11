@@ -146,29 +146,9 @@ export default function ExplorePage() {
   return (
     <div className="dashboard-bg min-h-screen pb-24 pt-5">
       <div className="mx-auto max-w-md px-4">
-        <div className="mb-4 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => setShowEquipment((current) => !current)}
-            className="transition-colors text-white/70 hover:text-white"
-            aria-label={showEquipment ? 'Show muscles' : 'Show equipment'}
-          >
-            <Dumbbell size={22} />
-          </button>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.25em] text-white/35">Explore</p>
-            <h1 className="text-2xl font-semibold text-white">{showEquipment ? 'Equipment' : 'Exercises'}</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setShowEquipment((current) => !current)}
-              className="text-white/50 hover:text-white transition-colors"
-              aria-label="Browse by equipment"
-            >
-              <Dumbbell size={21} />
-            </button>
-          </div>
+        <div className="mb-4">
+          <p className="text-xs font-medium uppercase tracking-[0.25em] text-white/35">Explore</p>
+          <h1 className="text-2xl font-semibold text-white">{showEquipment ? 'Equipment' : 'Exercises'}</h1>
         </div>
 
         {/* Search — navigates only on Enter or tap of search icon */}

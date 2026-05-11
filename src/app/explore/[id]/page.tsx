@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { notFound, useRouter } from 'next/navigation';
 import { getExerciseById } from '@/lib/db/exerciseQueries';
 import { seedExercises } from '@/lib/db/seed';
@@ -12,8 +12,8 @@ import { bodyGroups } from '@/lib/explore/constants';
 
 import { ExerciseThumbnail } from '@/components/ExerciseCard';
 
-export default function ExerciseDetail({ params }: any) {
-  const id = params?.id;
+export default function ExerciseDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);

@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { BarChart3, TrendingUp, Calendar, Dumbbell, Flame } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import { LoadingPage } from '@/components/ui';
 import { db } from '@/lib/db/dexie';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { usesVolumeExercise } from '@/lib/workout/exerciseClassification';
@@ -34,11 +37,18 @@ const EMPTY: ProgressStats = {
 };
 
 export default function ProgressPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<ProgressStats>(EMPTY);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function load() {
+    async function checkAndLoad() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/auth');
+        return;
+      }
+
       try {
         const weekStart = new Date();
         weekStart.setDate(weekStart.getDate() - weekStart.getDay());
@@ -78,8 +88,10 @@ export default function ProgressPage() {
         setLoading(false);
       }
     }
-    load();
-  }, []);
+    checkAndLoad();
+  }, [router]);
+
+  if (loading) return <LoadingPage />;
 
   return (
     <div className="dashboard-bg min-h-screen pb-24 pt-8">
