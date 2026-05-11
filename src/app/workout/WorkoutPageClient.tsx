@@ -59,9 +59,19 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
 
       const savedId = getSavedSessionId();
       if (savedId) {
-        await loadSession(savedId, TENANT_ID, 'local-browser', authSession.user.id)
-          .catch(console.error)
-          .finally(() => setIsRestoring(false));
+        try {
+          await loadSession(savedId, TENANT_ID, 'local-browser', authSession.user.id);
+          // Restore lastSetId so "Take rest" works immediately after a page refresh
+          const restoredSets = Object.values(useWorkoutStore.getState().sets);
+          if (restoredSets.length > 0) {
+            const latest = restoredSets.sort((a, b) => b.logged_at.localeCompare(a.logged_at))[0];
+            setLastSetId(latest.id);
+          }
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsRestoring(false);
+        }
       } else {
         setIsRestoring(false);
       }

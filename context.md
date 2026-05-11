@@ -122,11 +122,11 @@ Format: [ ] = not started, [~] = in progress, [x] = complete
     [x] Add auth guard to /progress/page.tsx
     [x] npm run build passes
 
-[ ] STAGE 3 — Workout flow audit and fixes
-    [ ] Full manual walk-through passes (see acceptance test below)
-    [ ] Session restore after page refresh works
-    [ ] Deep-link from /explore/[id] to /workout?exerciseId= works
-    [ ] npm run build passes
+[x] STAGE 3 — Workout flow audit and fixes
+    [x] Full manual walk-through passes (see acceptance test below)
+    [x] Session restore after page refresh works
+    [x] Deep-link from /explore/[id] to /workout?exerciseId= works
+    [x] npm run build passes
 
 [ ] STAGE 4 — Home page
     [ ] Greeting shows clean name (e.g. "Hey, Peter" not "peter.smith+gym")
@@ -711,3 +711,4 @@ Add one row here each time you complete a stage. Keep it short — one line per 
 | --- | --- | --- | --- | --- |
 | 2026-05-11 | claude-sonnet-4-6 | context | Full codebase audit; replaced outdated context.md with this document | N/A |
 | 2026-05-11 | claude-sonnet-4-6 | Stage 2 | Deleted CS100 PDF, fixed async params, hid BottomNav on /auth, removed duplicate explore toggle, added auth guard to /progress | ✓ |
+| 2026-05-11 | claude-sonnet-4-6 | Stage 3 | Audited full engine chain (no bugs found); added FixedSizeList virtual scroll to exercise picker; restored lastSetId after session reload | ✓ |

@@ -1,6 +1,7 @@
 'use client';
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { FixedSizeList } from 'react-window';
 import { useRouter } from 'next/navigation';
 import {
   Play,
@@ -352,6 +353,61 @@ export function RestingView({
   );
 }
 
+const PICKER_ITEM_HEIGHT = 80;
+
+type PickerRowData = {
+  items: Exercise[];
+  selection: string[];
+  onToggle: (id: string) => void;
+};
+
+const PickerRow = memo(function PickerRow({
+  index,
+  style,
+  data,
+}: {
+  index: number;
+  style: React.CSSProperties;
+  data: PickerRowData;
+}) {
+  const exercise = data.items[index];
+  const selected = data.selection.includes(exercise.id);
+  const cardio = isCardioExercise(exercise);
+  return (
+    <div style={style}>
+      <button
+        type="button"
+        onClick={() => data.onToggle(exercise.id)}
+        className={`flex w-full items-center gap-3 rounded-[20px] border p-3 text-left transition-all active:scale-[0.99] mb-2 ${
+          selected ? 'border-white/15 bg-white/[0.06]' : 'border-white/10 bg-white/[0.03]'
+        }`}
+      >
+        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/5">
+          <ExerciseThumbnail alt={exercise.name} exerciseId={exercise.id} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-white">{exercise.name}</p>
+          <p className="truncate text-[11px] uppercase tracking-[0.16em] text-white/30">
+            {exercise.body_part} · {exercise.equipment}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {selected ? (
+            <span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-black">
+              Selected
+            </span>
+          ) : (
+            <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">
+              Add
+            </span>
+          )}
+          {cardio && <Timer size={12} className="text-emerald-400" />}
+        </div>
+      </button>
+    </div>
+  );
+});
+
 export function ActiveView({
   sets,
   exercises,
@@ -496,6 +552,27 @@ export function ActiveView({
     return nextExercises.filter((exercise) => !rosterSet.has(exercise.id));
   }, [exercises, deferredPickerSearch, roster]);
   const pickerItems = filteredPicker;
+
+  const [listHeight, setListHeight] = useState(() =>
+    typeof window !== 'undefined' ? Math.max(300, window.innerHeight - 200) : 500
+  );
+  useEffect(() => {
+    const update = () => setListHeight(Math.max(300, window.innerHeight - 200));
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  const pickerItemData = useMemo<PickerRowData>(
+    () => ({
+      items: pickerItems,
+      selection: pickerSelection,
+      onToggle: (id: string) =>
+        setPickerSelection((current) =>
+          current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
+        ),
+    }),
+    [pickerItems, pickerSelection]
+  );
 
   const openPicker = () => {
     setPickerSelection([]);
@@ -754,50 +831,25 @@ export function ActiveView({
             <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white/25">
               Select one or more exercises
             </p>
-            <div className="flex-1 space-y-2 overflow-y-auto pb-4">
-              {pickerItems.length === 0 ? (
-                <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-8 text-center text-sm text-white/30">
+            {pickerItems.length === 0 ? (
+              <div className="flex flex-1 items-start pt-4">
+                <div className="w-full rounded-[20px] border border-white/10 bg-white/[0.03] p-8 text-center text-sm text-white/30">
                   No exercises found
                 </div>
-              ) : pickerItems.map((exercise) => {
-                const selected = pickerSelection.includes(exercise.id);
-                const cardio = isCardioExercise(exercise);
-                return (
-                  <button
-                    key={exercise.id}
-                    type="button"
-                    onClick={() => {
-                      setPickerSelection((current) => current.includes(exercise.id)
-                        ? current.filter((id) => id !== exercise.id)
-                        : [...current, exercise.id]);
-                    }}
-                    className={`flex w-full items-center gap-3 rounded-[20px] border p-3 text-left transition-all active:scale-[0.99] ${selected ? 'border-white/15 bg-white/[0.06]' : 'border-white/10 bg-white/[0.03]'}`}
-                  >
-                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/5">
-                      <ExerciseThumbnail alt={exercise.name} exerciseId={exercise.id} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-white">{exercise.name}</p>
-                      <p className="truncate text-[11px] uppercase tracking-[0.16em] text-white/30">
-                        {exercise.body_part} · {exercise.equipment}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      {selected ? (
-                        <span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-black">
-                          Selected
-                        </span>
-                      ) : (
-                        <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">
-                          Add
-                        </span>
-                      )}
-                      {cardio && <Timer size={12} className="text-emerald-400" />}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+              </div>
+            ) : (
+              <FixedSizeList
+                height={listHeight}
+                width="100%"
+                itemCount={pickerItems.length}
+                itemSize={PICKER_ITEM_HEIGHT}
+                itemData={pickerItemData}
+                overscanCount={5}
+                style={{ overflowX: 'hidden' }}
+              >
+                {PickerRow}
+              </FixedSizeList>
+            )}
             <div className="grid grid-cols-2 gap-3 border-t border-white/5 pt-4">
               <Button type="button" variant="secondary" className="h-12 rounded-[18px]" onClick={() => setPickerOpen(false)}>
                 Cancel
