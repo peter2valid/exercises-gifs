@@ -128,13 +128,13 @@ Format: [ ] = not started, [~] = in progress, [x] = complete
     [x] Deep-link from /explore/[id] to /workout?exerciseId= works
     [x] npm run build passes
 
-[ ] STAGE 4 — Home page
-    [ ] Greeting shows clean name (e.g. "Hey, Peter" not "peter.smith+gym")
-    [ ] "All-Time Volume" label (was "Total Volume")
-    [ ] Today's Focus section with Start/Browse buttons
-    [ ] Recent Activity section (last 3 sessions or empty state)
-    [ ] Quick Actions 2x2 grid
-    [ ] npm run build passes
+[x] STAGE 4 — Home page
+    [x] Greeting shows clean name (e.g. "Hey, Peter" not "peter.smith+gym")
+    [x] "All-Time Volume" label (was "Total Volume")
+    [x] Today's Focus section with Start/Browse buttons
+    [x] Recent Activity section (last 3 sessions or empty state)
+    [x] Quick Actions 2x2 grid
+    [x] npm run build passes
 
 [ ] STAGE 5 — Explore and browse
     [ ] EQUIPMENT_ICON_MAP extracted to src/lib/explore/constants.ts (shared)
@@ -712,3 +712,4 @@ Add one row here each time you complete a stage. Keep it short — one line per 
 | 2026-05-11 | claude-sonnet-4-6 | context | Full codebase audit; replaced outdated context.md with this document | N/A |
 | 2026-05-11 | claude-sonnet-4-6 | Stage 2 | Deleted CS100 PDF, fixed async params, hid BottomNav on /auth, removed duplicate explore toggle, added auth guard to /progress | ✓ |
 | 2026-05-11 | claude-sonnet-4-6 | Stage 3 | Audited full engine chain (no bugs found); added FixedSizeList virtual scroll to exercise picker; restored lastSetId after session reload | ✓ |
+| 2026-05-11 | claude-sonnet-4-6 | Stage 4 | Home page: clean name greeting, All-Time Volume label, Today's Focus section, Recent Activity (last 3 sessions + empty state), Quick Actions 2x2 grid | ✓ |
