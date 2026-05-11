@@ -149,7 +149,7 @@ export default function ProgressPage() {
         </div>
 
         <div className="glass-panel p-6 mb-4 animate-slide-up">
-          <p className="text-xs text-white/40 tracking-[0.1em] uppercase mb-1">Total Volume</p>
+          <p className="text-xs text-white/40 tracking-[0.1em] uppercase mb-1">All-Time Volume</p>
           <p className="text-4xl font-bold text-white">{Math.round(convertWeight(stats.totalVolume, unit)).toLocaleString()} {unit}</p>
           <p className="text-xs text-white/25 mt-2">All time, strength sets only</p>
         </div>

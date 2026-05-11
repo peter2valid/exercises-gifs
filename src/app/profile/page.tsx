@@ -4,13 +4,20 @@ import { useEffect, useState } from 'react';
 import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useEntitlementStore } from '@/store/entitlementStore';
 
 type WeightUnit = 'kg' | 'lbs';
 
 export default function ProfilePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const paymentStatus = searchParams.get('payment');
+  
+  const { gymPlan, hasMemberPremium } = useEntitlementStore();
+  const currentPlanLabel = hasMemberPremium ? 'Plus' : (gymPlan ? gymPlan.toUpperCase() : 'Free');
+
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
@@ -69,6 +76,33 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-bold text-white tracking-tight">You</h1>
         </div>
 
+        {paymentStatus && (
+          <div className={`mb-6 p-4 rounded-2xl border flex items-center gap-3 animate-slide-up ${
+            paymentStatus === 'success' 
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+              : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+          }`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+              paymentStatus === 'success' ? 'bg-emerald-500/20' : 'bg-rose-500/20'
+            }`}>
+              {paymentStatus === 'success' ? <ShieldCheck size={16} /> : <X size={16} />}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold tracking-tight">
+                {paymentStatus === 'success' ? 'Payment Successful' : 'Payment Failed'}
+              </p>
+              <p className="text-[11px] opacity-70 leading-tight mt-0.5">
+                {paymentStatus === 'success' 
+                  ? 'Your entitlements have been updated. Welcome to Plus!' 
+                  : 'There was an issue processing your transaction. Please try again.'}
+              </p>
+            </div>
+            <button onClick={() => router.replace('/profile')} className="p-1 opacity-40 hover:opacity-100 transition-opacity">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
         <div className="text-center mb-10 animate-slide-up">
           <div className="w-20 h-20 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-4">
             <UserIcon size={32} className="text-white/40" />
@@ -91,8 +125,12 @@ export default function ProfilePage() {
                 <span className="block text-[10px] text-white/30 uppercase tracking-wider">Manage your plan</span>
               </div>
             </div>
-            <div className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-white/40 uppercase tracking-tighter">
-              Free
+            <div className={`px-2 py-1 rounded-md border text-[10px] font-bold uppercase tracking-tighter ${
+              hasMemberPremium 
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                : 'bg-white/5 border-white/10 text-white/40'
+            }`}>
+              {currentPlanLabel}
             </div>
           </Link>
 
