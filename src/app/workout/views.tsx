@@ -154,20 +154,54 @@ function SessionHeader({
   const [now, setNow] = useState(Date.now());
   const unit = getWeightUnit();
 
+  // Local timer controls (UI-only): pause/resume and restart (display only)
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [pausedAt, setPausedAt] = useState<number | null>(null);
+  const [pausedDisplayMs, setPausedDisplayMs] = useState<number | null>(null);
+  const [totalPausedMs, setTotalPausedMs] = useState<number>(0);
+  const [restartOffsetMs, setRestartOffsetMs] = useState<number>(0);
+
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
 
-  const elapsedSeconds = startedAt ? Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000)) : 0;
+  // Reset local timer adjustments whenever the underlying session start changes
+  useEffect(() => {
+    setPausedAt(null);
+    setPausedDisplayMs(null);
+    setTotalPausedMs(0);
+    setRestartOffsetMs(0);
+    setMenuOpen(false);
+  }, [startedAt]);
+
+  // Compute displayed elapsed milliseconds with local adjustments
+  let elapsedMs = 0;
+  if (startedAt) {
+    const startedMs = new Date(startedAt).getTime();
+    if (pausedAt && pausedDisplayMs != null) {
+      elapsedMs = pausedDisplayMs;
+    } else {
+      elapsedMs = Math.max(0, now - startedMs - totalPausedMs - restartOffsetMs);
+    }
+  }
+  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
   const displayVolume = convertWeight(volume, unit);
 
   return (
-    <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4 shadow-2xl">
+    <div className="relative rounded-[24px] border border-white/10 bg-white/[0.03] p-4 shadow-2xl">
       <div className="grid grid-cols-3 gap-3 text-center">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">Duration</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-sky-400">{formatTime(elapsedSeconds)}</p>
+          <button
+            type="button"
+            onClick={() => { if (!startedAt) return; setMenuOpen((s) => !s); }}
+            className="mt-1 text-2xl font-semibold tabular-nums text-sky-400 focus:outline-none"
+            aria-expanded={menuOpen}
+            aria-controls="timer-menu"
+          >
+            {formatTime(elapsedSeconds)}
+          </button>
         </div>
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">Volume</p>
@@ -178,6 +212,54 @@ function SessionHeader({
           <p className="mt-1 text-2xl font-semibold tabular-nums text-white">{sets}</p>
         </div>
       </div>
+
+      {menuOpen && startedAt && (
+        <div id="timer-menu" className="absolute left-1/2 top-full z-30 mt-3 w-64 -translate-x-1/2 rounded-lg border border-white/10 bg-[#0b0b0b] p-3 shadow-lg">
+          <p className="mb-2 text-xs text-white/40">Timer controls</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                // Toggle pause/resume
+                if (!startedAt) return;
+                if (pausedAt) {
+                  // resume
+                  const added = Date.now() - pausedAt;
+                  setTotalPausedMs((t) => t + added);
+                  setPausedAt(null);
+                  setPausedDisplayMs(null);
+                } else {
+                  // pause: capture display ms
+                  const startedMs = new Date(startedAt).getTime();
+                  const currentDisplay = Math.max(0, Date.now() - startedMs - totalPausedMs - restartOffsetMs);
+                  setPausedAt(Date.now());
+                  setPausedDisplayMs(currentDisplay);
+                }
+                setMenuOpen(false);
+              }}
+              className="flex-1 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/90"
+            >
+              {pausedAt ? 'Resume' : 'Pause'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!startedAt) return;
+                // Restart display to zero (do not modify session started_at)
+                const startedMs = new Date(startedAt).getTime();
+                setRestartOffsetMs(Date.now() - startedMs);
+                setTotalPausedMs(0);
+                setPausedAt(null);
+                setPausedDisplayMs(0);
+                setMenuOpen(false);
+              }}
+              className="flex-1 rounded-md bg-sky-500 px-3 py-2 text-sm font-bold text-black"
+            >
+              Restart
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -664,12 +746,7 @@ export function ActiveView({
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 pt-5">
         <SessionHeader startedAt={sessionStartedAt} volume={totalVolume} sets={sets.length} />
 
-        {rosterExercises.length === 0 ? (
-          <div className="rounded-[24px] border border-dashed border-white/10 bg-white/[0.02] p-5 text-center">
-            <p className="text-sm font-semibold text-white/80">Add exercises to begin logging</p>
-            <p className="mt-1 text-xs text-white/35">Pick a few movements and build the session as you go.</p>
-          </div>
-        ) : (
+        {rosterExercises.length === 0 ? null : (
           <div className="space-y-3">
             {rosterExercises.map((exercise) => {
               const exerciseSets = sets.filter((set) => set.exercise_id === exercise.id);
@@ -677,15 +754,16 @@ export function ActiveView({
               const mode = classifyWorkoutExercise(exercise);
               const lastSet = exerciseSets[exerciseSets.length - 1];
 
+              const transitionClass = active && selectedExercise ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 pointer-events-none';
               return (
-                <button
-                  key={exercise.id}
-                  type="button"
-                  onClick={() => setActiveExerciseId(exercise.id)}
-                  className={`w-full rounded-[22px] border p-3 text-left transition-all ${active ? 'border-white/15 bg-white/[0.06]' : 'border-white/10 bg-white/[0.03]'}`}
-                >
+                <div key={exercise.id} className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => { if (isLogging) return; setActiveExerciseId((current) => (current === exercise.id ? '' : exercise.id)); }}
+                    className={`w-full rounded-[18px] border p-2 text-left transition-all ${active ? 'border-white/15 bg-white/[0.06]' : 'border-white/10 bg-white/[0.03]'}`}
+                  >
                   <div className="flex items-center gap-3">
-                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/5">
                       <ExerciseThumbnail alt={exercise.name} exerciseId={exercise.id} />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -707,87 +785,80 @@ export function ActiveView({
                     </div>
                     <ChevronDown className={`shrink-0 text-white/30 transition-transform ${active ? 'rotate-180' : ''}`} size={18} />
                   </div>
-                </button>
+                  </button>
+                  <div aria-hidden={!active || !selectedExercise} className={'overflow-hidden transition-all duration-200 ' + transitionClass}>
+                  <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-3">
+                    <div className="mb-4 flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/25">Current exercise</p>
+                        <h2 className="mt-1 truncate text-lg font-semibold text-white">{selectedExercise?.name}</h2>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={openPicker}
+                        className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white/70"
+                      >
+                        Change
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {selectedMode === 'strength' && (
+                          <>
+                            <NumericControl label="Weight" value={weight} onChange={setWeight} step={unit === 'kg' ? 2.5 : 5} min={0} suffix={unit} />
+                            <NumericControl label="Reps" value={reps} onChange={setReps} step={1} min={1} />
+                          </>
+                        )}
+
+                        {selectedMode === 'reps' && (
+                          <NumericControl label="Reps" value={reps} onChange={setReps} step={1} min={1} />
+                        )}
+
+                        {selectedMode === 'time' && (
+                          <NumericControl label="Duration" value={duration} onChange={setDuration} step={1} min={1} suffix="min" />
+                        )}
+
+                        {selectedMode === 'cardio' && (
+                          <>
+                            <NumericControl label="Duration" value={duration} onChange={setDuration} step={1} min={1} suffix="min" />
+                            <NumericControl label="Distance" value={distance} onChange={setDistance} step={0.5} min={0} suffix="km" />
+                          </>
+                        )}
+                      </div>
+
+                      <Button
+                        type="button"
+                        onClick={handleLog}
+                        disabled={isLogging}
+                        className="h-12 w-full rounded-[18px] text-base font-bold"
+                        variant="primary"
+                      >
+                        {isLogging ? <RefreshCw className="mr-2 animate-spin" size={18} /> : <CheckCircle className="mr-2" size={18} />}
+                        {isLogging ? 'Logging…' : 'Log set'}
+                      </Button>
+
+                      <p className="text-center text-xs text-white/35">
+                        {selectedMode === 'strength' && 'Weight counts toward volume. Reps stay editable per set.'}
+                        {selectedMode === 'reps' && 'No external weight needed for bodyweight work.'}
+                        {selectedMode === 'time' && 'Timed work stays out of volume totals.'}
+                        {selectedMode === 'cardio' && 'Distance is tracked separately from strength volume.'}
+                      </p>
+                    </div>
+                  </div>
+                  </div>
+                </div>
               );
             })}
           </div>
         )}
-
-        <div className="rounded-[26px] border border-white/10 bg-white/[0.03] p-4">
-          <div className="mb-4 flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/25">Current exercise</p>
-              <h2 className="mt-1 truncate text-xl font-semibold text-white">{selectedExercise?.name ?? 'Select an exercise'}</h2>
-              <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/35">
-                {selectedExercise ? `${selectedExercise.body_part} · ${selectedExercise.equipment}` : 'Use the picker to add movement'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={openPicker}
-              className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white/70"
-            >
-              Change
-            </button>
-          </div>
-
-          {selectedExercise ? (
-            <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                {selectedMode === 'strength' && (
-                  <>
-                    <NumericControl label="Weight" value={weight} onChange={setWeight} step={unit === 'kg' ? 2.5 : 5} min={0} suffix={unit} />
-                    <NumericControl label="Reps" value={reps} onChange={setReps} step={1} min={1} />
-                  </>
-                )}
-
-                {selectedMode === 'reps' && (
-                  <NumericControl label="Reps" value={reps} onChange={setReps} step={1} min={1} />
-                )}
-
-                {selectedMode === 'time' && (
-                  <NumericControl label="Duration" value={duration} onChange={setDuration} step={1} min={1} suffix="min" />
-                )}
-
-                {selectedMode === 'cardio' && (
-                  <>
-                    <NumericControl label="Duration" value={duration} onChange={setDuration} step={1} min={1} suffix="min" />
-                    <NumericControl label="Distance" value={distance} onChange={setDistance} step={0.5} min={0} suffix="km" />
-                  </>
-                )}
-              </div>
-
-              <Button
-                type="button"
-                onClick={handleLog}
-                disabled={isLogging}
-                className="h-14 w-full rounded-[20px] text-base font-bold"
-                variant="primary"
-              >
-                {isLogging ? <RefreshCw className="mr-2 animate-spin" size={18} /> : <CheckCircle className="mr-2" size={18} />}
-                {isLogging ? 'Logging…' : 'Log set'}
-              </Button>
-
-              <p className="text-center text-xs text-white/35">
-                {selectedMode === 'strength' && 'Weight counts toward volume. Reps stay editable per set.'}
-                {selectedMode === 'reps' && 'No external weight needed for bodyweight work.'}
-                {selectedMode === 'time' && 'Timed work stays out of volume totals.'}
-                {selectedMode === 'cardio' && 'Distance is tracked separately from strength volume.'}
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-[20px] border border-dashed border-white/10 bg-white/[0.02] p-4 text-center text-sm text-white/35">
-              Add an exercise to unlock logging controls.
-            </div>
-          )}
-        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
             onClick={onStartRest}
             disabled={!hasLastSet}
-            className="flex h-14 items-center justify-center gap-2 rounded-[18px] border border-white/10 bg-white/[0.04] text-sm font-bold text-white/70 transition-transform active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-12 items-center justify-center gap-2 rounded-[16px] border border-white/10 bg-white/[0.04] text-sm font-bold text-white/70 transition-transform active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Pause size={16} fill="currentColor" />
             Take rest
@@ -795,7 +866,7 @@ export function ActiveView({
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
-            className="flex h-14 items-center justify-center gap-2 rounded-[18px] border border-white/10 bg-white/[0.04] text-sm font-bold text-white/70 transition-transform active:scale-[0.99]"
+            className="flex h-12 items-center justify-center gap-2 rounded-[16px] border border-white/10 bg-white/[0.04] text-sm font-bold text-white/70 transition-transform active:scale-[0.99]"
           >
             <MoreHorizontal size={16} />
             More
@@ -805,10 +876,10 @@ export function ActiveView({
         <button
           type="button"
           onClick={openPicker}
-          className="flex h-14 items-center justify-center gap-2 rounded-[22px] bg-white text-black shadow-[0_18px_45px_rgba(255,255,255,0.12)] transition-transform active:scale-[0.99]"
+          className="flex h-12 items-center justify-center gap-2 rounded-[20px] bg-white text-black shadow-[0_12px_30px_rgba(255,255,255,0.12)] transition-transform active:scale-[0.99]"
         >
           <Plus size={18} />
-          <span className="text-base font-bold">Add exercises</span>
+          <span className="text-base font-bold">Add exercise</span>
         </button>
       </div>
 
