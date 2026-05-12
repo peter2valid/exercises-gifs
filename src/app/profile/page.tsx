@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell, ShieldCheck, Camera, Phone, User as UserCircle } from 'lucide-react';
+import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell, ShieldCheck, Camera, Phone, User as UserCircle, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useEntitlementStore } from '@/store/entitlementStore';
 import { type WeightUnit } from '@/lib/settings';
+import { getUserRoles, type UserRole } from '@/lib/auth/roles';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function ProfilePage() {
 
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -44,23 +46,26 @@ export default function ProfilePage() {
       }
       setUser(session.user);
 
-      // Fetch Profile data
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
+      // Fetch Profile & Roles
+      const [profileRes, userRoles] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle(),
+        getUserRoles(session.user.id)
+      ]);
 
-      if (profileData) {
-        setProfile(profileData);
-        setFullName(profileData.full_name || '');
-        setPhoneNumber(profileData.phone_number || '');
+      setRoles(userRoles);
+
+      if (profileRes.data) {
+        setProfile(profileRes.data);
+        setFullName(profileRes.data.full_name || '');
+        setPhoneNumber(profileRes.data.phone_number || '');
       }
       
       setLoading(false);
     }
     loadData();
   }, [router]);
+
+  const isAdmin = roles.some(r => ['super_admin', 'gym_owner', 'gym_admin'].includes(r.role));
 
   const handleUpdateProfile = async () => {
     setUpdating(true);
@@ -183,6 +188,25 @@ export default function ProfilePage() {
         </div>
 
         <div className="space-y-3">
+          {/* Admin Dashboard - Only visible to Admins */}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="w-full glass-panel p-4 flex items-center justify-between bg-sky-500/5 border-sky-500/20 hover:bg-sky-500/10 transition-all active:scale-[0.98] group mb-2"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center">
+                  <ShieldAlert size={20} className="text-sky-400" />
+                </div>
+                <div className="text-left">
+                  <span className="block text-sm font-bold text-white tracking-tight">Admin Dashboard</span>
+                  <span className="block text-[10px] text-sky-400/60 uppercase tracking-widest font-bold">Platform Management</span>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-white/20 group-hover:text-sky-400 transition-colors" />
+            </Link>
+          )}
+
           <Link
             href="/subscription"
             className="w-full glass-panel p-4 flex items-center justify-between hover:bg-white/10 transition-all active:scale-[0.98] group"
