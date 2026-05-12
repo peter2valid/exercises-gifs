@@ -44,6 +44,7 @@ export function resolveEntitlements(
   promotions: PromotionState[],
   cachedAt: string,
 ): EffectiveEntitlements {
+  const gymId = gym?.gymId ?? null;
   const features = new Set<Feature>(CORE_FEATURES);
 
   // ── Gym plan ─────────────────────────────────────────────────────────────
@@ -79,6 +80,7 @@ export function resolveEntitlements(
 
   return {
     features,
+    gymId,
     gymPlan,
     gymPlanStatus,
     hasMemberPremium,

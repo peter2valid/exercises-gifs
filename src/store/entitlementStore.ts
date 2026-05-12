@@ -6,6 +6,7 @@ import { CORE_FEATURES } from '@/lib/billing/gymPlans';
 type EntitlementStore = {
   // Resolved effective state
   features: Set<Feature>;
+  gymId: string | null;           // primary gym — use as tenant_id when non-null
   gymPlan: GymPlan | null;
   gymPlanStatus: SubscriptionStatus | null;
   hasMemberPremium: boolean;
@@ -34,6 +35,7 @@ const INITIAL_FEATURES = new Set<Feature>(CORE_FEATURES as Feature[]);
 
 export const useEntitlementStore = create<EntitlementStore>((set, get) => ({
   features: INITIAL_FEATURES,
+  gymId: null,
   gymPlan: null,
   gymPlanStatus: null,
   hasMemberPremium: false,
@@ -54,6 +56,7 @@ export const useEntitlementStore = create<EntitlementStore>((set, get) => ({
     const cached = await loadCachedEntitlements(userId);
     set({
       features: cached.features,
+      gymId: cached.gymId,
       gymPlan: cached.gymPlan,
       gymPlanStatus: cached.gymPlanStatus,
       hasMemberPremium: cached.hasMemberPremium,
@@ -76,6 +79,7 @@ export const useEntitlementStore = create<EntitlementStore>((set, get) => ({
       const fresh = await fetchAndCacheEntitlements(userId);
       set({
         features: fresh.features,
+        gymId: fresh.gymId,
         gymPlan: fresh.gymPlan,
         gymPlanStatus: fresh.gymPlanStatus,
         hasMemberPremium: fresh.hasMemberPremium,
@@ -93,6 +97,7 @@ export const useEntitlementStore = create<EntitlementStore>((set, get) => ({
     await clearEntitlementCache();
     set({
       features: INITIAL_FEATURES,
+      gymId: null,
       gymPlan: null,
       gymPlanStatus: null,
       hasMemberPremium: false,

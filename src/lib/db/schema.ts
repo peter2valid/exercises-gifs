@@ -110,6 +110,7 @@ export interface Exercise {
 export interface EntitlementCache {
   id: 'current';
   user_id: string;
+  gym_id: string | null;              // primary gym the user belongs to
   effective_features: string[];       // Feature[] serialised as string[]
   gym_plan: string | null;            // GymPlan | null
   gym_plan_status: string | null;     // SubscriptionStatus | null
@@ -118,4 +119,26 @@ export interface EntitlementCache {
   active_promotions: string[];
   cached_at: string;                  // ISO timestamp of last server fetch
   version: number;
+}
+
+export type GymRoleType = 'super_admin' | 'gym_owner' | 'gym_admin' | 'trainer' | 'member';
+
+export interface UserGymRole {
+  id: string;
+  user_id: string;
+  gym_id: string | null; // null for super_admin (platform-wide role)
+  role: GymRoleType;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MemberCheckIn {
+  id: string;           // = check_in_id
+  gym_id: string;
+  member_user_id: string;
+  checked_in_at: string;
+  method: 'qr_scan' | 'manual';
+  staff_user_id: string | null;
+  sync_state: string;
+  created_at: string;
 }

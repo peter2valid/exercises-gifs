@@ -5,6 +5,7 @@ import type {
   SessionCompletedPayload,
   SetEditedPayload,
   SetDeletedPayload,
+  MemberCheckedInPayload,
 } from '@/types';
 import { type WorkoutEngineState } from './state';
 
@@ -97,6 +98,15 @@ export function applyEvent(
       const sets = { ...state.sets };
       delete sets[p.set_id];
       return { ...state, sets };
+    }
+
+    case 'MEMBER_CHECKED_IN': {
+      // Check-in events carry attendance data but do not mutate workout state.
+      // The check_in_id is used as session_id on the event so it routes through
+      // the normal event pipeline. Projection is handled separately by the
+      // admin dashboard, not the workout engine.
+      void (event.payload as MemberCheckedInPayload);
+      return state;
     }
 
     default: {

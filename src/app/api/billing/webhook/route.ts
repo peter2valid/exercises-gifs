@@ -86,14 +86,26 @@ async function handleEvent(event: { event: string; data: Record<string, any> }):
       const reference = data.reference as string;
       const metadata  = data.metadata ?? {};
 
+      // ── Idempotency guard: skip if verify route already processed this ──────
+      const { data: existingPayment } = await adminSupabase
+        .from('payments')
+        .select('status')
+        .eq('reference', reference)
+        .maybeSingle();
+
+      if (existingPayment?.status === 'success') {
+        console.log(`[webhook] Payment ${reference} already processed`);
+        return;
+      }
+
       // Mark payment as success
       await adminSupabase
         .from('payments')
-        .update({ 
-          status: 'success', 
-          verified_at: now.toISOString(), 
+        .update({
+          status: 'success',
+          verified_at: now.toISOString(),
           updated_at: now.toISOString(),
-          paystack_reference: data.id?.toString() // ensure we store provider ref
+          paystack_reference: data.id?.toString(),
         })
         .eq('reference', reference);
 

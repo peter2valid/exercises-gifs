@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSupabase } from '@/lib/supabase/server';
 import { PLUS_PRICING } from '@/lib/billing/memberPlans';
 import { GYM_PLAN_PRICES_KES } from '@/lib/billing/gymPlans';
+import { hasGymRole } from '@/lib/auth/roles';
 import type { MemberBillingPeriod, GymPlan } from '@/lib/billing/types';
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY!;
@@ -46,6 +47,20 @@ export async function POST(req: Request): Promise<NextResponse> {
   return NextResponse.json({ error: 'Unknown payment type' }, { status: 400 });
 }
 
+async function guardPendingSpam(
+  supabase: ReturnType<typeof getServerSupabase>,
+  subjectId: string,
+): Promise<boolean> {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count } = await supabase
+    .from('payments')
+    .select('id', { count: 'exact', head: true })
+    .eq('subject_id', subjectId)
+    .eq('status', 'pending')
+    .gte('created_at', since);
+  return (count ?? 0) >= 10;
+}
+
 async function initMemberUpgrade(
   user: { id: string; email?: string },
   payload: MemberPayload,
@@ -53,8 +68,13 @@ async function initMemberUpgrade(
 ): Promise<NextResponse> {
   const { period } = payload;
 
-  if (!PLUS_PRICING[period]) {
+  const VALID_PERIODS: MemberBillingPeriod[] = ['weekly', 'monthly', 'quarterly'];
+  if (!VALID_PERIODS.includes(period) || !PLUS_PRICING[period]) {
     return NextResponse.json({ error: 'Invalid billing period' }, { status: 400 });
+  }
+
+  if (await guardPendingSpam(supabase, user.id)) {
+    return NextResponse.json({ error: 'Too many pending payments — please wait' }, { status: 429 });
   }
 
   const amountKobo = PLUS_PRICING[period].amountKes * 100; // Paystack expects kobo
@@ -120,16 +140,25 @@ async function initGymUpgrade(
     return NextResponse.json({ error: 'Invalid gym plan' }, { status: 400 });
   }
 
+  if (await guardPendingSpam(supabase, gymId)) {
+    return NextResponse.json({ error: 'Too many pending payments — please wait' }, { status: 429 });
+  }
+
   // Verify requesting user is an admin of this gym
+  const hasAccess = await hasGymRole(user.id, gymId, 'gym_admin');
+
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const { data: gym } = await supabase
     .from('gyms')
     .select('id, name')
     .eq('id', gymId)
-    .eq('admin_user_id', user.id)
     .maybeSingle();
 
   if (!gym) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: 'Gym not found' }, { status: 404 });
   }
 
   const amountKobo = GYM_PLAN_PRICES_KES[plan] * 100;

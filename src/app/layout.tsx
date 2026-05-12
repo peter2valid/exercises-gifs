@@ -27,7 +27,7 @@ export default function RootLayout({
           <ServiceWorkerRegister />
           <SyncInitializer />
           <SyncStatus />
-          <div className="min-h-screen relative">
+          <div className="fixed inset-0 overflow-y-auto overflow-x-hidden">
             <main>{children}</main>
           </div>
           <BottomNav />

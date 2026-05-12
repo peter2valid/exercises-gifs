@@ -3,40 +3,59 @@
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/db/dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CloudOff, AlertCircle } from 'lucide-react';
+import { CloudOff, AlertCircle, RefreshCw } from 'lucide-react';
 
 export function SyncStatus() {
-  const [isOnline, setIsOnline] = useState(typeof window !== 'undefined' ? window.navigator.onLine : true);
+  const [isOnline, setIsOnline] = useState(
+    typeof window !== 'undefined' ? window.navigator.onLine : true
+  );
 
-  const failedCount = useLiveQuery(() => db.sync_queue.where('status').equals('failed').count()) || 0;
+  // Hard failures
+  const failedCount =
+    useLiveQuery(() => db.sync_queue.where('status').equals('failed').count()) || 0;
+
+  // Stalled: pending items that have already been tried 3+ times
+  const stalledCount =
+    useLiveQuery(() =>
+      db.sync_queue
+        .where('status')
+        .equals('pending')
+        .filter(item => (item.attempts ?? 0) >= 3)
+        .count()
+    ) || 0;
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    const up = () => setIsOnline(true);
+    const down = () => setIsOnline(false);
+    window.addEventListener('online', up);
+    window.addEventListener('offline', down);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', up);
+      window.removeEventListener('offline', down);
     };
   }, []);
 
-  if (isOnline && failedCount === 0) return null;
+  if (isOnline && failedCount === 0 && stalledCount === 0) return null;
+
+  const label = !isOnline
+    ? 'Offline'
+    : failedCount > 0
+    ? `${failedCount} sync ${failedCount === 1 ? 'failure' : 'failures'}`
+    : `Syncing (${stalledCount} retrying)`;
+
+  const Icon = !isOnline ? CloudOff : failedCount > 0 ? AlertCircle : RefreshCw;
+  const color = !isOnline ? 'text-white/40' : failedCount > 0 ? 'text-rose-400' : 'text-amber-400';
 
   return (
     <div className="fixed top-4 right-4 z-50 animate-fade-in">
       <div className="glass-panel px-3 py-2 flex items-center gap-2 shadow-2xl border-white/10">
-        {!isOnline ? (
-          <>
-            <CloudOff size={14} className="text-white/40" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">Offline</span>
-          </>
-        ) : (
-          <>
-            <AlertCircle size={14} className="text-rose-400" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-rose-400/80">Sync issue</span>
-          </>
-        )}
+        <Icon
+          size={14}
+          className={`${color} ${!isOnline || failedCount > 0 ? '' : 'animate-spin'}`}
+        />
+        <span className={`text-[10px] font-bold uppercase tracking-widest ${color}`}>
+          {label}
+        </span>
       </div>
     </div>
   );

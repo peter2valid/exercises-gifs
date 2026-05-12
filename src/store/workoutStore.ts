@@ -65,6 +65,9 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   logSet: async (setId, exerciseId, weight, reps) => {
     const { session, tenantId, deviceId, userId } = get();
     if (!session) throw new Error('logSet called with no active session');
+    if (!exerciseId) throw new Error('exerciseId is required');
+    if (typeof weight !== 'number' || !isFinite(weight) || weight < 0) throw new Error('weight must be a finite number >= 0');
+    if (typeof reps !== 'number' || !isFinite(reps) || reps < 1) throw new Error('reps must be a finite number >= 1');
     await createEvent({
       type: 'SET_LOGGED',
       tenant_id: tenantId,
@@ -79,6 +82,8 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   startRest: async (setId, durationSeconds) => {
     const { session, tenantId, deviceId, userId } = get();
     if (!session) throw new Error('startRest called with no active session');
+    if (!setId) throw new Error('setId is required');
+    if (durationSeconds <= 0) throw new Error('durationSeconds must be > 0');
     const startedAt = new Date().toISOString();
     await createEvent({
       type: 'REST_STARTED',
@@ -105,6 +110,8 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   editSet: async (setId, weight, reps) => {
     const { session, tenantId, deviceId, userId } = get();
     if (!session) throw new Error('editSet called with no active session');
+    if (typeof weight !== 'number' || !isFinite(weight) || weight < 0) throw new Error('weight must be a finite number >= 0');
+    if (typeof reps !== 'number' || !isFinite(reps) || reps < 1) throw new Error('reps must be a finite number >= 1');
     await createEvent({
       type: 'SET_EDITED',
       tenant_id: tenantId,

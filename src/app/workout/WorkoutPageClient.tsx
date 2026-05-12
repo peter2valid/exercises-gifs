@@ -11,8 +11,9 @@ import {
   clearSessionId,
   getDeviceUserId,
 } from '@/lib/device/identity';
-import { TENANT_ID } from '@/lib/config';
+import { resolveTenantId } from '@/lib/config';
 import { supabase } from '@/lib/supabase/client';
+import { useEntitlementStore } from '@/store/entitlementStore';
 
 import {
   RestoringView,
@@ -24,6 +25,7 @@ import {
 
 export default function WorkoutPageClient({ initialExerciseId }: { initialExerciseId: string }) {
   const router = useRouter();
+  const gymId = useEntitlementStore((s) => s.gymId);
   const phase = useWorkoutStore((s) => s.phase);
   const session = useWorkoutStore((s) => s.session);
   const sets = useWorkoutStore((s) => s.sets);
@@ -61,7 +63,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
       const savedId = getSavedSessionId();
       if (savedId) {
         try {
-          await loadSession(savedId, TENANT_ID, 'local-browser', effectiveUserId);
+          await loadSession(savedId, resolveTenantId(effectiveUserId, gymId), 'local-browser', effectiveUserId);
           // Restore lastSetId so "Take rest" works immediately after a page refresh
           const restoredSets = Object.values(useWorkoutStore.getState().sets);
           if (restoredSets.length > 0) {
@@ -92,7 +94,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
       autoStarted.current = true;
       const sessionId = crypto.randomUUID();
       setIsStarting(true);
-      startSession(sessionId, userId, TENANT_ID, 'local-browser')
+      startSession(sessionId, userId, resolveTenantId(userId, gymId), 'local-browser')
         .then(() => saveSessionId(sessionId))
         .catch(console.error)
         .finally(() => setIsStarting(false));
@@ -103,7 +105,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
     if (isStarting || !userId) return;
     const sessionId = crypto.randomUUID();
     setIsStarting(true);
-    startSession(sessionId, userId, TENANT_ID, 'local-browser')
+    startSession(sessionId, userId, resolveTenantId(userId, gymId), 'local-browser')
       .then(() => saveSessionId(sessionId))
       .catch(console.error)
       .finally(() => setIsStarting(false));

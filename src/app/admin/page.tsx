@@ -1,4 +1,5 @@
 import { getServerSupabase, getAdminSupabase } from '@/lib/supabase/server';
+import { isSuperAdmin, getAdminGymId } from '@/lib/auth/roles';
 import { redirect } from 'next/navigation';
 import {
   Users,
@@ -23,20 +24,30 @@ export default async function AdminPage() {
   }
 
   const adminSupabase = getAdminSupabase();
-  
-  // 1. Verify admin status via service role (bypassing RLS)
-  // We check if the current user is the admin_user_id of any gym
-  const { data: gym } = await adminSupabase
+
+  // 1. Resolve gym access: check user_gym_roles first (new system),
+  //    fall back to legacy admin_user_id column for backward compatibility.
+  const superAdmin = await isSuperAdmin(user.id);
+  const roleGymId = await getAdminGymId(user.id);
+
+  let gymQuery = adminSupabase
     .from('gyms')
-    .select(`
-      *,
-      gym_subscriptions(plan, status)
-    `)
-    .eq('admin_user_id', user.id)
-    .maybeSingle();
+    .select('*, gym_subscriptions(plan, status)');
+
+  if (superAdmin) {
+    // Super admin sees the first gym for now; /super-admin will show all
+    gymQuery = gymQuery.limit(1);
+  } else if (roleGymId) {
+    gymQuery = gymQuery.eq('id', roleGymId);
+  } else {
+    // Legacy fallback: admin_user_id on the gyms table
+    gymQuery = gymQuery.eq('admin_user_id', user.id);
+  }
+
+  const { data: gym } = await gymQuery.maybeSingle();
 
   // 2. Access Denied State
-  if (!gym) {
+  if (!gym && !superAdmin) {
     return (
       <div className="dashboard-bg min-h-screen flex items-center justify-center p-4 text-center">
         <div className="glass-panel p-10 max-w-sm w-full animate-fade-in border border-white/10 rounded-[32px] shadow-2xl">

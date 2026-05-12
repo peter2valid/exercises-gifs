@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell, ShieldCheck } from 'lucide-react';
+import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell, ShieldCheck, Camera, Phone, User as UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -18,10 +18,16 @@ export default function ProfilePage() {
   const currentPlanLabel = hasMemberPremium ? 'Plus' : (gymPlan ? gymPlan.toUpperCase() : 'Free');
 
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Editable fields
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   useEffect(() => {
     const savedUnit = localStorage.getItem('weightUnit') as WeightUnit | null;
@@ -30,17 +36,51 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    async function getProfile() {
+    async function loadData() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.push('/auth');
         return;
       }
       setUser(session.user);
+
+      // Fetch Profile data
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (profileData) {
+        setProfile(profileData);
+        setFullName(profileData.full_name || '');
+        setPhoneNumber(profileData.phone_number || '');
+      }
+      
       setLoading(false);
     }
-    getProfile();
+    loadData();
   }, [router]);
+
+  const handleUpdateProfile = async () => {
+    setUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          full_name: fullName,
+          phone_number: phoneNumber,
+          updated_at: new Date().toISOString(),
+        });
+      if (error) throw error;
+      alert('Profile updated!');
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -70,9 +110,18 @@ export default function ProfilePage() {
   return (
     <div className="dashboard-bg min-h-screen pb-24 pt-8">
       <div className="max-w-md mx-auto px-4">
-        <div className="mb-8 animate-fade-in">
-          <p className="text-xs tracking-[0.3em] text-white/30 uppercase font-medium mb-2">Profile</p>
-          <h1 className="text-3xl font-bold text-white tracking-tight">You</h1>
+        <div className="mb-8 animate-fade-in flex justify-between items-end">
+          <div>
+            <p className="text-xs tracking-[0.3em] text-white/30 uppercase font-medium mb-2">Profile</p>
+            <h1 className="text-3xl font-bold text-white tracking-tight">You</h1>
+          </div>
+          <button 
+            onClick={handleUpdateProfile}
+            disabled={updating}
+            className="text-xs font-bold text-sky-400 uppercase tracking-widest hover:text-sky-300 transition-colors disabled:opacity-50"
+          >
+            {updating ? 'Saving...' : 'Save Changes'}
+          </button>
         </div>
 
         {paymentStatus && (
@@ -90,11 +139,6 @@ export default function ProfilePage() {
               <p className="text-sm font-bold tracking-tight">
                 {paymentStatus === 'success' ? 'Payment Successful' : 'Payment Failed'}
               </p>
-              <p className="text-[11px] opacity-70 leading-tight mt-0.5">
-                {paymentStatus === 'success' 
-                  ? 'Your entitlements have been updated. Welcome to Plus!' 
-                  : 'There was an issue processing your transaction. Please try again.'}
-              </p>
             </div>
             <button onClick={() => router.replace('/profile')} className="p-1 opacity-40 hover:opacity-100 transition-opacity">
               <X size={14} />
@@ -103,11 +147,39 @@ export default function ProfilePage() {
         )}
 
         <div className="text-center mb-10 animate-slide-up">
-          <div className="w-20 h-20 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-4">
-            <UserIcon size={32} className="text-white/40" />
+          <div className="relative w-24 h-24 mx-auto mb-4">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full rounded-full object-cover border-2 border-white/10" />
+            ) : (
+              <div className="w-full h-full rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                <UserIcon size={36} className="text-white/20" />
+              </div>
+            )}
+            <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-sky-500 border-4 border-[#090909] flex items-center justify-center text-white">
+              <Camera size={14} />
+            </button>
           </div>
-          <h2 className="text-xl font-semibold text-white mb-1">{user?.email?.split('@')[0]}</h2>
-          <p className="text-sm text-white/30">{user?.email}</p>
+          
+          <div className="space-y-4 px-2">
+            <div className="relative">
+              <UserCircle className="absolute left-0 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+              <input 
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                placeholder="Your Full Name"
+                className="w-full bg-transparent border-b border-white/5 py-2 pl-7 text-white text-lg font-semibold focus:border-sky-500 outline-none transition-colors placeholder:text-white/10"
+              />
+            </div>
+            <div className="relative">
+              <Phone className="absolute left-0 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+              <input 
+                value={phoneNumber}
+                onChange={e => setPhoneNumber(e.target.value)}
+                placeholder="Phone for marketing"
+                className="w-full bg-transparent border-b border-white/5 py-2 pl-7 text-white/50 text-sm focus:border-sky-500 outline-none transition-colors placeholder:text-white/10"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -147,10 +219,6 @@ export default function ProfilePage() {
             <LogOut size={20} className="text-white/40 group-hover:text-rose-400 transition-colors" />
             <span className="text-sm font-medium text-white group-hover:text-rose-400 transition-colors">Sign Out</span>
           </button>
-        </div>
-
-        <div className="mt-10 text-center">
-          <p className="text-xs text-white/20 mb-4">Version 1.0.0</p>
         </div>
       </div>
 

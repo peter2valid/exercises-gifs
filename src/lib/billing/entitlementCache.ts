@@ -19,6 +19,7 @@ export async function loadCachedEntitlements(userId: string): Promise<EffectiveE
     if (cached && cached.user_id === userId) {
       return {
         features: new Set<Feature>(cached.effective_features as Feature[]),
+        gymId: cached.gym_id ?? null,
         gymPlan: cached.gym_plan as any ?? null,
         gymPlanStatus: cached.gym_plan_status as any ?? null,
         hasMemberPremium: cached.has_member_premium,
@@ -109,6 +110,7 @@ export async function fetchAndCacheEntitlements(userId: string): Promise<Effecti
     await db.entitlement_cache.put({
       id: 'current',
       user_id: userId,
+      gym_id: resolved.gymId,
       effective_features: Array.from(resolved.features),
       gym_plan: resolved.gymPlan,
       gym_plan_status: resolved.gymPlanStatus,
@@ -138,6 +140,7 @@ export async function clearEntitlementCache(): Promise<void> {
 function coreOnlyEntitlements(): EffectiveEntitlements {
   return {
     features: new Set<Feature>(CORE_FEATURES as Feature[]),
+    gymId: null,
     gymPlan: null,
     gymPlanStatus: null,
     hasMemberPremium: false,

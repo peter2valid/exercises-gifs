@@ -39,9 +39,21 @@ export async function GET(req: Request): Promise<NextResponse> {
     await adminSupabase
       .from('payments')
       .update({ status: verifyData.data?.status ?? 'failed', updated_at: new Date().toISOString() })
-      .eq('reference', reference);
-
+      .eq('reference', reference)
+      .neq('status', 'success'); // don't downgrade an already-successful payment
     return redirectWithStatus('failed');
+  }
+
+  // ── Idempotency guard: skip if webhook already activated this payment ─────
+  const { data: existingPayment } = await adminSupabase
+    .from('payments')
+    .select('status')
+    .eq('reference', reference)
+    .maybeSingle();
+
+  if (existingPayment?.status === 'success') {
+    // Payment already processed (likely by webhook) — just redirect
+    return redirectWithStatus('success');
   }
 
   const { metadata, id: providerId } = verifyData.data;

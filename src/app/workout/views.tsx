@@ -214,7 +214,7 @@ function SessionHeader({
       </div>
 
       {menuOpen && startedAt && (
-        <div id="timer-menu" className="absolute left-1/2 top-full z-30 mt-3 w-64 -translate-x-1/2 rounded-lg border border-white/10 bg-[#0b0b0b] p-3 shadow-lg">
+        <div id="timer-menu" className="absolute left-1/2 top-full z-[60] mt-3 w-64 -translate-x-1/2 rounded-lg border border-white/10 bg-[#0b0b0b] p-3 shadow-lg">
           <p className="mb-2 text-xs text-white/40">Timer controls</p>
           <div className="flex gap-2">
             <button
@@ -284,7 +284,7 @@ export function IdleView({
   preselectedExercise?: Exercise | null;
 }) {
   return (
-    <div className="dashboard-bg min-h-screen pb-24 pt-8">
+    <div className="dashboard-bg min-h-screen pb-8 pt-8">
       <div className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-md flex-col px-4">
         <div className="mb-10 space-y-3">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/30">Workout now</p>
@@ -385,7 +385,7 @@ export function RestingView({
   const unit = getWeightUnit();
 
   return (
-    <div className="dashboard-bg min-h-screen px-4 pb-24 pt-8">
+    <div className="dashboard-bg min-h-screen px-4 pb-8 pt-8">
       <div className="mx-auto flex max-w-md flex-col items-center space-y-6">
         <div className="w-full text-center">
           <p className="text-xs font-bold uppercase tracking-[0.35em] text-white/25">Rest timer</p>
@@ -717,7 +717,7 @@ export function ActiveView({
   };
 
   return (
-    <div className="dashboard-bg flex min-h-screen flex-col pb-28">
+    <div className="dashboard-bg flex min-h-screen flex-col pb-8">
       <div className="sticky top-0 z-20 border-b border-white/5 bg-black/85 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-4">
           <button
@@ -979,6 +979,7 @@ export function FinishedView({
   exMap: Record<string, Exercise>;
   onReset: () => void;
 }) {
+  const [logOpen, setLogOpen] = useState(false);
   const unit = getWeightUnit();
   const totalVolumeKg = sets.reduce((acc, set) => {
     const exercise = exMap[set.exercise_id];
@@ -989,9 +990,10 @@ export function FinishedView({
 
   const timedSets = sets.filter((set) => !usesVolumeExercise(exMap[set.exercise_id]));
   const strengthSets = sets.filter((set) => usesVolumeExercise(exMap[set.exercise_id]));
+  const allSets = [...strengthSets, ...timedSets];
 
   return (
-    <div className="dashboard-bg min-h-screen px-4 pb-24 pt-8">
+    <div className="dashboard-bg min-h-screen px-4 pb-8 pt-8">
       <div className="mx-auto flex max-w-md flex-col items-center gap-6 text-center">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-white/25">Workout complete</p>
@@ -1010,22 +1012,30 @@ export function FinishedView({
           </div>
         </div>
 
-        <div className="w-full rounded-[24px] border border-white/10 bg-white/[0.03] p-4 text-left">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/25">Log</p>
-          <div className="mt-3 space-y-2">
-            {strengthSets.map((set) => (
-              <div key={set.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] px-3 py-2">
-                <span className="truncate text-sm text-white/70">{exMap[set.exercise_id]?.name || 'Exercise'}</span>
-                <span className="shrink-0 text-sm font-semibold text-white">{formatWorkoutSet(exMap[set.exercise_id], set, unit)}</span>
-              </div>
-            ))}
-            {timedSets.map((set) => (
-              <div key={set.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] px-3 py-2">
-                <span className="truncate text-sm text-white/70">{exMap[set.exercise_id]?.name || 'Exercise'}</span>
-                <span className="shrink-0 text-sm font-semibold text-white">{formatWorkoutSet(exMap[set.exercise_id], set, unit)}</span>
-              </div>
-            ))}
-          </div>
+        <div className="w-full rounded-[24px] border border-white/10 bg-white/[0.03] text-left overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setLogOpen((s) => !s)}
+            className="flex w-full items-center justify-between px-4 py-4 transition-colors active:bg-white/5"
+          >
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/25">
+              Log · {allSets.length} {allSets.length === 1 ? 'set' : 'sets'}
+            </p>
+            <ChevronDown
+              size={16}
+              className={`text-white/25 transition-transform duration-200 ${logOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {logOpen && (
+            <div className="space-y-2 px-4 pb-4">
+              {allSets.map((set) => (
+                <div key={set.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] px-3 py-2">
+                  <span className="truncate text-sm text-white/70">{exMap[set.exercise_id]?.name || 'Exercise'}</span>
+                  <span className="shrink-0 text-sm font-semibold text-white">{formatWorkoutSet(exMap[set.exercise_id], set, unit)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <Button onClick={onReset} className="h-12 w-full rounded-[18px] text-base font-semibold" variant="primary">

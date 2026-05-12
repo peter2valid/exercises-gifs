@@ -7,6 +7,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 const BATCH_SIZE = 50;
 const INITIAL_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 60000; // 1 minute
+const MAX_ATTEMPTS = 10;      // permanently fail after 10 retries
 const QUEUE_PRUNE_DELAY = 1000 * 60 * 60 * 24; // 24 hours
 
 export interface SyncPushResponse {
@@ -143,16 +144,24 @@ export class SyncWorker {
       });
 
       if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+        // Auth and client errors are permanent — stop retrying immediately
+        const permanent = res.status === 401 || res.status === 403 || res.status === 400;
+        console.warn(`[SyncWorker] push HTTP ${res.status}${permanent ? ' (permanent)' : ''}`);
+        await this.resolveBatch(readyToSync, {
+          success: false,
+          synced_ids: [],
+          failed_ids: batch.map(e => ({ id: e.id, error: `HTTP ${res.status}`, retryable: !permanent })),
+        });
+        return;
       }
 
       const response: SyncPushResponse = await res.json();
       await this.resolveBatch(readyToSync, response);
     } catch (err) {
-      console.warn('[SyncWorker] upstream push failed:', err);
-      await this.resolveBatch(readyToSync, { 
-        success: false, 
-        synced_ids: [], 
+      console.warn('[SyncWorker] upstream push network error:', err);
+      await this.resolveBatch(readyToSync, {
+        success: false,
+        synced_ids: [],
         failed_ids: batch.map(e => ({ id: e.id, error: String(err), retryable: true }))
       });
     }
@@ -219,20 +228,23 @@ export class SyncWorker {
           const isRetryable = failure ? failure.retryable : true;
           const error = failure ? failure.error : 'Batch push failed';
 
-          if (!isRetryable) {
-            await db.sync_queue.update(item.id, { status: 'failed', last_error: error, updated_at: now });
+          const nextAttempts = item.attempts + 1;
+          const exceeded = nextAttempts >= MAX_ATTEMPTS;
+
+          if (!isRetryable || exceeded) {
+            if (exceeded) console.warn(`[SyncWorker] Max attempts reached for event ${eventId}`);
+            await db.sync_queue.update(item.id, { status: 'failed', attempts: nextAttempts, last_error: error, updated_at: now });
             await db.events.update(eventId, { sync_state: 'failed' });
           } else {
-            const attempts = item.attempts + 1;
-            const delay = Math.min(MAX_BACKOFF_MS, INITIAL_BACKOFF_MS * Math.pow(2, attempts - 1));
+            const delay = Math.min(MAX_BACKOFF_MS, INITIAL_BACKOFF_MS * Math.pow(2, nextAttempts - 1));
             const nextRetry = new Date(Date.now() + delay).toISOString();
 
             await db.sync_queue.update(item.id, {
               status: 'pending',
-              attempts,
+              attempts: nextAttempts,
               last_error: error,
               next_retry_at: nextRetry,
-              updated_at: now
+              updated_at: now,
             });
             await db.events.update(eventId, { sync_state: 'pending' });
           }

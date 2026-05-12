@@ -80,6 +80,7 @@ export interface PromotionState {
 
 export interface EffectiveEntitlements {
   features: Set<Feature>;
+  gymId: string | null;          // primary gym the user belongs to
   gymPlan: GymPlan | null;
   gymPlanStatus: SubscriptionStatus | null;
   hasMemberPremium: boolean;

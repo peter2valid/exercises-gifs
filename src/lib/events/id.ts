@@ -52,6 +52,8 @@ function extractContext(event: EventPayload): string {
       return `${event.payload.session_id}:${event.payload.set_id}:edit:${event.payload.weight}:${event.payload.reps}`;
     case 'SET_DELETED':
       return `${event.payload.session_id}:${event.payload.set_id}:delete`;
+    case 'MEMBER_CHECKED_IN':
+      return `${event.payload.check_in_id}:${event.payload.member_user_id}:${event.payload.checked_in_at}`;
   }
 }
 

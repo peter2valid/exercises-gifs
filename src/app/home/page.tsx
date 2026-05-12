@@ -15,12 +15,13 @@ import {
 import { LoadingPage } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
 import { getSavedSessionId } from '@/lib/device/identity';
-import { TENANT_ID } from '@/lib/config';
 import { useWorkoutStore } from '@/store/workoutStore';
+import { useEntitlementStore } from '@/store/entitlementStore';
 import { db } from '@/lib/db/dexie';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { usesVolumeExercise } from '@/lib/workout/exerciseClassification';
 import { convertWeight, getWeightUnit } from '@/lib/settings';
+import { resolveTenantId } from '@/lib/config';
 
 function getFirstName(email: string): string {
   const localPart = email.split('@')[0];
@@ -53,6 +54,7 @@ const QUICK_ACTIONS = [
 
 export default function HomePage() {
   const router = useRouter();
+  const gymId = useEntitlementStore((s) => s.gymId);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [thisWeek, setThisWeek] = useState(0);
@@ -82,7 +84,7 @@ export default function HomePage() {
 
       try {
         // Load the guest session into the workout store under the real user id
-        await useWorkoutStore.getState().loadSession(savedId, TENANT_ID, 'local-browser', session.user.id);
+        await useWorkoutStore.getState().loadSession(savedId, resolveTenantId(session.user.id, gymId), 'local-browser', session.user.id);
       } catch (e) {
         console.error('claimGuest session failed', e);
       }

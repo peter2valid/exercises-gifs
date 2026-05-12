@@ -36,6 +36,15 @@ export async function projectState(
 export async function projectFromEvents(sessionId: string): Promise<WorkoutEngineState> {
   const sessionEvents = await loadSessionEvents(sessionId);
   const state = replayEvents(sessionEvents);
+
+  // Guard: if there are events but SESSION_STARTED never arrived, the stream is
+  // incomplete (e.g. pulled a partial batch). Skip projection entirely — do NOT
+  // delete existing set_logs, which would corrupt visible session data.
+  if (sessionEvents.length > 0 && !state.session) {
+    console.warn('[projectFromEvents] Incomplete event stream for session', sessionId, '— skipping projection');
+    return state;
+  }
+
   await projectState(sessionId, state);
   return state;
 }
