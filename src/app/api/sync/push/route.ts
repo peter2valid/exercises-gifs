@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getUserFromRequest, getAdminSupabase } from '@/lib/supabase/server';
+import { getUserFromRequest } from '@/lib/supabase/server';
+import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { EventType } from '@/types';
 
 const VALID_EVENT_TYPES = new Set<EventType>([

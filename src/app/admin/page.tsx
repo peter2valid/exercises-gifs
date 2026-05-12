@@ -1,4 +1,5 @@
-import { getServerSupabase, getAdminSupabase } from '@/lib/supabase/server';
+import { getServerSupabase } from '@/lib/supabase/server';
+import { getAdminSupabase } from '@/lib/supabase/admin';
 import { isSuperAdmin, getAdminGymId } from '@/lib/auth/roles';
 import { redirect } from 'next/navigation';
 import {
