@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell, ShieldCheck, Camera, Phone, User as UserCircle, ShieldAlert } from 'lucide-react';
+import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell, ShieldCheck, Camera, Phone, User as UserCircle, ShieldAlert, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -49,7 +49,7 @@ export default function ProfilePage() {
       // Fetch Profile & Roles
       const [profileRes, userRoles] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle(),
-        getUserRoles(session.user.id)
+        getUserRoles(session.user.id, supabase)
       ]);
 
       setRoles(userRoles);
