@@ -9,6 +9,7 @@ import {
   saveSessionId,
   getSavedSessionId,
   clearSessionId,
+  getDeviceUserId,
 } from '@/lib/device/identity';
 import { TENANT_ID } from '@/lib/config';
 import { supabase } from '@/lib/supabase/client';
@@ -46,12 +47,12 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
 
   useEffect(() => {
     async function init() {
+      const deviceUser = getDeviceUserId();
       const { data: { session: authSession } } = await supabase.auth.getSession();
-      if (!authSession) {
-        router.push('/auth');
-        return;
-      }
-      setUserId(authSession.user.id);
+
+      // If there's an auth session use the real user id, otherwise use device-local id
+      const effectiveUserId = authSession ? authSession.user.id : deviceUser;
+      setUserId(effectiveUserId);
 
       await seedExercises().catch(console.error);
       const exs = await getAllExercises().catch(() => []);
@@ -60,7 +61,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
       const savedId = getSavedSessionId();
       if (savedId) {
         try {
-          await loadSession(savedId, TENANT_ID, 'local-browser', authSession.user.id);
+          await loadSession(savedId, TENANT_ID, 'local-browser', effectiveUserId);
           // Restore lastSetId so "Take rest" works immediately after a page refresh
           const restoredSets = Object.values(useWorkoutStore.getState().sets);
           if (restoredSets.length > 0) {
@@ -134,7 +135,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
   const exMap = Object.fromEntries(exercises.map((exercise) => [exercise.id, exercise]));
   const preselectedExercise = initialExerciseId ? (exMap[initialExerciseId] ?? null) : null;
 
-  if (isRestoring || !userId) return <RestoringView />;
+  if (isRestoring) return <RestoringView />;
 
   return (
     <div className="dashboard-bg min-h-screen flex flex-col">
