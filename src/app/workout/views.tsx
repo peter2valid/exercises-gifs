@@ -157,32 +157,33 @@ function SessionHeader({
   // Local timer controls (UI-only): pause/resume and restart (display only)
   const [menuOpen, setMenuOpen] = useState(false);
   const [pausedAt, setPausedAt] = useState<number | null>(null);
-  const [pausedDisplayMs, setPausedDisplayMs] = useState<number | null>(null);
-  const [totalPausedMs, setTotalPausedMs] = useState<number>(0);
-  const [restartOffsetMs, setRestartOffsetMs] = useState<number>(0);
+  const [accumulatedMs, setAccumulatedMs] = useState<number>(0);
+  const [startTime, setStartTime] = useState<number | null>(null);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
 
-  // Reset local timer adjustments whenever the underlying session start changes
+  // Sync with underlying session start
   useEffect(() => {
-    setPausedAt(null);
-    setPausedDisplayMs(null);
-    setTotalPausedMs(0);
-    setRestartOffsetMs(0);
+    if (startedAt) {
+      setStartTime(new Date(startedAt).getTime());
+      setAccumulatedMs(0);
+      setPausedAt(null);
+    } else {
+      setStartTime(null);
+    }
     setMenuOpen(false);
   }, [startedAt]);
 
-  // Compute displayed elapsed milliseconds with local adjustments
+  // Compute displayed elapsed milliseconds
   let elapsedMs = 0;
-  if (startedAt) {
-    const startedMs = new Date(startedAt).getTime();
-    if (pausedAt && pausedDisplayMs != null) {
-      elapsedMs = pausedDisplayMs;
+  if (startTime) {
+    if (pausedAt) {
+      elapsedMs = accumulatedMs;
     } else {
-      elapsedMs = Math.max(0, now - startedMs - totalPausedMs - restartOffsetMs);
+      elapsedMs = accumulatedMs + (now - startTime);
     }
   }
   const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
@@ -220,20 +221,16 @@ function SessionHeader({
             <button
               type="button"
               onClick={() => {
-                // Toggle pause/resume
-                if (!startedAt) return;
+                if (!startTime) return;
+                const currentTime = Date.now();
                 if (pausedAt) {
                   // resume
-                  const added = Date.now() - pausedAt;
-                  setTotalPausedMs((t) => t + added);
+                  setStartTime(currentTime);
                   setPausedAt(null);
-                  setPausedDisplayMs(null);
                 } else {
-                  // pause: capture display ms
-                  const startedMs = new Date(startedAt).getTime();
-                  const currentDisplay = Math.max(0, Date.now() - startedMs - totalPausedMs - restartOffsetMs);
-                  setPausedAt(Date.now());
-                  setPausedDisplayMs(currentDisplay);
+                  // pause
+                  setAccumulatedMs(accumulatedMs + (currentTime - startTime));
+                  setPausedAt(currentTime);
                 }
                 setMenuOpen(false);
               }}
@@ -244,13 +241,9 @@ function SessionHeader({
             <button
               type="button"
               onClick={() => {
-                if (!startedAt) return;
-                // Restart display to zero (do not modify session started_at)
-                const startedMs = new Date(startedAt).getTime();
-                setRestartOffsetMs(Date.now() - startedMs);
-                setTotalPausedMs(0);
+                setStartTime(Date.now());
+                setAccumulatedMs(0);
                 setPausedAt(null);
-                setPausedDisplayMs(0);
                 setMenuOpen(false);
               }}
               className="flex-1 rounded-md bg-sky-500 px-3 py-2 text-sm font-bold text-black"
@@ -722,9 +715,9 @@ export function ActiveView({
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-4">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => router.push('/home')}
             className="rounded-full p-2 text-white/70 transition-colors active:scale-95 hover:text-white"
-            aria-label="Go back"
+            aria-label="Close workout"
           >
             <ChevronDown size={22} />
           </button>
@@ -793,13 +786,23 @@ export function ActiveView({
                         <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/25">Current exercise</p>
                         <h2 className="mt-1 truncate text-lg font-semibold text-white">{selectedExercise?.name}</h2>
                       </div>
-                      <button
-                        type="button"
-                        onClick={openPicker}
-                        className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white/70"
-                      >
-                        Change
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={openPicker}
+                          className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white/70"
+                        >
+                          Change
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveExerciseId('')}
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/40 hover:text-white"
+                          aria-label="Close log"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="space-y-4">
@@ -974,10 +977,12 @@ export function FinishedView({
   sets,
   exMap,
   onReset,
+  onHome,
 }: {
   sets: SetLog[];
   exMap: Record<string, Exercise>;
   onReset: () => void;
+  onHome: () => void;
 }) {
   const [logOpen, setLogOpen] = useState(false);
   const unit = getWeightUnit();
@@ -1038,10 +1043,15 @@ export function FinishedView({
           )}
         </div>
 
-        <Button onClick={onReset} className="h-12 w-full rounded-[18px] text-base font-semibold" variant="primary">
-          <RotateCcw size={18} className="mr-2" />
-          Start new workout
-        </Button>
+        <div className="flex w-full flex-col gap-2">
+          <Button onClick={onReset} className="h-12 w-full rounded-[18px] text-base font-semibold" variant="primary">
+            <RotateCcw size={18} className="mr-2" />
+            Start new workout
+          </Button>
+          <Button onClick={onHome} className="h-12 w-full rounded-[18px] text-base font-semibold border-white/10 bg-white/5 text-white" variant="secondary">
+            Go Home
+          </Button>
+        </div>
       </div>
     </div>
   );

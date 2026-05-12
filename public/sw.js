@@ -50,6 +50,11 @@ self.addEventListener('fetch', (event) => {
       caches.match(request).then((cached) => {
         if (cached) return cached;
         return fetch(request).then((response) => {
+          // If the response is a redirect and the request mode is not 'follow',
+          // we must return the response as is or let the browser handle it.
+          if (response.redirected && request.redirect !== 'follow') {
+            return response;
+          }
           if (response && response.status === 200 && response.type === 'basic') {
             caches.open(IMAGE_CACHE).then((c) => c.put(request, response.clone()));
           }
@@ -65,6 +70,9 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.match(request).then((cached) => {
         const networkFetch = fetch(request).then((response) => {
+          if (response.redirected && request.redirect !== 'follow') {
+            return response;
+          }
           if (response && response.status === 200 && response.type === 'basic') {
             caches.open(STATIC_CACHE).then((c) => c.put(request, response.clone()));
           }

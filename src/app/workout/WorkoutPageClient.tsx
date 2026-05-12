@@ -172,7 +172,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
           onAdjustRest={adjustRest}
         />
       )}
-      {phase === 'finished' && <FinishedView sets={setList} exMap={exMap} onReset={handleReset} />}
+      {phase === 'finished' && <FinishedView sets={setList} exMap={exMap} onReset={handleReset} onHome={() => router.push('/home')} />}
     </div>
   );
 }
