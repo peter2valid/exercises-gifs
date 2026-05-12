@@ -1,15 +1,51 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 
 export function getServerSupabase() {
-  return createRouteHandlerClient({ cookies });
+  const cookieStore = cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            // The `set` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+        remove(name: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value: '', ...options });
+          } catch (error) {
+            // The `remove` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+      },
+    }
+  );
 }
 
 export function getAdminSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
   );
 }
 
@@ -21,16 +57,17 @@ export function getAdminSupabase() {
 export async function getUserFromRequest(req: Request) {
   // 1. Cookie-based auth (standard browser requests)
   const supabase = getServerSupabase();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session?.user) return session.user;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) return user;
 
   // 2. Bearer token auth (SyncWorker and non-cookie clients)
   const authHeader = req.headers.get('Authorization');
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
   if (token) {
     const admin = getAdminSupabase();
-    const { data: { user } } = await admin.auth.getUser(token);
-    if (user) return user;
+    // Use getUser(token) to safely verify the JWT with the server
+    const { data: { user: bearerUser } } = await admin.auth.getUser(token);
+    if (bearerUser) return bearerUser;
   }
 
   return null;

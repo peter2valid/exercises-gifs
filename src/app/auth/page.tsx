@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui';
 import { Zap, Mail, Lock, Loader2, Smartphone } from 'lucide-react';
 
 export default function AuthPage() {
   const router = useRouter();
+  const supabase = createSupabaseBrowserClient();
   const [loading, setLoading] = useState(false);
   const [authMethod, setAuthMethod] = useState<'email' | 'phone' | null>(null);
   const [email, setEmail] = useState('');
@@ -25,8 +26,12 @@ export default function AuthPage() {
       if (mode === 'signin') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.push('/home');
-        router.refresh();
+        // Wait for session to be acknowledged by browser/cookies before redirecting
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          router.replace('/home');
+          router.refresh();
+        }
       } else {
         const { error } = await supabase.auth.signUp({ 
           email, 
