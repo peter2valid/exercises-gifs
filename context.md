@@ -721,3 +721,4 @@ Add one row here each time you complete a stage. Keep it short — one line per 
 | 2026-05-11 | gemini-cli | Stage 10 | Paystack Connection: Finalised verify/webhook routes; added payment status notifications to /profile; verified entitlement sync | ✓ |
 | 2026-05-11 | gemini-cli | Stage 11 | Final QA: Verified all flows; ensured label consistency; improved /admin UX; lint and build pass | ✓ |
 | 2026-05-12 | GitHub Copilot | Guest sessions | Allow starting workouts from /explore for unauthenticated users; claim guest session on sign-in; build verified | ✓ |
+| 2026-05-12 | GitHub Copilot | Home UI | Simplified `Home` header to match mobile reference; added compact stat tiles; build verified | ✓ |

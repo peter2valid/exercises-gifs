@@ -156,58 +156,25 @@ export default function HomePage() {
     <div className="dashboard-bg min-h-screen pb-24 pt-8">
       <div className="max-w-md mx-auto px-4 space-y-8">
 
-        {/* Greeting */}
+        {/* Compact Greeting matching reference image */}
         <div className="animate-fade-in">
-          <p className="text-xs tracking-[0.3em] text-white/30 uppercase font-medium mb-2">Supafast</p>
-          <h1 className="text-4xl font-bold text-white tracking-tight mb-2">
-            Hey, {firstName}
-          </h1>
-          <p className="text-sm text-white/40">Ready for today&apos;s session?</p>
+          <p className="text-sm text-white/40 mb-1">Hello, {firstName}</p>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">Ready To Move?</h1>
         </div>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-2 gap-3 animate-slide-up">
-          <div className="glass-panel p-4">
-            <p className="text-xs text-white/40 tracking-[0.1em] uppercase mb-1">This Week</p>
-            <p className="text-2xl font-semibold text-white">
-              {thisWeek} {thisWeek === 1 ? 'Workout' : 'Workouts'}
-            </p>
+        {/* Minimal stat tiles (mimic reference) */}
+        <div className="flex items-center justify-between gap-3 animate-slide-up mt-4">
+          <div className="flex-1 glass-panel p-3 text-center">
+            <p className="text-2xl font-black text-white">6541</p>
+            <p className="text-xs text-white/40 mt-1">Steps</p>
           </div>
-          <div className="glass-panel p-4">
-            <p className="text-xs text-white/40 tracking-[0.1em] uppercase mb-1">All-Time Volume</p>
-            <p className="text-2xl font-semibold text-white">{Math.round(convertWeight(totalVolume, unit)).toLocaleString()} {unit}</p>
+          <div className="flex-1 glass-panel p-3 text-center">
+            <p className="text-2xl font-black text-white">1.5</p>
+            <p className="text-xs text-white/40 mt-1">Liters</p>
           </div>
-        </div>
-
-        {/* Today's Focus */}
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/30 mb-3">
-            Today&apos;s Focus
-          </p>
-          <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => router.push('/workout')}
-              className="flex h-20 w-full items-center gap-4 rounded-[24px] border border-white/10 bg-white text-black shadow-[0_18px_50px_rgba(255,255,255,0.08)] transition-transform active:scale-[0.99]"
-            >
-              <div className="ml-4 flex h-12 w-12 items-center justify-center rounded-full bg-black text-white">
-                <Play size={18} fill="currentColor" />
-              </div>
-              <div className="text-left">
-                <p className="text-base font-bold">Start Workout</p>
-                <p className="text-sm text-black/50">Log without a plan</p>
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push('/explore')}
-              className="flex h-16 w-full items-center gap-4 rounded-[22px] border border-white/10 bg-white/[0.04] transition-transform active:scale-[0.99]"
-            >
-              <div className="ml-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white">
-                <Search size={16} />
-              </div>
-              <p className="text-sm font-semibold text-white">Browse Exercises</p>
-            </button>
+          <div className="flex-1 glass-panel p-3 text-center">
+            <p className="text-2xl font-black text-white">259</p>
+            <p className="text-xs text-white/40 mt-1">Cal Burn</p>
           </div>
         </div>
 
