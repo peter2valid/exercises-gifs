@@ -16,7 +16,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
-  const supabase = getServerSupabase();
+  const supabase = await getServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {

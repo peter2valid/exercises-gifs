@@ -2,8 +2,8 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 
-export function getServerSupabase() {
-  const cookieStore = cookies();
+export async function getServerSupabase() {
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,7 +56,7 @@ export function getAdminSupabase() {
  */
 export async function getUserFromRequest(req: Request) {
   // 1. Cookie-based auth (standard browser requests)
-  const supabase = getServerSupabase();
+  const supabase = await getServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (user) return user;
 

@@ -22,7 +22,7 @@ type InitPayload   = MemberPayload | GymPayload;
  * Frontend NEVER grants entitlements based on this response alone.
  */
 export async function POST(req: Request): Promise<NextResponse> {
-  const supabase = getServerSupabase();
+  const supabase = await getServerSupabase();
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
@@ -48,7 +48,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 }
 
 async function guardPendingSpam(
-  supabase: ReturnType<typeof getServerSupabase>,
+  supabase: any,
   subjectId: string,
 ): Promise<boolean> {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -64,7 +64,7 @@ async function guardPendingSpam(
 async function initMemberUpgrade(
   user: { id: string; email?: string },
   payload: MemberPayload,
-  supabase: ReturnType<typeof getServerSupabase>,
+  supabase: any,
 ): Promise<NextResponse> {
   const { period } = payload;
 
@@ -132,7 +132,7 @@ async function initMemberUpgrade(
 async function initGymUpgrade(
   user: { id: string; email?: string },
   payload: GymPayload,
-  supabase: ReturnType<typeof getServerSupabase>,
+  supabase: any,
 ): Promise<NextResponse> {
   const { gymId, plan } = payload;
 
