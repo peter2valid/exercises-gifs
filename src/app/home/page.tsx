@@ -14,6 +14,9 @@ import {
 } from 'lucide-react';
 import { LoadingPage } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
+import { getSavedSessionId } from '@/lib/device/identity';
+import { TENANT_ID } from '@/lib/config';
+import { useWorkoutStore } from '@/store/workoutStore';
 import { db } from '@/lib/db/dexie';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { usesVolumeExercise } from '@/lib/workout/exerciseClassification';
@@ -68,6 +71,24 @@ export default function HomePage() {
     }
     checkUser();
   }, [router]);
+
+  // If a guest started a session previously, claim it for the signed-in user
+  useEffect(() => {
+    async function claimGuest() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const savedId = getSavedSessionId();
+      if (!savedId) return;
+
+      try {
+        // Load the guest session into the workout store under the real user id
+        await useWorkoutStore.getState().loadSession(savedId, TENANT_ID, 'local-browser', session.user.id);
+      } catch (e) {
+        console.error('claimGuest session failed', e);
+      }
+    }
+    claimGuest();
+  }, []);
 
   useEffect(() => {
     async function loadStats() {
