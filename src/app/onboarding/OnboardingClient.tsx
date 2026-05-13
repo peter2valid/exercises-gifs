@@ -8,6 +8,8 @@ export function OnboardingClient() {
   const router = useRouter();
   const [step, setStep] = useState<'form' | 'done'>('form');
   const [gymName, setGymName] = useState('');
+  const [gymType, setGymType] = useState('');
+  const [gymLocation, setGymLocation] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdGymId, setCreatedGymId] = useState<string | null>(null);
@@ -22,7 +24,11 @@ export function OnboardingClient() {
       const res = await fetch('/api/gyms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: gymName.trim() }),
+        body: JSON.stringify({ 
+          name: gymName.trim(),
+          type: gymType.trim() || null,
+          location: gymLocation.trim() || null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Failed to create gym');
@@ -73,6 +79,38 @@ export function OnboardingClient() {
                   required
                   autoFocus
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 ml-1">
+                    Type
+                  </label>
+                  <select
+                    value={gymType}
+                    onChange={(e) => setGymType(e.target.value)}
+                    className="w-full h-12 bg-white/5 border border-white/5 rounded-xl px-4 text-white text-sm outline-none focus:border-white/20 transition-all appearance-none"
+                  >
+                    <option value="" className="bg-black text-white/40">Select type...</option>
+                    <option value="bodybuilding" className="bg-black text-white">Bodybuilding</option>
+                    <option value="crossfit" className="bg-black text-white">CrossFit</option>
+                    <option value="powerlifting" className="bg-black text-white">Powerlifting</option>
+                    <option value="yoga" className="bg-black text-white">Yoga / Pilates</option>
+                    <option value="general" className="bg-black text-white">General Fitness</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 ml-1">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={gymLocation}
+                    onChange={(e) => setGymLocation(e.target.value)}
+                    placeholder="e.g. Nairobi"
+                    className="w-full h-12 bg-white/5 border border-white/5 rounded-xl px-4 text-white text-sm outline-none focus:border-white/20 transition-all"
+                  />
+                </div>
               </div>
 
               {error && <p className="text-rose-400 text-xs px-1">{error}</p>}

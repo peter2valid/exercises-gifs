@@ -1,19 +1,21 @@
 import { requireAdminAccess } from '@/lib/admin/access';
-import { GymNameForm } from '@/components/admin/GymNameForm';
+import { GymProfileForm } from '@/components/admin/GymProfileForm';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
   const { gym, user } = await requireAdminAccess();
 
+  if (!gym) return null;
+
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-3xl">
       <div>
         <h2 className="text-[18px] font-bold text-[#e8e8e8]">Settings</h2>
-        <p className="text-[13px] text-[#555] mt-0.5">Gym account details</p>
+        <p className="text-[13px] text-[#555] mt-0.5">Gym account details and profile</p>
       </div>
 
-      <GymNameForm gymId={gym?.id ?? ''} initialName={gym?.name ?? ''} />
+      <GymProfileForm gym={gym} />
 
       <div className="a-card space-y-4">
         <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#555]">Account</p>

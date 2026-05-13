@@ -18,19 +18,29 @@ export async function requireAdminAccess() {
   const admin = getAdminSupabase();
   const gymId = gymRole?.gym_id ?? null;
 
-  let gym: { id: string; name: string } | null = null;
+  let gym: { 
+    id: string; 
+    name: string;
+    address: string | null;
+    phone: string | null;
+    type: string | null;
+    location: string | null;
+    description: string | null;
+    logo_url: string | null;
+    website: string | null;
+  } | null = null;
 
   if (gymId) {
     const { data } = await admin
       .from('gyms')
-      .select('id, name')
+      .select('id, name, address, phone, type, location, description, logo_url, website')
       .eq('id', gymId)
       .maybeSingle();
     gym = data;
   } else if (isSA) {
     const { data } = await admin
       .from('gyms')
-      .select('id, name')
+      .select('id, name, address, phone, type, location, description, logo_url, website')
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();

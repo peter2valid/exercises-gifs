@@ -9,8 +9,10 @@ type EntitlementStore = {
   gymId: string | null;           // primary gym — use as tenant_id when non-null
   gymPlan: GymPlan | null;
   gymPlanStatus: SubscriptionStatus | null;
+  gymPeriodEnd: string | null;
   hasMemberPremium: boolean;
   memberPlanStatus: SubscriptionStatus | null;
+  memberPeriodEnd: string | null;
   activePromotions: string[];
   cachedAt: string | null;
   isStale: boolean;
@@ -38,8 +40,10 @@ export const useEntitlementStore = create<EntitlementStore>((set, get) => ({
   gymId: null,
   gymPlan: null,
   gymPlanStatus: null,
+  gymPeriodEnd: null,
   hasMemberPremium: false,
   memberPlanStatus: null,
+  memberPeriodEnd: null,
   activePromotions: [],
   cachedAt: null,
   isStale: false,
@@ -59,8 +63,10 @@ export const useEntitlementStore = create<EntitlementStore>((set, get) => ({
       gymId: cached.gymId,
       gymPlan: cached.gymPlan,
       gymPlanStatus: cached.gymPlanStatus,
+      gymPeriodEnd: cached.gymPeriodEnd,
       hasMemberPremium: cached.hasMemberPremium,
       memberPlanStatus: cached.memberPlanStatus,
+      memberPeriodEnd: cached.memberPeriodEnd,
       activePromotions: cached.activePromotions,
       cachedAt: cached.cachedAt,
       isStale: cached.isStale,
@@ -82,8 +88,10 @@ export const useEntitlementStore = create<EntitlementStore>((set, get) => ({
         gymId: fresh.gymId,
         gymPlan: fresh.gymPlan,
         gymPlanStatus: fresh.gymPlanStatus,
+        gymPeriodEnd: fresh.gymPeriodEnd,
         hasMemberPremium: fresh.hasMemberPremium,
         memberPlanStatus: fresh.memberPlanStatus,
+        memberPeriodEnd: fresh.memberPeriodEnd,
         activePromotions: fresh.activePromotions,
         cachedAt: fresh.cachedAt,
         isStale: false,

@@ -177,6 +177,28 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Join/Create Gym Prompt for users without a gym */}
+        {!gymId && (
+          <div className="glass-panel p-6 border-white/10 bg-white/5 animate-fade-in">
+            <h3 className="text-sm font-bold text-white mb-2">Connect with a Gym</h3>
+            <p className="text-xs text-white/40 mb-4">Join your local gym to access programs, check-ins, and trainer guidance.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => router.push('/join')}
+                className="h-10 rounded-xl bg-white text-black text-xs font-bold"
+              >
+                Find a Gym
+              </button>
+              <button
+                onClick={() => router.push('/onboarding')}
+                className="h-10 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold"
+              >
+                I own a Gym
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Recent Activity */}
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/30 mb-3">

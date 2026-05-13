@@ -14,15 +14,27 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   const body = await req.json().catch(() => ({}));
   const name = typeof body.name === 'string' ? body.name.trim() : '';
+  const type = typeof body.type === 'string' ? body.type.trim() : null;
+  const location = typeof body.location === 'string' ? body.location.trim() : null;
+
   if (name.length < 2 || name.length > 80) {
     return NextResponse.json({ error: 'Gym name must be 2–80 characters.' }, { status: 400 });
   }
+
+  // Generate a basic slug
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
   const admin = getAdminSupabase();
 
   const { data: gym, error: gymErr } = await admin
     .from('gyms')
-    .insert({ name, admin_user_id: user.id })
+    .insert({ 
+      name, 
+      slug,
+      type,
+      location,
+      admin_user_id: user.id 
+    })
     .select('id, name')
     .single();
 

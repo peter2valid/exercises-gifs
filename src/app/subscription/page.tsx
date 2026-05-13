@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Zap, CheckCircle, Shield, ArrowRight, Star, Crown } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronLeft, Zap, CheckCircle, Shield, ArrowRight, Star, Crown, AlertTriangle, Loader2 } from 'lucide-react';
 import { useEntitlementStore } from '@/store/entitlementStore';
 import { PLUS_PRICING, PLUS_FEATURES } from '@/lib/billing/memberPlans';
 import { getFeatureMeta } from '@/lib/billing/featureRegistry';
@@ -14,14 +15,37 @@ export default function SubscriptionPage() {
     features, 
     gymPlan, 
     hasMemberPremium, 
+    memberPeriodEnd,
+    memberPlanStatus,
     isLoading, 
     triggerUpgrade 
   } = useEntitlementStore();
+
+  const [canceling, setCanceling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   if (isLoading) return <LoadingPage />;
 
   const isPlus = hasMemberPremium;
   const currentPlanLabel = isPlus ? 'Viewora Plus' : (gymPlan ? `${gymPlan.toUpperCase()} Plan` : 'Free');
+
+  const handleCancel = async () => {
+    if (!confirm('Are you sure you want to cancel your Viewora Plus subscription? You will lose access to premium features at the end of your billing cycle.')) return;
+    setCanceling(true);
+    setCancelError(null);
+    try {
+      const res = await fetch('/api/billing/cancel', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Failed to cancel subscription');
+      alert('Subscription canceled successfully. Your premium features will remain active until the end of your current billing period.');
+      // Refresh state if needed, or let background refresh handle it
+      router.refresh();
+    } catch (err) {
+      setCancelError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setCanceling(false);
+    }
+  };
 
   return (
     <div className="dashboard-bg min-h-screen pb-24 pt-8">
@@ -59,6 +83,55 @@ export default function SubscriptionPage() {
               : 'Unlock advanced analytics, AI recommendations, and deeper insights.'}
           </p>
         </section>
+
+        {isPlus && memberPlanStatus !== 'canceled' && (
+          <div className="mb-10 p-5 rounded-2xl bg-white/[0.03] border border-white/10 animate-slide-up">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <p className="text-sm font-bold text-white">Active Subscription</p>
+                {memberPeriodEnd && (
+                  <p className="text-xs text-white/50 mt-1">
+                    Renews on {new Date(memberPeriodEnd).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
+                )}
+              </div>
+              <div className="px-2 py-1 rounded border border-emerald-500/20 bg-emerald-500/10 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                Active
+              </div>
+            </div>
+            
+            {cancelError && (
+              <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300">
+                {cancelError}
+              </div>
+            )}
+
+            <button
+              onClick={handleCancel}
+              disabled={canceling}
+              className="w-full py-2.5 rounded-xl border border-rose-500/20 text-rose-400 text-sm font-bold hover:bg-rose-500/10 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {canceling ? <Loader2 size={16} className="animate-spin" /> : <AlertTriangle size={16} />}
+              Cancel Subscription
+            </button>
+          </div>
+        )}
+
+        {isPlus && memberPlanStatus === 'canceled' && (
+          <div className="mb-10 p-5 rounded-2xl bg-rose-500/5 border border-rose-500/10 animate-slide-up">
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-sm font-bold text-white">Subscription Canceled</p>
+              <div className="px-2 py-1 rounded border border-rose-500/20 bg-rose-500/10 text-[10px] font-bold text-rose-400 uppercase tracking-wider">
+                Canceled
+              </div>
+            </div>
+            {memberPeriodEnd && (
+              <p className="text-xs text-white/50">
+                You will retain access to Plus features until {new Date(memberPeriodEnd).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}.
+              </p>
+            )}
+          </div>
+        )}
 
         {!isPlus && (
           <div className="mb-10 space-y-3 animate-slide-up">

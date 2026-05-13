@@ -1,6 +1,7 @@
 import { requireSuperAdmin } from '@/lib/admin/access';
 import { getAdminSupabase } from '@/lib/supabase/server';
 import { AdminTable, type AdminColumn } from '@/components/admin/AdminTable';
+import { CancelSubscriptionButton } from '@/components/super-admin/ActionButtons';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,13 +31,18 @@ const gymCols: AdminColumn[] = [
   {
     key: 'status',
     label: 'Status',
-    render: (v) => <span className={STATUS_CLASS[v as string] ?? 'a-badge a-badge-gray'}>{String(v)}</span>,
+    render: (v) => <span className={STATUS_CLASS[v as string] ?? 'a-badge a-badge-gray capitalize'}>{String(v)}</span>,
   },
   {
     key: 'current_period_end',
     label: 'Expires',
     render: (v) => fmtDate(v as string | null),
   },
+  {
+    key: 'actions',
+    label: '',
+    render: (_, row) => <CancelSubscriptionButton id={row.gym_id as string} type="gym" status={row.status as string} />,
+  }
 ];
 
 const userCols: AdminColumn[] = [
@@ -53,13 +59,18 @@ const userCols: AdminColumn[] = [
   {
     key: 'status',
     label: 'Status',
-    render: (v) => <span className={STATUS_CLASS[v as string] ?? 'a-badge a-badge-gray'}>{String(v)}</span>,
+    render: (v) => <span className={STATUS_CLASS[v as string] ?? 'a-badge a-badge-gray capitalize'}>{String(v)}</span>,
   },
   {
     key: 'current_period_end',
     label: 'Expires',
     render: (v) => fmtDate(v as string | null),
   },
+  {
+    key: 'actions',
+    label: '',
+    render: (_, row) => <CancelSubscriptionButton id={row.user_id as string} type="user" status={row.status as string} />,
+  }
 ];
 
 export default async function SubscriptionsPage() {

@@ -83,8 +83,10 @@ export interface EffectiveEntitlements {
   gymId: string | null;          // primary gym the user belongs to
   gymPlan: GymPlan | null;
   gymPlanStatus: SubscriptionStatus | null;
+  gymPeriodEnd: string | null;
   hasMemberPremium: boolean;
   memberPlanStatus: SubscriptionStatus | null;
+  memberPeriodEnd: string | null;
   activePromotions: string[];
   cachedAt: string;
   isStale: boolean;

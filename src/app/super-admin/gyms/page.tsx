@@ -1,6 +1,7 @@
 import { requireSuperAdmin } from '@/lib/admin/access';
 import { getAdminSupabase } from '@/lib/supabase/server';
 import { AdminTable, type AdminColumn } from '@/components/admin/AdminTable';
+import { SuspendGymButton } from '@/components/super-admin/ActionButtons';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,11 @@ const STATUS_CLASS: Record<string, string> = {
   past_due: 'a-badge a-badge-warn',
   canceled: 'a-badge a-badge-err',
   trialing: 'a-badge a-badge-blue',
+};
+
+const GYM_STATUS_CLASS: Record<string, string> = {
+  active: 'a-badge a-badge-ok',
+  suspended: 'a-badge a-badge-err',
 };
 
 const cols: AdminColumn[] = [
@@ -23,6 +29,11 @@ const cols: AdminColumn[] = [
     render: (v) => <span className="font-mono text-[12px] text-[#555]">{String(v).slice(0, 8).toUpperCase()}</span>,
   },
   {
+    key: 'status',
+    label: 'Account Status',
+    render: (v) => <span className={GYM_STATUS_CLASS[v as string] ?? 'a-badge a-badge-gray capitalize'}>{String(v)}</span>,
+  },
+  {
     key: 'plan',
     label: 'Plan',
     render: (v) => v
@@ -31,9 +42,9 @@ const cols: AdminColumn[] = [
   },
   {
     key: 'sub_status',
-    label: 'Status',
+    label: 'Sub Status',
     render: (v) => v
-      ? <span className={STATUS_CLASS[v as string] ?? 'a-badge a-badge-gray'}>{String(v)}</span>
+      ? <span className={STATUS_CLASS[v as string] ?? 'a-badge a-badge-gray capitalize'}>{String(v)}</span>
       : <span className="text-[#555]">—</span>,
   },
   {
@@ -41,6 +52,11 @@ const cols: AdminColumn[] = [
     label: 'Created',
     render: (v) => new Date(v as string).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
   },
+  {
+    key: 'actions',
+    label: '',
+    render: (_, row) => <SuspendGymButton gymId={row.id as string} status={row.status as string} />,
+  }
 ];
 
 export default async function GymsPage() {
@@ -49,7 +65,7 @@ export default async function GymsPage() {
 
   const { data: gyms } = await admin
     .from('gyms')
-    .select('id, name, created_at')
+    .select('id, name, status, created_at')
     .order('created_at', { ascending: false });
 
   const gymIds = (gyms ?? []).map(g => g.id);

@@ -271,17 +271,21 @@ export function IdleView({
   isLoading,
   preselectedExercise,
   exercisesError,
+  assignedPrograms = [],
+  onStartProgram,
 }: {
   onStart: () => void;
   onBrowseLibrary: () => void;
   isLoading: boolean;
   preselectedExercise?: Exercise | null;
   exercisesError?: boolean;
+  assignedPrograms?: any[];
+  onStartProgram?: (program: any) => void;
 }) {
   return (
     <div className="dashboard-bg min-h-screen pb-8 pt-8">
       <div className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-md flex-col px-4">
-        <div className="mb-10 space-y-3">
+        <div className="mb-8 space-y-3">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/30">Workout now</p>
           <h1 className="text-3xl font-bold tracking-tight text-white">Start a simple session</h1>
           <p className="max-w-sm text-sm text-white/45">Log without a plan, then add exercises only when you need them.</p>
@@ -304,31 +308,50 @@ export function IdleView({
             type="button"
             onClick={onStart}
             disabled={isLoading}
-            className="flex h-20 w-full items-center gap-4 rounded-[24px] border border-white/10 bg-white text-black shadow-[0_18px_50px_rgba(255,255,255,0.1)] transition-transform active:scale-[0.99] disabled:opacity-60"
+            className="flex h-16 w-full items-center gap-4 rounded-[20px] border border-white/10 bg-white text-black shadow-[0_18px_50px_rgba(255,255,255,0.1)] transition-transform active:scale-[0.99] disabled:opacity-60"
           >
-            <div className="ml-4 flex h-12 w-12 items-center justify-center rounded-full bg-black text-white">
-              <Play size={18} fill="currentColor" />
+            <div className="ml-4 flex h-10 w-10 items-center justify-center rounded-full bg-black text-white">
+              <Play size={16} fill="currentColor" />
             </div>
             <div className="min-w-0 text-left">
-              <p className="text-lg font-bold">{isLoading ? 'Starting workout…' : 'Start new workout'}</p>
-              <p className="text-sm text-black/55">Log without a plan</p>
+              <p className="text-base font-bold">{isLoading ? 'Starting workout…' : 'Start Free Workout'}</p>
             </div>
           </button>
 
           <button
             type="button"
             onClick={onBrowseLibrary}
-            className="flex h-20 w-full items-center gap-4 rounded-[24px] border border-white/10 bg-white/[0.04] transition-transform active:scale-[0.99]"
+            className="flex h-16 w-full items-center gap-4 rounded-[20px] border border-white/10 bg-white/[0.04] transition-transform active:scale-[0.99]"
           >
-            <div className="ml-4 flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white">
-              <Search size={18} />
+            <div className="ml-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white">
+              <Search size={16} />
             </div>
             <div className="min-w-0 text-left">
-              <p className="text-lg font-bold text-white">Find exercises</p>
-              <p className="text-sm text-white/45">Build a small roster before you log</p>
+              <p className="text-base font-bold text-white">Find exercises</p>
             </div>
           </button>
         </div>
+
+        {assignedPrograms.length > 0 && (
+          <div className="mt-10">
+            <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/30 mb-4">Your Programs</p>
+            <div className="space-y-3">
+              {assignedPrograms.map(prog => (
+                <div key={prog.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                  <h3 className="text-base font-bold text-white mb-1">{prog.name}</h3>
+                  {prog.description && <p className="text-xs text-white/40 mb-4">{prog.description}</p>}
+                  <button
+                    onClick={() => onStartProgram?.(prog)}
+                    disabled={isLoading}
+                    className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#3b82f6] text-sm font-bold text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
+                  >
+                    <Play size={14} fill="currentColor" /> Start Program
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {exercisesError && (
           <p className="mt-4 text-center text-xs text-amber-400/70">
@@ -336,7 +359,7 @@ export function IdleView({
           </p>
         )}
 
-        <p className="mt-4 text-center text-xs text-white/20">Fast, local, and ready for weak connections.</p>
+        <p className="mt-auto pt-6 text-center text-xs text-white/20 pb-4">Fast, local, and ready for weak connections.</p>
       </div>
     </div>
   );

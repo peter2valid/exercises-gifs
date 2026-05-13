@@ -46,6 +46,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
 
   const [exercises, setExercises] = useState<any[]>([]);
   const [exercisesError, setExercisesError] = useState(false);
+  const [assignedPrograms, setAssignedPrograms] = useState<any[]>([]);
   const [lastSetId, setLastSetId] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(true);
@@ -85,6 +86,16 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
       } catch {
         setExercisesError(true);
         setExercises([]);
+      }
+
+      if (authSession) {
+        try {
+          const res = await fetch('/api/programs/assigned');
+          const data = await res.json();
+          if (res.ok) setAssignedPrograms(data.programs || []);
+        } catch (err) {
+          console.error('[workout] failed to fetch programs:', err);
+        }
       }
 
       const savedId = getSavedSessionId();
@@ -145,6 +156,37 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
       .catch((e) => {
         console.error('[workout] start failed:', e);
         setError('Could not start the workout. Please try again.');
+      })
+      .finally(() => {
+        startingRef.current = false;
+        setIsStarting(false);
+      });
+  };
+
+  const handleStartProgram = (program: any) => {
+    if (startingRef.current || !userId) return;
+    startingRef.current = true;
+    const currentGymId = useEntitlementStore.getState().gymId;
+    const sessionId = crypto.randomUUID();
+    
+    // Pre-fill roster with program exercises
+    if (program.template_exercises?.length > 0) {
+      const roster = program.template_exercises
+        .sort((a: any, b: any) => a.ord - b.ord)
+        .map((e: any) => e.exercise_id);
+      try {
+        localStorage.setItem(`supafast-workout-roster:${sessionId}`, JSON.stringify(roster));
+      } catch (err) {
+        console.error('Failed to save program roster:', err);
+      }
+    }
+
+    setIsStarting(true);
+    startSession(sessionId, userId, resolveTenantId(userId, currentGymId), 'local-browser')
+      .then(() => saveSessionId(sessionId))
+      .catch((e) => {
+        console.error('[workout] start program failed:', e);
+        setError('Could not start the program. Please try again.');
       })
       .finally(() => {
         startingRef.current = false;
@@ -214,6 +256,8 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
           isLoading={isStarting}
           preselectedExercise={preselectedExercise}
           exercisesError={exercisesError}
+          assignedPrograms={assignedPrograms}
+          onStartProgram={handleStartProgram}
         />
       )}
       {phase === 'active' && (
