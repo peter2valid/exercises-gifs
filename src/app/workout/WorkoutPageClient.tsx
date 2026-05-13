@@ -290,7 +290,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
 
       {/* Global error toast — shown over all views */}
       {error && (
-        <div className="fixed bottom-24 inset-x-4 z-[100] mx-auto max-w-md">
+        <div style={{ bottom: 'calc(var(--bottom-nav-height,76px) + env(safe-area-inset-bottom) + 12px)' }} className="fixed inset-x-4 z-[100] mx-auto max-w-md">
           <div className="flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-950/95 px-4 py-3 shadow-2xl backdrop-blur-sm">
             <p className="flex-1 text-sm text-red-300 leading-snug">{error}</p>
             <button

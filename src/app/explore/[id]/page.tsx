@@ -89,7 +89,7 @@ export default function ExerciseDetail({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        <div className="fixed bottom-[88px] left-4 right-4 max-w-md mx-auto z-50">
+        <div style={{ bottom: 'calc(var(--bottom-nav-height,76px) + env(safe-area-inset-bottom) + 12px)' }} className="fixed left-4 right-4 max-w-md mx-auto z-50">
           <Link
             href={`/workout?exerciseId=${encodeURIComponent(String(exercise.id))}`}
             className="flex items-center justify-center w-full rounded-2xl font-bold transition-all active:scale-[0.98] bg-white text-black py-4 shadow-2xl shadow-black/50 hover:bg-white/90"
