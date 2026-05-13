@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { UserCheck, UserX, Trash2, Loader2, Clock } from 'lucide-react';
+import { UserCheck, UserX, Trash2, Loader2, Clock, UserPlus } from 'lucide-react';
+import { AddMemberModal } from './AddMemberModal';
 
 interface Member {
   id: string;
@@ -27,6 +28,7 @@ export function MembersPanel({ gymId, initialMembers, initialRequests }: Props) 
   const [members, setMembers] = useState(initialMembers);
   const [requests, setRequests] = useState(initialRequests);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const handleAction = async (membershipId: string, action: 'approve' | 'reject' | 'delete') => {
     if (processingId) return;
@@ -64,6 +66,19 @@ export function MembersPanel({ gymId, initialMembers, initialRequests }: Props) 
   return (
     <div className="space-y-8">
       {/* Pending Requests */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-[14px] font-semibold text-[#e8e8e8]">Manage Members</h3>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="h-8 px-3 rounded-lg bg-blue-600 text-white text-[11px] font-bold flex items-center gap-1.5 hover:bg-blue-500 transition-colors"
+        >
+          <UserPlus size={14} />
+          Add Member
+        </button>
+      </div>
+
+      {showAddModal && <AddMemberModal gymId={gymId} onClose={() => setShowAddModal(false)} />}
+
       {requests.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-[14px] font-semibold text-[#e8e8e8] flex items-center gap-2">

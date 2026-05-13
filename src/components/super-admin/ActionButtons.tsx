@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Ban, Play, XCircle } from 'lucide-react';
+import { Loader2, Ban, Play, XCircle, Edit2 } from 'lucide-react';
+import { EditGymModal } from './EditGymModal';
 
 export function SuspendGymButton({ gymId, status }: { gymId: string, status: string }) {
   const [loading, setLoading] = useState(false);
@@ -43,6 +44,22 @@ export function SuspendGymButton({ gymId, status }: { gymId: string, status: str
     >
       {loading ? <Loader2 size={16} className="animate-spin" /> : isSuspended ? <Play size={16} /> : <Ban size={16} />}
     </button>
+  );
+}
+
+export function EditGymButton({ gym, ownerEmail }: { gym: any; ownerEmail?: string | null }) {
+  const [show, setShow] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setShow(true)}
+        className="p-1.5 rounded text-blue-400 hover:bg-blue-400/10 transition-colors"
+        title="Edit Gym"
+      >
+        <Edit2 size={16} />
+      </button>
+      {show && <EditGymModal gym={gym} ownerEmail={ownerEmail} onClose={() => setShow(false)} />}
+    </>
   );
 }
 

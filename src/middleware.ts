@@ -62,6 +62,8 @@ export async function middleware(request: NextRequest) {
   // 1. PUBLIC ROUTES: Always accessible
   const isAuthPage = path.startsWith('/auth');
   const isPublicApi = path.startsWith('/api/public');
+  const isExplore = path.startsWith('/explore');
+  const isJoin = path.startsWith('/join');
   const isStatic = path.match(/\.(.*)$/); // Basic check for static assets
 
   // 2. REDIRECT: If logged in and trying to access /auth, go to /home
@@ -71,7 +73,7 @@ export async function middleware(request: NextRequest) {
 
   // 3. PROTECT: If NOT logged in and trying to access private pages, go to /auth
   // Special case for API routes: return JSON 401 instead of redirecting to HTML
-  if (!user && !isAuthPage && !isPublicApi && !isStatic && path !== '/') {
+  if (!user && !isAuthPage && !isPublicApi && !isExplore && !isJoin && !isStatic && path !== '/') {
     if (path.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

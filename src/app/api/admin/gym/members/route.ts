@@ -55,6 +55,54 @@ export async function POST(req: Request): Promise<NextResponse> {
   return NextResponse.json({ ok: true });
 }
 
+// PUT /api/admin/gym/members — Directly add a member by email
+export async function PUT(req: Request): Promise<NextResponse> {
+  const user = await getUserFromRequest(req);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const body = await req.json().catch(() => ({}));
+  const { gymId, email, role = 'member' } = body;
+
+  if (!gymId || !email) {
+    return NextResponse.json({ error: 'gymId and email required' }, { status: 400 });
+  }
+
+  const allowed = await hasGymRole(user.id, gymId, 'gym_admin');
+  if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const admin = getAdminSupabase();
+  
+  // Look up user
+  const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  const target = users?.find(u => u.email?.toLowerCase() === email.toLowerCase().trim());
+
+  if (!target) {
+    return NextResponse.json({ error: 'User not found. Please ask them to sign up first or use the invite system.' }, { status: 404 });
+  }
+
+  // Create membership
+  const { error: memErr } = await admin
+    .from('gym_memberships')
+    .upsert({
+      user_id: target.id,
+      gym_id: gymId,
+      status: 'active',
+      role: role,
+      joined_at: new Date().toISOString()
+    }, { onConflict: 'user_id,gym_id' });
+
+  if (memErr) return NextResponse.json({ error: 'Failed to create membership' }, { status: 500 });
+
+  // Grant role
+  await admin.from('user_gym_roles').upsert({
+    user_id: target.id,
+    gym_id: gymId,
+    role: role as any
+  }, { onConflict: 'user_id,gym_id,role' });
+
+  return NextResponse.json({ ok: true });
+}
+
 // DELETE /api/admin/gym/members — Remove a member
 export async function DELETE(req: Request): Promise<NextResponse> {
   const user = await getUserFromRequest(req);

@@ -1,7 +1,7 @@
 import { requireSuperAdmin } from '@/lib/admin/access';
 import { getAdminSupabase } from '@/lib/supabase/server';
 import { AdminTable, type AdminColumn } from '@/components/admin/AdminTable';
-import { SuspendGymButton } from '@/components/super-admin/ActionButtons';
+import { SuspendGymButton, EditGymButton } from '@/components/super-admin/ActionButtons';
 import { NewGymButton } from '@/components/super-admin/NewGymModal';
 
 export const dynamic = 'force-dynamic';
@@ -25,9 +25,11 @@ const cols: AdminColumn[] = [
     render: (v) => <span className="font-medium text-[#e8e8e8]">{String(v)}</span>,
   },
   {
-    key: 'id',
-    label: 'ID',
-    render: (v) => <span className="font-mono text-[12px] text-[#555]">{String(v).slice(0, 8).toUpperCase()}</span>,
+    key: 'admin_email',
+    label: 'Owner / Admin',
+    render: (v) => v 
+      ? <span className="text-[13px] text-[#909090]">{String(v)}</span>
+      : <span className="text-[#333] italic text-[12px]">Unassigned</span>,
   },
   {
     key: 'status',
@@ -56,7 +58,12 @@ const cols: AdminColumn[] = [
   {
     key: 'actions',
     label: '',
-    render: (_, row) => <SuspendGymButton gymId={row.id as string} status={row.status as string} />,
+    render: (_, row) => (
+      <div className="flex items-center justify-end gap-1">
+        <EditGymButton gym={row} ownerEmail={row.admin_email as string} />
+        <SuspendGymButton gymId={row.id as string} status={row.status as string} />
+      </div>
+    ),
   }
 ];
 
@@ -66,22 +73,25 @@ export default async function GymsPage() {
 
   const { data: gyms } = await admin
     .from('gyms')
-    .select('id, name, status, created_at')
+    .select('id, name, status, created_at, admin_user_id')
     .order('created_at', { ascending: false });
 
   const gymIds = (gyms ?? []).map(g => g.id);
 
-  const { data: subs } = gymIds.length
-    ? await admin
-        .from('gym_subscriptions')
-        .select('gym_id, plan, status')
-        .in('gym_id', gymIds)
-    : { data: [] };
+  // Fetch subscriptions and users (to get emails)
+  const [subsRes, usersRes] = await Promise.all([
+    gymIds.length
+      ? admin.from('gym_subscriptions').select('gym_id, plan, status').in('gym_id', gymIds)
+      : { data: [] },
+    admin.auth.admin.listUsers({ perPage: 1000 })
+  ]);
 
-  const subMap = Object.fromEntries((subs ?? []).map(s => [s.gym_id, s]));
+  const subMap = Object.fromEntries((subsRes.data ?? []).map(s => [s.gym_id, s]));
+  const userMap = Object.fromEntries((usersRes.data?.users ?? []).map(u => [u.id, u.email]));
 
   const rows = (gyms ?? []).map(g => ({
     ...g,
+    admin_email: g.admin_user_id ? userMap[g.admin_user_id] : null,
     plan: subMap[g.id]?.plan ?? null,
     sub_status: subMap[g.id]?.status ?? null,
   })) as Record<string, unknown>[];

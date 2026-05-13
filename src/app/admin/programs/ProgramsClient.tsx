@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, ChevronRight, Trash2, PlusCircle, X, Loader2, Dumbbell, Check } from 'lucide-react';
+import Image from 'next/image';
+import { Plus, ChevronRight, Trash2, PlusCircle, X, Loader2, Dumbbell, Check, Share2, Copy, Send } from 'lucide-react';
 
 interface TemplateExercise {
   id: string;
@@ -143,6 +144,19 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
     e.body_part.toLowerCase().includes(exSearch.toLowerCase())
   );
 
+  const shareUrl = selected ? (typeof window !== 'undefined' ? `${window.location.origin}/p/${selected.id}` : '') : '';
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(shareUrl);
+    alert('Link copied to clipboard!');
+  };
+
+  const shareWhatsApp = () => {
+    if (!selected) return;
+    const text = encodeURIComponent(`Check out this workout program: ${selected.name}\n\n${shareUrl}`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
   // ─── List view ────────────────────────────────────────────────────────────
   if (!selected) {
     return (
@@ -243,6 +257,22 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
           <h2 className="text-[18px] font-bold text-[#e8e8e8] truncate">{selected.name}</h2>
           {selected.description && <p className="text-[13px] text-[#555]">{selected.description}</p>}
         </div>
+        <div className="flex gap-2">
+          <button
+            onClick={copyLink}
+            className="p-2 rounded-lg border border-[#262626] text-[#909090] hover:text-white transition-colors"
+            title="Copy Link"
+          >
+            <Copy size={16} />
+          </button>
+          <button
+            onClick={shareWhatsApp}
+            className="p-2 rounded-lg bg-[#25d366]/10 border border-[#25d366]/20 text-[#25d366] hover:bg-[#25d366]/20 transition-colors"
+            title="Share via WhatsApp"
+          >
+            <Send size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Exercise list */}
@@ -304,19 +334,30 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
             autoFocus
             className="w-full h-9 rounded-lg border border-[#262626] bg-[#141414] px-3 text-sm text-[#e8e8e8] outline-none focus:border-[#3b82f6]"
           />
-          <div className="max-h-48 overflow-y-auto space-y-1 -mx-1 px-1">
+          <div className="max-h-64 overflow-y-auto space-y-1 -mx-1 px-1">
             {filteredEx.slice(0, 40).map(ex => (
               <button
                 key={ex.id}
                 onClick={() => setAddingEx(ex)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                className={`w-full text-left px-2 py-2 rounded-xl text-sm transition-all flex items-center gap-3 ${
                   addingEx?.id === ex.id
                     ? 'bg-[#3b82f6]/20 text-[#60a5fa] border border-[#3b82f6]/40'
-                    : 'text-[#909090] hover:text-[#e8e8e8] hover:bg-white/5'
+                    : 'text-[#909090] hover:text-[#e8e8e8] hover:bg-white/5 border border-transparent'
                 }`}
               >
-                <span className="font-medium">{ex.name}</span>
-                <span className="text-[11px] text-[#555] ml-2">{ex.body_part}</span>
+                <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-[#1a1a1a] shrink-0 border border-white/5">
+                  <Image 
+                    src={`/exercise-posters/${ex.id}.jpg`} 
+                    alt="" 
+                    fill 
+                    className="object-cover"
+                    unoptimized 
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-bold truncate leading-tight">{ex.name}</p>
+                  <p className="text-[11px] text-[#555] mt-0.5 uppercase tracking-wider">{ex.body_part}</p>
+                </div>
               </button>
             ))}
           </div>

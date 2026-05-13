@@ -1,50 +1,78 @@
 import { requireSuperAdmin } from '@/lib/admin/access';
 import { getAdminSupabase } from '@/lib/supabase/server';
 import { AdminTable, type AdminColumn } from '@/components/admin/AdminTable';
+import { UserActions } from '@/components/super-admin/UserActions';
 
 export const dynamic = 'force-dynamic';
-
-const cols: AdminColumn[] = [
-  {
-    key: 'email',
-    label: 'Email',
-    render: (v) => <span className="text-[13px] text-[#e8e8e8]">{String(v ?? '—')}</span>,
-  },
-  {
-    key: 'id',
-    label: 'User ID',
-    render: (v) => <span className="font-mono text-[12px] text-[#555]">{String(v).slice(0, 8).toUpperCase()}</span>,
-  },
-  {
-    key: 'created_at',
-    label: 'Signed Up',
-    render: (v) => new Date(v as string).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
-  },
-  {
-    key: 'last_sign_in_at',
-    label: 'Last Seen',
-    render: (v) => v
-      ? new Date(v as string).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-      : <span className="text-[#555]">—</span>,
-  },
-];
 
 export default async function UsersPage() {
   await requireSuperAdmin();
   const admin = getAdminSupabase();
 
-  const { data, error } = await admin.auth.admin.listUsers({ perPage: 200 });
+  const [usersRes, gymsRes, rolesRes] = await Promise.all([
+    admin.auth.admin.listUsers({ perPage: 200 }),
+    admin.from('gyms').select('id, name'),
+    admin.from('user_gym_roles').select('*')
+  ]);
 
-  if (error) {
+  if (usersRes.error) {
     return (
       <div className="space-y-4 max-w-5xl">
         <h2 className="text-[18px] font-bold text-[#e8e8e8]">Users</h2>
-        <p className="text-[13px] text-red-400">Failed to load users: {error.message}</p>
+        <p className="text-[13px] text-red-400">Failed to load users: {usersRes.error.message}</p>
       </div>
     );
   }
 
-  const rows = (data.users ?? []).map(u => ({
+  const gyms = gymsRes.data ?? [];
+  const allRoles = rolesRes.data ?? [];
+  const gymMap = Object.fromEntries(gyms.map(g => [g.id, g.name]));
+
+  const cols: AdminColumn[] = [
+    {
+      key: 'email',
+      label: 'Email',
+      render: (v) => <span className="text-[13px] text-[#e8e8e8]">{String(v ?? '—')}</span>,
+    },
+    {
+      key: 'roles',
+      label: 'Roles / Gyms',
+      render: (_, row) => {
+        const userRoles = allRoles.filter(r => r.user_id === row.id);
+        if (userRoles.length === 0) return <span className="text-[#333] italic text-[12px]">No roles</span>;
+        
+        return (
+          <div className="flex flex-wrap gap-1">
+            {userRoles.map((r, i) => (
+              <span key={i} className={`a-badge text-[10px] ${r.role === 'super_admin' ? 'a-badge-blue' : 'a-badge-gray'}`}>
+                {r.role === 'super_admin' ? 'Super Admin' : `${r.role} @ ${gymMap[r.gym_id!] || 'Unknown'}`}
+              </span>
+            ))}
+          </div>
+        );
+      }
+    },
+    {
+      key: 'created_at',
+      label: 'Signed Up',
+      render: (v) => new Date(v as string).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+    },
+    {
+      key: 'actions',
+      label: '',
+      render: (_, row) => (
+        <div className="flex justify-end">
+          <UserActions 
+            user={row} 
+            gyms={gyms} 
+            roles={allRoles.filter(r => r.user_id === row.id)} 
+          />
+        </div>
+      ),
+    },
+  ];
+
+  const rows = (usersRes.data.users ?? []).map(u => ({
     id: u.id,
     email: u.email,
     created_at: u.created_at,
