@@ -30,8 +30,11 @@ export function BottomNav() {
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/95 backdrop-blur-xl" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-      <div className="max-w-md mx-auto px-2 py-3 flex items-center justify-around">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/95 backdrop-blur-xl"
+      style={{ height: '76px', paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      <div className="max-w-md mx-auto px-2 h-full flex items-center justify-around">
         {navItems.map(({ href, icon: Icon, label }) => {
           const active = isActive(href);
           return (

@@ -38,8 +38,22 @@ export default async function PublicProgramPage({ params }: { params: Promise<{ 
   return (
     <div className="min-h-screen bg-[#050505] text-white pb-32">
       {/* Header */}
-      <div className="relative h-64 w-full">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-600/20 to-[#050505]" />
+      <div className="relative h-72 w-full overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-600/25 via-black/20 to-[#050505]" />
+        <div className="absolute inset-0 grid grid-cols-3 gap-2 p-4 opacity-55">
+          {exercises.slice(0, 3).map((ex: any) => (
+            <div key={ex.id} className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04]">
+              <Image
+                src={`/exercise-posters/${ex.exercise_id}.jpg`}
+                alt={ex.exercise_name}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+            </div>
+          ))}
+        </div>
         <div className="absolute inset-0 flex flex-col justify-end p-6">
           <Link href="/explore" className="mb-4 inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
             <ArrowLeft size={16} /> Explore
@@ -58,6 +72,21 @@ export default async function PublicProgramPage({ params }: { params: Promise<{ 
             {program.description}
           </p>
         )}
+
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 text-center">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/25">Steps</p>
+            <p className="mt-1 text-lg font-bold">{exercises.length}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 text-center">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/25">Style</p>
+            <p className="mt-1 text-lg font-bold">Shared</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 text-center">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/25">Gym</p>
+            <p className="mt-1 truncate text-sm font-semibold text-white/80">{(program.gyms as any)?.name || 'GymApp'}</p>
+          </div>
+        </div>
 
         <div className="space-y-4">
           <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-white/30">Exercises</h2>

@@ -18,8 +18,9 @@ interface Program {
   id: string;
   name: string;
   description: string | null;
+  created_by: string | null;
   created_at: string;
-  template_exercises: { id: string }[];
+  template_exercises: { id: string; exercise_id: string; exercise_name: string }[];
 }
 
 interface Exercise {
@@ -28,13 +29,57 @@ interface Exercise {
   body_part: string;
 }
 
+interface ProgramAssignment {
+  template_id: string;
+  assigned_to: string;
+  assigned_by: string | null;
+}
+
+interface UserDirectoryEntry {
+  id: string;
+  email: string | null;
+  name: string | null;
+}
+
 interface Props {
   gymId: string;
   initialPrograms: Program[];
+  assignments: ProgramAssignment[];
+  userDirectory: UserDirectoryEntry[];
   exercises: Exercise[];
 }
 
-export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
+function ThumbnailStrip({ exercises, tall = false }: { exercises: { exercise_id: string; exercise_name: string }[]; tall?: boolean }) {
+  const preview = exercises.slice(0, 3);
+
+  if (preview.length === 0) {
+    return (
+      <div className={`flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] ${tall ? 'h-32' : 'h-24'}`}>
+        <Dumbbell size={18} className="text-white/15" />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`grid gap-2 ${preview.length === 1 ? 'grid-cols-1' : preview.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+      {preview.map((exercise, index) => (
+        <div key={exercise.exercise_id} className={`relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] ${tall ? 'h-28' : 'h-20'}`}>
+          <Image
+            src={`/exercise-posters/${exercise.exercise_id}.jpg`}
+            alt={exercise.exercise_name}
+            fill
+            className="object-cover"
+            unoptimized
+            priority={index === 0}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function ProgramsClient({ gymId, initialPrograms, assignments, userDirectory, exercises }: Props) {
   const [programs, setPrograms] = useState(initialPrograms);
   const [selected, setSelected] = useState<Program | null>(null);
   const [programExercises, setProgramExercises] = useState<TemplateExercise[]>([]);
@@ -64,6 +109,13 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
   const [assignEmail, setAssignEmail] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [assignResult, setAssignResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const userMap = Object.fromEntries(userDirectory.map((user) => [user.id, user]));
+  const assignmentsByTemplate = assignments.reduce<Record<string, ProgramAssignment[]>>((acc, assignment) => {
+    acc[assignment.template_id] = acc[assignment.template_id] ?? [];
+    acc[assignment.template_id].push(assignment);
+    return acc;
+  }, {});
 
   const openProgram = async (prog: Program) => {
     setSelected(prog);
@@ -161,9 +213,17 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
 
   const shareWhatsApp = () => {
     if (!selected) return;
-    const text = encodeURIComponent(`Check out this workout program: ${selected.name}\n\n${shareUrl}`);
+    const assignees = (assignmentsByTemplate[selected.id] ?? []).map((assignment) => userMap[assignment.assigned_to]?.email ?? 'a member');
+    const accessLine = assignees.length ? `Shared with ${assignees.join(', ')}` : 'Not assigned to any member yet';
+    const text = encodeURIComponent(`Workout program: ${selected.name}\n${accessLine}\n\n${shareUrl}`);
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
+
+  const selectedAssignments = selected ? (assignmentsByTemplate[selected.id] ?? []) : [];
+  const selectedAssignees = selectedAssignments
+    .map((assignment) => userMap[assignment.assigned_to])
+    .filter((user): user is UserDirectoryEntry => Boolean(user));
+  const selectedPreviewExercises = selected?.template_exercises ?? [];
 
   // ─── List view ────────────────────────────────────────────────────────────
   if (!selected) {
@@ -244,23 +304,41 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
             {programs.map(prog => (
               <div
                 key={prog.id}
-                className="a-card flex items-center gap-3 cursor-pointer hover:border-[#3b82f6]/40 transition-colors group"
+                className="a-card grid gap-3 cursor-pointer hover:border-[#3b82f6]/40 transition-colors group"
                 onClick={() => openProgram(prog)}
               >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#e8e8e8] truncate">{prog.name}</p>
-                  <p className="text-[12px] text-[#555] mt-0.5">
-                    {prog.template_exercises.length} exercise{prog.template_exercises.length !== 1 ? 's' : ''} ·{' '}
-                    {new Date(prog.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </p>
+                <ThumbnailStrip exercises={prog.template_exercises} />
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#e8e8e8] truncate">{prog.name}</p>
+                    <p className="text-[12px] text-[#555] mt-0.5">
+                      {prog.template_exercises.length} exercise{prog.template_exercises.length !== 1 ? 's' : ''} ·{' '}
+                      {new Date(prog.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </p>
+                    <p className="text-[11px] text-[#444] mt-1 truncate">
+                      {selected ? '' : 'Tap to open, share, and assign'}
+                    </p>
+                  </div>
+                  <div className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-white/45">
+                    Share
+                  </div>
                 </div>
-                <ChevronRight size={16} className="text-[#333] group-hover:text-[#555] shrink-0 transition-colors" />
-                <button
-                  onClick={e => { e.stopPropagation(); deleteProgram(prog); }}
-                  className="shrink-0 text-[#333] hover:text-[#ef4444] transition-colors p-1"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-white/35">
+                    <span>{(assignmentsByTemplate[prog.id] ?? []).length} shared</span>
+                    <span>•</span>
+                    <span>{prog.created_by ? (userMap[prog.created_by]?.email ?? 'Creator hidden') : 'Creator unknown'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <ChevronRight size={16} className="text-[#333] group-hover:text-[#555] transition-colors" />
+                    <button
+                      onClick={e => { e.stopPropagation(); deleteProgram(prog); }}
+                      className="text-[#333] hover:text-[#ef4444] transition-colors p-1"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -299,6 +377,31 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
           >
             <Send size={16} />
           </button>
+        </div>
+      </div>
+
+      <div className="a-card grid gap-4">
+        <ThumbnailStrip exercises={selectedPreviewExercises} tall />
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] px-3 py-3">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/25">Exercises</p>
+            <p className="mt-1 text-lg font-bold text-white">{selectedPreviewExercises.length}</p>
+          </div>
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] px-3 py-3">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/25">Shared</p>
+            <p className="mt-1 text-lg font-bold text-white">{selectedAssignees.length}</p>
+          </div>
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] px-3 py-3">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/25">Visibility</p>
+            <p className="mt-1 text-xs font-semibold text-emerald-400">Link + members</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {(selectedAssignees.length > 0 ? selectedAssignees : [{ id: 'none', email: 'No members yet', name: null }]).map((user) => (
+            <span key={user.id} className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] text-white/65">
+              {user.email ?? user.name ?? 'No members yet'}
+            </span>
+          ))}
         </div>
       </div>
 
