@@ -1,5 +1,7 @@
 import { requireAdminAccess } from '@/lib/admin/access';
 import { GymProfileForm } from '@/components/admin/GymProfileForm';
+import { QrCode, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +18,25 @@ export default async function SettingsPage() {
       </div>
 
       <GymProfileForm gym={gym} />
+
+      <div className="a-card space-y-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#555]">Marketing Assets</p>
+        <Link 
+          href="/admin/settings/qr"
+          className="flex items-center justify-between p-3 rounded-xl border border-[#262626] bg-[#0a0a0a] hover:border-[#3b82f6]/40 transition-colors group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-600/10 border border-blue-600/20 flex items-center justify-center text-blue-500">
+              <QrCode size={20} />
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-[#e8e8e8]">Poster QR Code</p>
+              <p className="text-[11px] text-[#555]">Download high-res QR for your gym posters</p>
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-[#333] group-hover:text-[#e8e8e8] transition-colors" />
+        </Link>
+      </div>
 
       <div className="a-card space-y-4">
         <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#555]">Account</p>
