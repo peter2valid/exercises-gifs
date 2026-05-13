@@ -31,8 +31,6 @@ export async function POST(req: Request): Promise<NextResponse> {
     .insert({ 
       name, 
       slug,
-      type,
-      location,
       admin_user_id: user.id 
     })
     .select('id, name')

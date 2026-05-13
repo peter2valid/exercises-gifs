@@ -100,8 +100,14 @@ export function QRScanner({ gymId, gymName }: Props) {
       };
       rafRef.current = requestAnimationFrame(scan);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      setState(msg.includes('denied') || msg.includes('Permission') ? 'denied' : 'idle');
+      console.error('[QRScanner] start error:', err);
+      const isDenied = err instanceof Error && (
+        err.name === 'NotAllowedError' || 
+        err.name === 'PermissionDeniedError' ||
+        err.message.toLowerCase().includes('denied') || 
+        err.message.toLowerCase().includes('permission')
+      );
+      setState(isDenied ? 'denied' : 'idle');
     }
   }, [handleQrFound]);
 
@@ -167,7 +173,13 @@ export function QRScanner({ gymId, gymName }: Props) {
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
             <CameraOff size={28} className="text-[#ef4444]" />
             <p className="text-sm text-[#909090]">Camera access denied.</p>
-            <p className="text-xs text-[#555]">Enable camera permissions in your browser settings, then reload.</p>
+            <p className="text-xs text-[#555]">Enable camera permissions in your browser settings, then try again.</p>
+            <button
+              onClick={startCamera}
+              className="mt-2 px-4 py-2 rounded-lg bg-[#262626] text-[#e8e8e8] text-[12px] font-semibold hover:bg-[#333] transition-colors"
+            >
+              Try Again
+            </button>
           </div>
         )}
       </div>

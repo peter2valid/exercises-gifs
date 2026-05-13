@@ -1,9 +1,9 @@
 // Service Worker for offline support and caching
 // v2 — fixes redirect errors caused by intercepting navigation requests
 
-const CACHE_NAME = 'exercises-app-v2';
-const STATIC_CACHE = 'exercises-static-v2';
-const IMAGE_CACHE = 'exercises-images-v2';
+const CACHE_NAME = 'exercises-app-v3';
+const STATIC_CACHE = 'exercises-static-v3';
+const IMAGE_CACHE = 'exercises-images-v3';
 
 // Do NOT precache any HTML pages — they require auth and will redirect.
 // Static assets and images are populated lazily on first request.
@@ -74,7 +74,8 @@ self.addEventListener('fetch', (event) => {
             return response;
           }
           if (response && response.status === 200 && response.type === 'basic') {
-            caches.open(STATIC_CACHE).then((c) => c.put(request, response.clone()));
+            const responseToCache = response.clone();
+            caches.open(STATIC_CACHE).then((c) => c.put(request, responseToCache));
           }
           return response;
         });

@@ -57,7 +57,7 @@ export async function fetchAndCacheEntitlements(userId: string): Promise<Effecti
     if (primaryGymId) {
       const { data: gymSub } = await supabase
         .from('gym_subscriptions')
-        .select('plan, status, current_period_end, grace_period_end')
+        .select('plan, status, current_period_end')
         .eq('gym_id', primaryGymId)
         .maybeSingle();
 
@@ -67,7 +67,7 @@ export async function fetchAndCacheEntitlements(userId: string): Promise<Effecti
           plan: gymSub.plan as any,
           status: gymSub.status as any,
           periodEnd: gymSub.current_period_end,
-          gracePeriodEnd: gymSub.grace_period_end,
+          gracePeriodEnd: null,
         };
       }
     }
@@ -77,7 +77,7 @@ export async function fetchAndCacheEntitlements(userId: string): Promise<Effecti
 
     const { data: userSub } = await supabase
       .from('user_subscriptions')
-      .select('plan, billing_period, status, current_period_end, grace_period_end, trial_ends_at')
+      .select('plan, billing_period, status, current_period_end')
       .eq('user_id', userId)
       .maybeSingle();
 
@@ -88,8 +88,8 @@ export async function fetchAndCacheEntitlements(userId: string): Promise<Effecti
         billingPeriod: userSub.billing_period as any || 'monthly',
         status: userSub.status as any,
         periodEnd: userSub.current_period_end,
-        gracePeriodEnd: userSub.grace_period_end,
-        trialEndsAt: userSub.trial_ends_at,
+        gracePeriodEnd: null,
+        trialEndsAt: null,
       };
     }
 
