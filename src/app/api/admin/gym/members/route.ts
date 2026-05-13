@@ -72,8 +72,10 @@ export async function PUT(req: Request): Promise<NextResponse> {
 
   const admin = getAdminSupabase();
   
-  // Look up user by email directly for better reliability
-  const { data: { user: target }, error: authErr } = await admin.auth.admin.getUserByEmail(email.toLowerCase().trim());
+  // Look up user by email with the supported admin API.
+  const normalizedEmail = email.toLowerCase().trim();
+  const { data: usersPage, error: authErr } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  const target = usersPage?.users?.find((candidate) => candidate.email?.toLowerCase() === normalizedEmail) ?? null;
 
   if (authErr || !target) {
     console.log('[admin/members] lookup failed for:', email, authErr);
