@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell, ShieldCheck, Camera, Phone, User as UserCircle, ShieldAlert, ChevronRight, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
@@ -154,7 +155,13 @@ export default function ProfilePage() {
         <div className="text-center mb-10 animate-slide-up">
           <div className="relative w-24 h-24 mx-auto mb-4">
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full rounded-full object-cover border-2 border-white/10" />
+              <Image 
+                src={profile.avatar_url} 
+                alt="Avatar" 
+                width={96}
+                height={96}
+                className="w-full h-full rounded-full object-cover border-2 border-white/10" 
+              />
             ) : (
               <div className="w-full h-full rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
                 <UserIcon size={36} className="text-white/20" />

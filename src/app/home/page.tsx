@@ -87,7 +87,7 @@ export default function HomePage() {
       }
     }
     claimGuest();
-  }, []);
+  }, [gymId]);
 
   useEffect(() => {
     async function loadStats() {

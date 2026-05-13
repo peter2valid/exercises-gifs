@@ -114,8 +114,10 @@ export interface EntitlementCache {
   effective_features: string[];       // Feature[] serialised as string[]
   gym_plan: string | null;            // GymPlan | null
   gym_plan_status: string | null;     // SubscriptionStatus | null
+  gym_period_end: string | null;
   has_member_premium: boolean;
   member_plan_status: string | null;  // SubscriptionStatus | null
+  member_period_end: string | null;
   active_promotions: string[];
   cached_at: string;                  // ISO timestamp of last server fetch
   version: number;
