@@ -28,6 +28,10 @@ interface StaffRow {
   user_id: string;
   role: string;
   created_at: string;
+  profiles?: {
+    full_name: string;
+    avatar_url: string;
+  };
 }
 
 interface InviteRow {
@@ -242,7 +246,7 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
             <table className="a-table">
               <thead>
                 <tr>
-                  <th>User ID</th>
+                  <th>User</th>
                   <th>Role</th>
                   <th>Added</th>
                   <th></th>
@@ -252,9 +256,14 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
                 {staff.map(row => (
                   <tr key={row.id}>
                     <td>
-                      <span className="font-mono text-[12px] text-[#909090]">
-                        {row.user_id.slice(0, 8).toUpperCase()}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="text-[13px] font-medium text-[#e8e8e8]">
+                          {row.profiles?.full_name || 'Anonymous User'}
+                        </span>
+                        <span className="font-mono text-[10px] text-[#555]">
+                          {row.user_id.slice(0, 8).toUpperCase()}
+                        </span>
+                      </div>
                     </td>
                     <td>
                       <span className={ROLE_CLASS[row.role] ?? 'a-badge a-badge-gray'}>

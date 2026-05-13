@@ -72,15 +72,17 @@ export async function PUT(req: Request): Promise<NextResponse> {
 
   const admin = getAdminSupabase();
   
-  // Look up user
-  const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 });
-  const target = users?.find(u => u.email?.toLowerCase() === email.toLowerCase().trim());
+  // Look up user by email directly for better reliability
+  const { data: { user: target }, error: authErr } = await admin.auth.admin.getUserByEmail(email.toLowerCase().trim());
 
-  if (!target) {
-    return NextResponse.json({ error: 'User not found. Please ask them to sign up first or use the invite system.' }, { status: 404 });
+  if (authErr || !target) {
+    console.log('[admin/members] lookup failed for:', email, authErr);
+    return NextResponse.json({ 
+      error: 'User not found. Please ask them to sign up first or use the invite system.' 
+    }, { status: 404 });
   }
 
-  // Create membership
+  // 1. Create/Update membership record
   const { error: memErr } = await admin
     .from('gym_memberships')
     .upsert({
@@ -91,14 +93,28 @@ export async function PUT(req: Request): Promise<NextResponse> {
       joined_at: new Date().toISOString()
     }, { onConflict: 'user_id,gym_id' });
 
-  if (memErr) return NextResponse.json({ error: 'Failed to create membership' }, { status: 500 });
+  if (memErr) {
+    console.error('[admin/members] membership upsert error:', memErr);
+    return NextResponse.json({ error: 'Failed to create membership' }, { status: 500 });
+  }
 
-  // Grant role
-  await admin.from('user_gym_roles').upsert({
+  // 2. Grant role (Sync with user_gym_roles)
+  // To keep it clean, we remove existing roles for this gym and user first
+  await admin.from('user_gym_roles')
+    .delete()
+    .eq('user_id', target.id)
+    .eq('gym_id', gymId);
+
+  const { error: roleErr } = await admin.from('user_gym_roles').insert({
     user_id: target.id,
     gym_id: gymId,
     role: role as any
-  }, { onConflict: 'user_id,gym_id,role' });
+  });
+
+  if (roleErr) {
+    console.error('[admin/members] role insert error:', roleErr);
+    // Don't fail the whole request if membership succeeded, but log it
+  }
 
   return NextResponse.json({ ok: true });
 }

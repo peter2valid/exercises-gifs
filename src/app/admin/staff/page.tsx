@@ -21,7 +21,7 @@ export default async function StaffPage() {
   const [staffResult, invitesResult] = await Promise.all([
     admin
       .from('user_gym_roles')
-      .select('id, user_id, role, created_at')
+      .select('id, user_id, role, created_at, profiles:user_id(full_name, avatar_url)')
       .eq('gym_id', gymId)
       .in('role', ['gym_owner', 'gym_admin', 'trainer', 'member'])
       .order('created_at', { ascending: false }),
@@ -34,9 +34,7 @@ export default async function StaffPage() {
       .order('created_at', { ascending: false }),
   ]);
 
-  const staff = (staffResult.data ?? []) as {
-    id: string; user_id: string; role: string; created_at: string;
-  }[];
+  const staff = (staffResult.data ?? []) as any[];
   const invites = (invitesResult.data ?? []) as {
     id: string; email: string; role: string; token: string; created_at: string; expires_at: string;
   }[];
