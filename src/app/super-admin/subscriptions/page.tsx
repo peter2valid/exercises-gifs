@@ -1,7 +1,7 @@
 import { requireSuperAdmin } from '@/lib/admin/access';
 import { getAdminSupabase } from '@/lib/supabase/server';
 import { AdminTable, type AdminColumn } from '@/components/admin/AdminTable';
-import { CancelSubscriptionButton } from '@/components/super-admin/ActionButtons';
+import { CancelSubscriptionButton, EditGymSubscriptionButton } from '@/components/super-admin/ActionButtons';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +41,12 @@ const gymCols: AdminColumn[] = [
   {
     key: 'actions',
     label: '',
-    render: (_, row) => <CancelSubscriptionButton id={row.gym_id as string} type="gym" status={row.status as string} />,
+    render: (_, row) => (
+      <div className="flex items-center justify-end gap-1">
+        <EditGymSubscriptionButton subscription={row} />
+        <CancelSubscriptionButton id={row.gym_id as string} type="gym" status={row.status as string} />
+      </div>
+    ),
   }
 ];
 
@@ -97,6 +102,7 @@ export default async function SubscriptionsPage() {
       <div>
         <h2 className="text-[18px] font-bold text-[#e8e8e8]">Subscriptions</h2>
         <p className="text-[13px] text-[#555] mt-0.5">All active and past subscriptions</p>
+        <p className="mt-1 text-[12px] text-[#444]">Use Edit to manually set gym plan and expiry for cash or M-Pesa payments.</p>
       </div>
 
       <div className="space-y-3">

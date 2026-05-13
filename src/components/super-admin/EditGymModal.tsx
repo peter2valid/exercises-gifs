@@ -9,7 +9,7 @@ interface Gym {
   id: string;
   name: string;
   slug: string;
-  admin_user_id?: string | null;
+  owner_id?: string | null;
 }
 
 export function EditGymModal({ gym, ownerEmail: initialEmail, onClose }: { gym: Gym; ownerEmail?: string | null; onClose: () => void }) {

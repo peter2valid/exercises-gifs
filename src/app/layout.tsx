@@ -28,7 +28,7 @@ export default function RootLayout({
           <SyncInitializer />
           <SyncStatus />
           <div className="fixed inset-0 overflow-y-auto overflow-x-hidden">
-            <main>{children}</main>
+            <main className="min-h-full pb-32">{children}</main>
           </div>
           <BottomNav />
         </EntitlementProvider>

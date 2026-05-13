@@ -42,10 +42,10 @@ export async function POST(
     }
   }
 
-  // 3. Update gym legacy admin_user_id if any gym_owner role was added
+  // 3. Update gym owner_id if any gym_owner role was added
   const ownerRoles = gymRoles.filter((r: any) => r.role === 'gym_owner');
   for (const r of ownerRoles) {
-    await admin.from('gyms').update({ admin_user_id: userId }).eq('id', r.gym_id);
+    await admin.from('gyms').update({ owner_id: userId }).eq('id', r.gym_id);
   }
 
   return NextResponse.json({ success: true });

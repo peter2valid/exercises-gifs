@@ -121,21 +121,16 @@ export default function ProfilePage() {
   return (
     <div className="dashboard-bg min-h-screen pb-24 pt-8">
       <div className="max-w-md mx-auto px-4">
-        <div className="mb-8 animate-fade-in flex justify-between items-end">
+        <div className="mb-8 animate-fade-in flex justify-between items-end gap-4">
           <div>
             <p className="text-xs tracking-[0.3em] text-white/30 uppercase font-medium mb-2">Profile</p>
             <h1 className="text-3xl font-bold text-white tracking-tight">You</h1>
           </div>
           <button
-            onClick={handleUpdateProfile}
-            disabled={updating}
-            className={`text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50 ${
-              saveStatus === 'saved' ? 'text-emerald-400' :
-              saveStatus === 'error' ? 'text-rose-400' :
-              'text-sky-400 hover:text-sky-300'
-            }`}
+            onClick={() => setShowSettings(true)}
+            className="text-xs font-bold uppercase tracking-widest text-sky-400 hover:text-sky-300 transition-colors"
           >
-            {updating ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : saveStatus === 'error' ? saveErrorMsg : 'Save Changes'}
+            Edit Settings
           </button>
         </div>
 
@@ -182,24 +177,14 @@ export default function ProfilePage() {
             </label>
           </div>
           
-          <div className="space-y-4 px-2">
-            <div className="relative">
-              <UserCircle className="absolute left-0 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-              <input 
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                placeholder="Your Full Name"
-                className="w-full bg-transparent border-b border-white/5 py-2 pl-7 text-white text-lg font-semibold focus:border-sky-500 outline-none transition-colors placeholder:text-white/10"
-              />
+          <div className="space-y-3 px-2">
+            <div className="glass-panel p-4 text-left space-y-1">
+              <p className="text-[10px] uppercase tracking-[0.25em] text-white/25 font-bold">Name</p>
+              <p className="text-sm font-semibold text-white">{profile?.full_name || 'Add your name in Settings'}</p>
             </div>
-            <div className="relative">
-              <Phone className="absolute left-0 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-              <input 
-                value={phoneNumber}
-                onChange={e => setPhoneNumber(e.target.value)}
-                placeholder="Phone for marketing"
-                className="w-full bg-transparent border-b border-white/5 py-2 pl-7 text-white/50 text-sm focus:border-sky-500 outline-none transition-colors placeholder:text-white/10"
-              />
+            <div className="glass-panel p-4 text-left space-y-1">
+              <p className="text-[10px] uppercase tracking-[0.25em] text-white/25 font-bold">Phone number</p>
+              <p className="text-sm font-semibold text-white/70">{profile?.phone_number || 'Not added'}</p>
             </div>
           </div>
         </div>
@@ -296,6 +281,33 @@ export default function ProfilePage() {
 
             <div className="glass-panel p-5 space-y-4">
               <div className="flex items-center gap-3 mb-2">
+                <UserCircle size={16} className="text-white/40" />
+                <p className="text-[11px] text-white/40 uppercase tracking-[0.2em] font-bold">Profile</p>
+              </div>
+              <div className="space-y-3">
+                <div className="relative">
+                  <UserCircle className="absolute left-0 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <input 
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    placeholder="Your full name"
+                    className="w-full bg-transparent border-b border-white/5 py-2 pl-7 text-white text-base font-semibold focus:border-sky-500 outline-none transition-colors placeholder:text-white/10"
+                  />
+                </div>
+                <div className="relative">
+                  <Phone className="absolute left-0 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <input 
+                    value={phoneNumber}
+                    onChange={e => setPhoneNumber(e.target.value)}
+                    placeholder="Phone number"
+                    className="w-full bg-transparent border-b border-white/5 py-2 pl-7 text-white/70 text-sm focus:border-sky-500 outline-none transition-colors placeholder:text-white/10"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="glass-panel p-5 space-y-4">
+              <div className="flex items-center gap-3 mb-2">
                 <Scale size={16} className="text-white/40" />
                 <p className="text-[11px] text-white/40 uppercase tracking-[0.2em] font-bold">Weight Unit</p>
               </div>
@@ -330,6 +342,26 @@ export default function ProfilePage() {
               <div className={`w-11 h-6 rounded-full relative transition-colors duration-200 ${soundEnabled ? 'bg-emerald-500' : 'bg-white/10'}`}>
                 <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${soundEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
               </div>
+            </button>
+
+            {saveStatus === 'saved' && (
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+                Saved.
+              </div>
+            )}
+
+            {saveStatus === 'error' && (
+              <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+                {saveErrorMsg}
+              </div>
+            )}
+
+            <button
+              onClick={handleUpdateProfile}
+              disabled={updating}
+              className="w-full rounded-2xl bg-sky-500 text-black py-3.5 text-sm font-bold uppercase tracking-[0.16em] disabled:opacity-50"
+            >
+              {updating ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
         </div>

@@ -67,8 +67,8 @@ export default async function PromotionsPage() {
 
   const { data: promos } = await admin
     .from('promotion_rules')
-    .select('id, code, features, valid_until, subject_type, subject_id, created_at')
-    .order('created_at', { ascending: false });
+    .select('id, code, features, valid_until, subject_type, subject_id')
+    .order('code', { ascending: true });
 
   const rows = (promos ?? []) as Record<string, unknown>[];
   const active = rows.filter(r => !isExpired(r.valid_until as string | null));

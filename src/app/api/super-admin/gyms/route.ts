@@ -51,8 +51,8 @@ export async function POST(req: Request) {
         role: 'gym_owner'
       }, { onConflict: 'user_id,gym_id,role' });
       
-      // Also update admin_user_id for legacy compatibility
-      await admin.from('gyms').update({ admin_user_id: target.id }).eq('id', gym.id);
+      // Keep the gym owner field aligned with the live schema.
+      await admin.from('gyms').update({ owner_id: target.id }).eq('id', gym.id);
     } else {
       // Create invitation
       const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');

@@ -1,7 +1,7 @@
 import { requireSuperAdmin } from '@/lib/admin/access';
 import { getAdminSupabase } from '@/lib/supabase/server';
 import { AdminTable, type AdminColumn } from '@/components/admin/AdminTable';
-import { SuspendGymButton, EditGymButton } from '@/components/super-admin/ActionButtons';
+import { SuspendGymButton, EditGymButton, EditGymSubscriptionButton } from '@/components/super-admin/ActionButtons';
 import { NewGymButton } from '@/components/super-admin/NewGymModal';
 
 export const dynamic = 'force-dynamic';
@@ -61,6 +61,7 @@ const cols: AdminColumn[] = [
     render: (_, row) => (
       <div className="flex items-center justify-end gap-1">
         <EditGymButton gym={row} ownerEmail={row.admin_email as string} />
+        <EditGymSubscriptionButton subscription={row} />
         <SuspendGymButton gymId={row.id as string} status={row.status as string} />
       </div>
     ),
@@ -73,7 +74,7 @@ export default async function GymsPage() {
 
   const { data: gyms } = await admin
     .from('gyms')
-    .select('id, name, status, created_at, admin_user_id')
+    .select('id, name, slug, status, created_at, owner_id')
     .order('created_at', { ascending: false });
 
   const gymIds = (gyms ?? []).map(g => g.id);
@@ -81,7 +82,7 @@ export default async function GymsPage() {
   // Fetch subscriptions and users (to get emails)
   const [subsRes, usersRes] = await Promise.all([
     gymIds.length
-      ? admin.from('gym_subscriptions').select('gym_id, plan, status').in('gym_id', gymIds)
+      ? admin.from('gym_subscriptions').select('gym_id, plan, status, current_period_end').in('gym_id', gymIds)
       : { data: [] },
     admin.auth.admin.listUsers({ perPage: 1000 })
   ]);
@@ -91,9 +92,10 @@ export default async function GymsPage() {
 
   const rows = (gyms ?? []).map(g => ({
     ...g,
-    admin_email: g.admin_user_id ? userMap[g.admin_user_id] : null,
+    admin_email: g.owner_id ? userMap[g.owner_id] : null,
     plan: subMap[g.id]?.plan ?? null,
     sub_status: subMap[g.id]?.status ?? null,
+    current_period_end: subMap[g.id]?.current_period_end ?? null,
   })) as Record<string, unknown>[];
 
   return (

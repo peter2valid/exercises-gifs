@@ -41,7 +41,7 @@ export async function PATCH(
   if (ownerEmail !== undefined) {
     if (ownerEmail === '') {
       // Remove owner
-      await admin.from('gyms').update({ admin_user_id: null }).eq('id', gymId);
+      await admin.from('gyms').update({ owner_id: null }).eq('id', gymId);
       await admin.from('user_gym_roles').delete().eq('gym_id', gymId).eq('role', 'gym_owner');
     } else if (ownerEmail.trim().includes('@')) {
       const email = ownerEmail.toLowerCase().trim();
@@ -61,8 +61,8 @@ export async function PATCH(
           role: 'gym_owner'
         }, { onConflict: 'user_id,gym_id,role' });
         
-        // Update admin_user_id
-        await admin.from('gyms').update({ admin_user_id: target.id }).eq('id', gymId);
+        // Update owner_id on the live schema.
+        await admin.from('gyms').update({ owner_id: target.id }).eq('id', gymId);
       } else {
         // Create invitation
         const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');

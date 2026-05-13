@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Ban, Play, XCircle, Edit2 } from 'lucide-react';
 import { EditGymModal } from './EditGymModal';
+import { GymSubscriptionModal } from './GymSubscriptionModal';
 
 export function SuspendGymButton({ gymId, status }: { gymId: string, status: string }) {
   const [loading, setLoading] = useState(false);
@@ -88,6 +89,22 @@ export function EditGymButton({ gym, ownerEmail }: { gym: any; ownerEmail?: stri
         <Edit2 size={16} />
       </button>
       {show && <EditGymModal gym={gym} ownerEmail={ownerEmail} onClose={() => setShow(false)} />}
+    </>
+  );
+}
+
+export function EditGymSubscriptionButton({ subscription }: { subscription: any }) {
+  const [show, setShow] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setShow(true)}
+        className="p-1.5 rounded text-emerald-400 hover:bg-emerald-400/10 transition-colors"
+        title="Edit Subscription"
+      >
+        <Edit2 size={16} />
+      </button>
+      {show && <GymSubscriptionModal subscription={subscription} onClose={() => setShow(false)} />}
     </>
   );
 }

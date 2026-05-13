@@ -33,7 +33,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       slug,
       type: type || null,
       location: location || null,
-      admin_user_id: user.id
+      owner_id: user.id
     })
     .select('id, name')
     .single();
