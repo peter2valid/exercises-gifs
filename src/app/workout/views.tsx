@@ -270,11 +270,13 @@ export function IdleView({
   onBrowseLibrary,
   isLoading,
   preselectedExercise,
+  exercisesError,
 }: {
   onStart: () => void;
   onBrowseLibrary: () => void;
   isLoading: boolean;
   preselectedExercise?: Exercise | null;
+  exercisesError?: boolean;
 }) {
   return (
     <div className="dashboard-bg min-h-screen pb-8 pt-8">
@@ -328,7 +330,13 @@ export function IdleView({
           </button>
         </div>
 
-        <p className="mt-6 text-center text-xs text-white/20">Fast, local, and ready for weak connections.</p>
+        {exercisesError && (
+          <p className="mt-4 text-center text-xs text-amber-400/70">
+            Exercise library unavailable — try closing and reopening the app, or check storage permissions.
+          </p>
+        )}
+
+        <p className="mt-4 text-center text-xs text-white/20">Fast, local, and ready for weak connections.</p>
       </div>
     </div>
   );
@@ -497,6 +505,7 @@ export function ActiveView({
   onLogSet,
   onStartRest,
   onComplete,
+  onAbandon,
   hasLastSet,
 }: {
   sets: SetLog[];
@@ -508,10 +517,15 @@ export function ActiveView({
   onLogSet: (exerciseId: string, weight: number, reps: number) => Promise<void>;
   onStartRest: () => void;
   onComplete: () => void;
+  onAbandon: () => void;
   hasLastSet: boolean;
 }) {
   const router = useRouter();
   const [isLogging, setIsLogging] = useState(false);
+  const [logError, setLogError] = useState<string | null>(null);
+  const [abandonConfirm, setAbandonConfirm] = useState(false);
+  // Ref-based guard prevents double-tap before React re-renders with isLogging=true
+  const loggingRef = useRef(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
@@ -684,8 +698,10 @@ export function ActiveView({
   };
 
   const handleLog = async () => {
-    if (!selectedExercise || isLogging) return;
+    if (!selectedExercise || loggingRef.current) return;
+    loggingRef.current = true;
     setIsLogging(true);
+    setLogError(null);
     try {
       const mode = classifyWorkoutExercise(selectedExercise);
       if (mode === 'strength') {
@@ -697,7 +713,11 @@ export function ActiveView({
       } else {
         await onLogSet(selectedExercise.id, distance, duration);
       }
+    } catch (e) {
+      console.error('[workout] logSet failed:', e);
+      setLogError('Set could not be saved — your data is safe, please try again.');
     } finally {
+      loggingRef.current = false;
       setIsLogging(false);
     }
   };
@@ -728,7 +748,7 @@ export function ActiveView({
           <button
             type="button"
             onClick={onComplete}
-            disabled={sets.length === 0}
+            disabled={sets.length === 0 || isLogging}
             className="rounded-full bg-sky-500 px-4 py-2 text-sm font-bold text-black transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Finish
@@ -841,6 +861,10 @@ export function ActiveView({
                         {isLogging ? 'Logging…' : 'Log set'}
                       </Button>
 
+                      {logError && (
+                        <p className="text-center text-xs text-red-400">{logError}</p>
+                      )}
+
                       <p className="text-center text-xs text-white/35">
                         {selectedMode === 'strength' && 'Weight counts toward volume. Reps stay editable per set.'}
                         {selectedMode === 'reps' && 'No external weight needed for bodyweight work.'}
@@ -946,26 +970,49 @@ export function ActiveView({
       )}
 
       {moreOpen && (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/70 backdrop-blur-sm" onClick={() => setMoreOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-end bg-black/70 backdrop-blur-sm" onClick={() => { setMoreOpen(false); setAbandonConfirm(false); }}>
           <div className="mx-auto w-full max-w-md rounded-t-[28px] border border-white/10 bg-[#121212] p-4" onClick={(event) => event.stopPropagation()}>
             <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-white/10" />
-            <div className="space-y-2">
-              <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4" onClick={() => { setMoreOpen(false); onStartRest(); }} disabled={!hasLastSet}>
-                <Timer size={16} className="mr-2" />
-                Take rest now
-              </Button>
-              <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4" onClick={() => { setMoreOpen(false); onComplete(); }} disabled={sets.length === 0}>
-                <CheckCircle size={16} className="mr-2" />
-                Finish workout
-              </Button>
-              <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4" onClick={() => { clearRoster(); }}>
-                <XCircle size={16} className="mr-2" />
-                Clear roster
-              </Button>
-              <Button type="button" variant="ghost" className="h-12 w-full rounded-[18px] justify-center" onClick={() => setMoreOpen(false)}>
-                Close
-              </Button>
-            </div>
+            {abandonConfirm ? (
+              <div className="space-y-3">
+                <p className="text-center text-sm font-semibold text-white">Abandon this workout?</p>
+                <p className="text-center text-xs text-white/40">Your logged sets will be lost. This cannot be undone.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button type="button" variant="secondary" className="h-12 rounded-[18px]" onClick={() => setAbandonConfirm(false)}>
+                    Keep going
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => { setMoreOpen(false); setAbandonConfirm(false); onAbandon(); }}
+                    className="h-12 rounded-[18px] bg-red-600 text-sm font-bold text-white transition-transform active:scale-[0.99]"
+                  >
+                    Abandon
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4" onClick={() => { setMoreOpen(false); onStartRest(); }} disabled={!hasLastSet}>
+                  <Timer size={16} className="mr-2" />
+                  Take rest now
+                </Button>
+                <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4" onClick={() => { setMoreOpen(false); onComplete(); }} disabled={sets.length === 0 || isLogging}>
+                  <CheckCircle size={16} className="mr-2" />
+                  Finish workout
+                </Button>
+                <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4" onClick={() => { clearRoster(); setMoreOpen(false); }}>
+                  <XCircle size={16} className="mr-2" />
+                  Clear exercise roster
+                </Button>
+                <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4 text-red-400 hover:text-red-300" onClick={() => setAbandonConfirm(true)}>
+                  <XCircle size={16} className="mr-2" />
+                  Abandon workout
+                </Button>
+                <Button type="button" variant="ghost" className="h-12 w-full rounded-[18px] justify-center" onClick={() => setMoreOpen(false)}>
+                  Close
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}
