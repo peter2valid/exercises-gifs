@@ -13,6 +13,14 @@ import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { usesVolumeExercise } from '@/lib/workout/exerciseClassification';
 import { convertWeight, getWeightUnit } from '@/lib/settings';
 import { resolveTenantId } from '@/lib/config';
+import {
+  format,
+  parseISO,
+  subDays,
+  startOfWeek,
+  differenceInCalendarDays,
+  startOfDay,
+} from 'date-fns';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -30,22 +38,23 @@ function getTimeGreeting(): string {
 }
 
 function formatRelativeDate(iso: string): string {
-  const date = new Date(iso);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const date = parseISO(iso);
+  const diff = differenceInCalendarDays(startOfDay(new Date()), startOfDay(date));
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  return format(date, 'MMM d');
 }
 
 function computeStreak(sessions: { started_at: string }[]): number {
-  const days = new Set(sessions.map((s) => new Date(s.started_at).toDateString()));
-  const cursor = new Date();
-  if (!days.has(cursor.toDateString())) cursor.setDate(cursor.getDate() - 1);
+  if (!sessions.length) return 0;
+  const daySet = new Set(sessions.map((s) => format(parseISO(s.started_at), 'yyyy-MM-dd')));
+  let d = new Date();
+  // If no workout today yet, start streak check from yesterday
+  if (!daySet.has(format(d, 'yyyy-MM-dd'))) d = subDays(d, 1);
   let streak = 0;
-  while (days.has(cursor.toDateString())) {
+  while (daySet.has(format(d, 'yyyy-MM-dd'))) {
     streak++;
-    cursor.setDate(cursor.getDate() - 1);
+    d = subDays(d, 1);
   }
   return streak;
 }
@@ -53,8 +62,8 @@ function computeStreak(sessions: { started_at: string }[]): number {
 function computeActiveDays(sessions: { started_at: string }[], weekStart: Date): Set<number> {
   const active = new Set<number>();
   for (const s of sessions) {
-    const d = new Date(s.started_at);
-    if (d >= weekStart) active.add((d.getDay() + 6) % 7);
+    const diff = differenceInCalendarDays(parseISO(s.started_at), weekStart);
+    if (diff >= 0 && diff <= 6) active.add(diff);
   }
   return active;
 }
@@ -113,7 +122,8 @@ function ActivityRing({ value, max = 7, size = 188 }: { value: number; max?: num
 
 function WeekDots({ activeDays }: { activeDays: Set<number> }) {
   const LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const todayIdx = (new Date().getDay() + 6) % 7;
+  const ws = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const todayIdx = differenceInCalendarDays(startOfDay(new Date()), ws);
 
   return (
     <div className="flex items-center gap-2.5 justify-center">
@@ -163,6 +173,7 @@ interface RecentSession {
 export default function HomePage() {
   const router = useRouter();
   const gymId = useEntitlementStore((s) => s.gymId);
+  const entitlementsReady = useEntitlementStore((s) => s.cachedAt !== null);
 
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -244,10 +255,7 @@ export default function HomePage() {
   useEffect(() => {
     async function loadStats() {
       try {
-        const weekStart = new Date();
-        const dayOfWeek = (weekStart.getDay() + 6) % 7; // 0=Mon
-        weekStart.setDate(weekStart.getDate() - dayOfWeek);
-        weekStart.setHours(0, 0, 0, 0);
+        const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
         const weekStartIso = weekStart.toISOString();
 
         const [completedSessions, allSets, exercises] = await Promise.all([
@@ -394,8 +402,8 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Gym connect prompt */}
-        {!gymId && (
+        {/* Gym connect prompt — only show after entitlements confirm no gym */}
+        {entitlementsReady && !gymId && (
           <div
             className="w-full rounded-[22px] p-5 mb-6"
             style={{
