@@ -2,6 +2,7 @@ import { requireSuperAdmin } from '@/lib/admin/access';
 import { getAdminSupabase } from '@/lib/supabase/server';
 import { AdminTable, type AdminColumn } from '@/components/admin/AdminTable';
 import { SuspendGymButton } from '@/components/super-admin/ActionButtons';
+import { NewGymButton } from '@/components/super-admin/NewGymModal';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,9 +88,12 @@ export default async function GymsPage() {
 
   return (
     <div className="space-y-4 max-w-5xl">
-      <div>
-        <h2 className="text-[18px] font-bold text-[#e8e8e8]">Gyms</h2>
-        <p className="text-[13px] text-[#555] mt-0.5">{rows.length} gym{rows.length !== 1 ? 's' : ''}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-[18px] font-bold text-[#e8e8e8]">Gyms</h2>
+          <p className="text-[13px] text-[#555] mt-0.5">{rows.length} gym{rows.length !== 1 ? 's' : ''}</p>
+        </div>
+        <NewGymButton />
       </div>
       <AdminTable
         columns={cols}

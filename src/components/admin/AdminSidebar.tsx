@@ -90,7 +90,12 @@ export function AdminSidebar({ variant, gymName, isOpen, onClose }: Props) {
 
       {/* Bottom actions */}
       <div className="border-t border-[#262626] px-2 py-3 space-y-0.5">
-        {variant === 'super-admin' && (
+        {variant === 'admin' ? (
+          <Link href="/super-admin" className="a-nav-link" onClick={onClose}>
+            <Zap size={15} />
+            Super Admin
+          </Link>
+        ) : (
           <Link href="/admin" className="a-nav-link" onClick={onClose}>
             <Building2 size={15} />
             Gym Admin
