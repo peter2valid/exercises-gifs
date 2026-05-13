@@ -1,0 +1,430 @@
+{
+  "payments": {
+    "required": [
+      "id",
+      "reference",
+      "subject_type",
+      "subject_id",
+      "amount_kobo",
+      "status"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "reference": {
+        "format": "text",
+        "type": "string"
+      },
+      "subject_type": {
+        "format": "text",
+        "type": "string"
+      },
+      "subject_id": {
+        "format": "text",
+        "type": "string"
+      },
+      "amount_kobo": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "currency": {
+        "default": "KES",
+        "format": "text",
+        "type": "string"
+      },
+      "status": {
+        "default": "pending",
+        "format": "text",
+        "type": "string"
+      },
+      "paystack_reference": {
+        "format": "text",
+        "type": "string"
+      },
+      "metadata": {
+        "format": "jsonb"
+      },
+      "verified_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "promotion_rules": {
+    "required": [
+      "id",
+      "code",
+      "features",
+      "subject_type"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "code": {
+        "format": "text",
+        "type": "string"
+      },
+      "features": {
+        "format": "jsonb"
+      },
+      "subject_type": {
+        "default": "global",
+        "format": "text",
+        "type": "string"
+      },
+      "subject_id": {
+        "format": "text",
+        "type": "string"
+      },
+      "valid_until": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "user_subscriptions": {
+    "required": [
+      "user_id",
+      "plan",
+      "status"
+    ],
+    "properties": {
+      "user_id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "plan": {
+        "default": "plus",
+        "format": "text",
+        "type": "string"
+      },
+      "status": {
+        "default": "active",
+        "format": "text",
+        "type": "string"
+      },
+      "billing_period": {
+        "default": "monthly",
+        "format": "text",
+        "type": "string"
+      },
+      "current_period_end": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "profiles": {
+    "required": [
+      "id"
+    ],
+    "properties": {
+      "id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "full_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "phone_number": {
+        "format": "text",
+        "type": "string"
+      },
+      "avatar_url": {
+        "format": "text",
+        "type": "string"
+      },
+      "marketing_opt_in": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "member_check_ins": {
+    "required": [
+      "id",
+      "gym_id",
+      "member_user_id",
+      "checked_in_at",
+      "method"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "gym_id": {
+        "description": "Note:\nThis is a Foreign Key to `gyms.id`.<fk table='gyms' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "member_user_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "checked_in_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "method": {
+        "format": "text",
+        "type": "string"
+      },
+      "staff_user_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "gym_memberships": {
+    "required": [
+      "id"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "user_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "gym_id": {
+        "description": "Note:\nThis is a Foreign Key to `gyms.id`.<fk table='gyms' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "role": {
+        "default": "member",
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "gyms": {
+    "required": [
+      "id",
+      "name",
+      "slug"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "slug": {
+        "format": "text",
+        "type": "string"
+      },
+      "owner_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "gym_subscriptions": {
+    "required": [
+      "gym_id",
+      "plan",
+      "status"
+    ],
+    "properties": {
+      "gym_id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `gyms.id`.<fk table='gyms' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "plan": {
+        "format": "text",
+        "type": "string"
+      },
+      "status": {
+        "default": "active",
+        "format": "text",
+        "type": "string"
+      },
+      "current_period_end": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "events": {
+    "required": [
+      "id",
+      "server_sequence",
+      "type",
+      "payload",
+      "session_id",
+      "tenant_id",
+      "device_id",
+      "user_id",
+      "idempotency_key"
+    ],
+    "properties": {
+      "id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "text",
+        "type": "string"
+      },
+      "server_sequence": {
+        "format": "bigint",
+        "type": "integer"
+      },
+      "type": {
+        "format": "text",
+        "type": "string"
+      },
+      "payload": {
+        "format": "jsonb"
+      },
+      "session_id": {
+        "format": "text",
+        "type": "string"
+      },
+      "tenant_id": {
+        "default": "default",
+        "format": "text",
+        "type": "string"
+      },
+      "device_id": {
+        "format": "text",
+        "type": "string"
+      },
+      "user_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "idempotency_key": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "CURRENT_TIMESTAMP",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "version": {
+        "default": 1,
+        "format": "integer",
+        "type": "integer"
+      }
+    },
+    "type": "object"
+  },
+  "user_gym_roles": {
+    "required": [
+      "id",
+      "user_id",
+      "role"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "user_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "gym_id": {
+        "description": "Note:\nThis is a Foreign Key to `gyms.id`.<fk table='gyms' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "role": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  }
+}

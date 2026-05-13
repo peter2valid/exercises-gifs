@@ -6,16 +6,19 @@ import { supabase } from '@/lib/supabase/client';
 import {
   LayoutDashboard, Users, ScanLine, CreditCard, Package,
   UserCheck, Settings2, Building2, Tag, X, LogOut, Zap, ExternalLink,
+  QrCode, Dumbbell,
 } from 'lucide-react';
 
 const ADMIN_NAV = [
-  { href: '/admin',           label: 'Dashboard',     icon: LayoutDashboard, exact: true },
-  { href: '/admin/members',   label: 'Members',       icon: Users },
-  { href: '/admin/check-ins', label: 'Check-ins',     icon: ScanLine },
-  { href: '/admin/payments',  label: 'Payments',      icon: CreditCard },
-  { href: '/admin/packages',  label: 'Packages',      icon: Package },
-  { href: '/admin/staff',     label: 'Staff',         icon: UserCheck },
-  { href: '/admin/settings',  label: 'Settings',      icon: Settings2 },
+  { href: '/admin',             label: 'Dashboard',   icon: LayoutDashboard, exact: true },
+  { href: '/admin/members',     label: 'Members',     icon: Users },
+  { href: '/admin/scan',        label: 'Scan QR',     icon: QrCode },
+  { href: '/admin/check-ins',   label: 'Check-ins',   icon: ScanLine },
+  { href: '/admin/programs',    label: 'Programs',    icon: Dumbbell },
+  { href: '/admin/payments',    label: 'Payments',    icon: CreditCard },
+  { href: '/admin/packages',    label: 'Packages',    icon: Package },
+  { href: '/admin/staff',       label: 'Staff',       icon: UserCheck },
+  { href: '/admin/settings',    label: 'Settings',    icon: Settings2 },
 ];
 
 const SUPER_NAV = [
