@@ -6,14 +6,14 @@ export const dynamic = 'force-dynamic';
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { user } = await requireSuperAdmin().catch(() => ({ user: null }));
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const gymId = params.id;
+  const { id: gymId } = await params;
   const body = await req.json().catch(() => ({}));
-  const { name, slug, ownerEmail } = body;
+  const { name, slug, ownerEmail, action } = body;
 
   const admin = getAdminSupabase();
 
@@ -21,6 +21,8 @@ export async function PATCH(
   const updates: any = {};
   if (name) updates.name = name;
   if (slug) updates.slug = slug;
+  if (action === 'suspend') updates.status = 'suspended';
+  if (action === 'restore') updates.status = 'active';
   updates.updated_at = new Date().toISOString();
 
   if (Object.keys(updates).length > 1) {

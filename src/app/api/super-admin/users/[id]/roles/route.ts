@@ -6,12 +6,12 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { user: currentUser } = await requireSuperAdmin().catch(() => ({ user: null }));
   if (!currentUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const userId = params.id;
+  const { id: userId } = await params;
   const { isSuperAdmin, gymRoles } = await req.json().catch(() => ({}));
 
   const admin = getAdminSupabase();
