@@ -6,7 +6,14 @@ export const dynamic = 'force-dynamic';
 
 export default async function GymQRPage() {
   const { gym } = await requireAdminAccess();
-  if (!gym) return null;
+  if (!gym) {
+    return (
+      <div className="space-y-2 max-w-3xl">
+        <h2 className="text-[18px] font-bold text-[#e8e8e8]">Gym QR Code</h2>
+        <p className="text-[13px] text-[#ef4444]">No gym found for this account.</p>
+      </div>
+    );
+  }
 
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
   const joinUrl = `${APP_URL}/join?gymId=${gym.id}`;

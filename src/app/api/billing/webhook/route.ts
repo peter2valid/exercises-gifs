@@ -94,7 +94,7 @@ async function handleEvent(event: { event: string; data: Record<string, any> }):
         .maybeSingle();
 
       if (existingPayment?.status === 'success') {
-        console.log(`[webhook] Payment ${reference} already processed`);
+        console.info(`[webhook] Payment ${reference} already processed`);
         return;
       }
 
@@ -121,7 +121,7 @@ async function handleEvent(event: { event: string; data: Record<string, any> }):
           .maybeSingle();
         
         if (current?.current_period_end && new Date(current.current_period_end) > periodEnd) {
-          console.log(`[webhook] Skipping downgrade for user ${user_id}`);
+          console.info(`[webhook] Skipping downgrade for user ${user_id}`);
           return;
         }
 

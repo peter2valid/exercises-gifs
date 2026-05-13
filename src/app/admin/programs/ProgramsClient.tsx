@@ -57,6 +57,7 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
   const [addingExercise, setAddingExercise] = useState(false);
 
   const [copied, setCopied] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Program | null>(null);
 
   // Assign
   const [showAssign, setShowAssign] = useState(false);
@@ -99,11 +100,14 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
     }
   };
 
-  const deleteProgram = async (prog: Program) => {
-    if (!confirm(`Delete "${prog.name}"?`)) return;
-    await fetch(`/api/admin/programs/${prog.id}`, { method: 'DELETE' });
-    setPrograms(prev => prev.filter(p => p.id !== prog.id));
-    if (selected?.id === prog.id) setSelected(null);
+  const deleteProgram = (prog: Program) => setDeleteTarget(prog);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    await fetch(`/api/admin/programs/${deleteTarget.id}`, { method: 'DELETE' });
+    setPrograms(prev => prev.filter(p => p.id !== deleteTarget.id));
+    if (selected?.id === deleteTarget.id) setSelected(null);
+    setDeleteTarget(null);
   };
 
   const addExercise = async () => {
@@ -164,6 +168,24 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
   // ─── List view ────────────────────────────────────────────────────────────
   if (!selected) {
     return (
+      <>
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
+          <div className="relative w-full max-w-sm bg-[#111] border border-[#262626] rounded-2xl shadow-2xl p-6 space-y-4">
+            <p className="text-sm font-semibold text-[#e8e8e8]">Delete &ldquo;{deleteTarget.name}&rdquo;?</p>
+            <p className="text-[13px] text-[#555]">This action cannot be undone. All exercises in this program will also be removed.</p>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setDeleteTarget(null)} className="flex-1 h-9 rounded-lg border border-[#262626] text-sm text-[#909090] hover:text-[#e8e8e8] transition-colors">
+                Cancel
+              </button>
+              <button onClick={confirmDelete} className="flex-1 h-9 rounded-lg bg-[#ef4444]/20 border border-[#ef4444]/30 text-[#ef4444] text-sm font-bold hover:bg-[#ef4444]/30 transition-colors">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="space-y-4 max-w-3xl">
         <div className="flex items-center justify-between">
           <div>
@@ -244,6 +266,7 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
           </div>
         )}
       </div>
+      </>
     );
   }
 

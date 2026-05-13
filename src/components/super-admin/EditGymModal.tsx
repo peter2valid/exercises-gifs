@@ -17,6 +17,7 @@ export function EditGymModal({ gym, ownerEmail: initialEmail, onClose }: { gym: 
   const [name, setName] = useState(gym.name);
   const [slug, setSlug] = useState(gym.slug);
   const [ownerEmail, setOwnerEmail] = useState(initialEmail || '');
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -24,22 +25,23 @@ export function EditGymModal({ gym, ownerEmail: initialEmail, onClose }: { gym: 
     if (!name || !slug) return;
     
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch(`/api/super-admin/gyms/${gym.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, slug, ownerEmail }),
       });
-      
+
       if (res.ok) {
         router.refresh();
         onClose();
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to update gym');
+        setError(data.error || 'Failed to update gym');
       }
-    } catch (e) {
-      alert('Error updating gym');
+    } catch {
+      setError('Network error — please try again');
     } finally {
       setLoading(false);
     }
@@ -88,6 +90,10 @@ export function EditGymModal({ gym, ownerEmail: initialEmail, onClose }: { gym: 
             />
             <p className="text-[10px] text-[#444]">Update the gym owner. If the user doesn&apos;t exist, an invitation will be sent.</p>
           </div>
+
+          {error && (
+            <p className="text-[13px] text-[#ef4444] bg-[#ef4444]/10 border border-[#ef4444]/20 rounded-lg px-3 py-2">{error}</p>
+          )}
 
           <div className="pt-2 flex gap-3">
             <AdminButton type="button" variant="ghost" className="flex-1" onClick={onClose}>

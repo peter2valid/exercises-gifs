@@ -7,7 +7,8 @@ type Params = { params: Promise<{ id: string }> };
 
 async function getGymIdForTemplate(templateId: string): Promise<string | null> {
   const admin = getAdminSupabase();
-  const { data } = await admin.from('templates').select('gym_id').eq('id', templateId).maybeSingle();
+  const { data, error } = await admin.from('templates').select('gym_id').eq('id', templateId).maybeSingle();
+  if (error) console.error('[programs/exercises] gym lookup:', error);
   return data?.gym_id ?? null;
 }
 

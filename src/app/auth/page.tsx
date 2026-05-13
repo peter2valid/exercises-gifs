@@ -16,6 +16,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +42,7 @@ export default function AuthPage() {
           }
         });
         if (error) throw error;
-        alert('Check your email for the confirmation link!');
+        setNotice('Check your email for the confirmation link!');
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred');
@@ -57,7 +58,7 @@ export default function AuthPage() {
     try {
       const { error } = await supabase.auth.signInWithOtp({ phone });
       if (error) throw error;
-      alert('Check your phone for the login code!');
+      setNotice('Check your phone for the login code!');
     } catch (err: any) {
       setError(err.message || 'An error occurred');
     } finally {
@@ -103,6 +104,12 @@ export default function AuthPage() {
             Opening a gym? Register here →
           </a>
         </div>
+
+        {notice && (
+          <div className="mb-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-300 text-center">
+            {notice}
+          </div>
+        )}
 
         {/* Auth Card */}
         <div className="glass-panel p-6 shadow-2xl border-white/10">

@@ -62,13 +62,18 @@ export async function GET(req: Request): Promise<NextResponse> {
   if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const admin = getAdminSupabase();
-  const { data } = await admin
+  const { data, error } = await admin
     .from('gym_invitations')
     .select('id, email, role, token, created_at, expires_at')
     .eq('gym_id', gymId)
     .is('accepted_at', null)
     .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[invite] list:', error);
+    return NextResponse.json({ error: 'Failed to fetch invitations' }, { status: 500 });
+  }
 
   return NextResponse.json({ invitations: data ?? [] });
 }

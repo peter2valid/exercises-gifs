@@ -7,14 +7,17 @@ import { EditGymModal } from './EditGymModal';
 
 export function SuspendGymButton({ gymId, status }: { gymId: string, status: string }) {
   const [loading, setLoading] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  
+
   const isSuspended = status === 'suspended';
   const action = isSuspended ? 'restore' : 'suspend';
 
-  const handleToggle = async () => {
-    if (!confirm(`Are you sure you want to ${action} this gym?`)) return;
+  const handleConfirm = async () => {
     setLoading(true);
+    setError(null);
+    setConfirming(false);
     try {
       const res = await fetch(`/api/super-admin/gyms/${gymId}`, {
         method: 'PATCH',
@@ -24,18 +27,44 @@ export function SuspendGymButton({ gymId, status }: { gymId: string, status: str
       if (res.ok) {
         router.refresh();
       } else {
-        alert('Failed to update gym status');
+        setError('Failed');
+        setTimeout(() => setError(null), 3000);
       }
-    } catch (e) {
-      alert('Error updating gym');
+    } catch {
+      setError('Error');
+      setTimeout(() => setError(null), 3000);
     } finally {
       setLoading(false);
     }
   };
 
+  if (error) {
+    return <span className="text-[11px] text-rose-400">{error}</span>;
+  }
+
+  if (confirming) {
+    return (
+      <span className="flex items-center gap-1">
+        <button
+          onClick={handleConfirm}
+          disabled={loading}
+          className="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:bg-rose-500/30"
+        >
+          {loading ? <Loader2 size={11} className="animate-spin" /> : 'Confirm'}
+        </button>
+        <button
+          onClick={() => setConfirming(false)}
+          className="px-2 py-0.5 rounded text-[11px] text-[#555] border border-[#262626] hover:text-[#e8e8e8]"
+        >
+          Cancel
+        </button>
+      </span>
+    );
+  }
+
   return (
     <button
-      onClick={handleToggle}
+      onClick={() => setConfirming(true)}
       disabled={loading}
       className={`p-1.5 rounded transition-colors ${
         isSuspended ? 'text-emerald-400 hover:bg-emerald-400/10' : 'text-rose-400 hover:bg-rose-400/10'
@@ -65,13 +94,16 @@ export function EditGymButton({ gym, ownerEmail }: { gym: any; ownerEmail?: stri
 
 export function CancelSubscriptionButton({ id, type, status }: { id: string, type: 'gym' | 'user', status: string }) {
   const [loading, setLoading] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   if (status === 'canceled' || status === 'expired') return null;
 
-  const handleCancel = async () => {
-    if (!confirm(`Force cancel this ${type} subscription?`)) return;
+  const handleConfirm = async () => {
     setLoading(true);
+    setError(null);
+    setConfirming(false);
     try {
       const res = await fetch(`/api/super-admin/subscriptions/${type}/${id}`, {
         method: 'POST',
@@ -79,18 +111,44 @@ export function CancelSubscriptionButton({ id, type, status }: { id: string, typ
       if (res.ok) {
         router.refresh();
       } else {
-        alert('Failed to cancel subscription');
+        setError('Failed');
+        setTimeout(() => setError(null), 3000);
       }
-    } catch (e) {
-      alert('Error canceling subscription');
+    } catch {
+      setError('Error');
+      setTimeout(() => setError(null), 3000);
     } finally {
       setLoading(false);
     }
   };
 
+  if (error) {
+    return <span className="text-[11px] text-rose-400">{error}</span>;
+  }
+
+  if (confirming) {
+    return (
+      <span className="flex items-center gap-1">
+        <button
+          onClick={handleConfirm}
+          disabled={loading}
+          className="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:bg-rose-500/30"
+        >
+          {loading ? <Loader2 size={11} className="animate-spin" /> : 'Confirm'}
+        </button>
+        <button
+          onClick={() => setConfirming(false)}
+          className="px-2 py-0.5 rounded text-[11px] text-[#555] border border-[#262626] hover:text-[#e8e8e8]"
+        >
+          Cancel
+        </button>
+      </span>
+    );
+  }
+
   return (
     <button
-      onClick={handleCancel}
+      onClick={() => setConfirming(true)}
       disabled={loading}
       className="p-1.5 rounded text-rose-400 hover:bg-rose-400/10 transition-colors"
       title="Force Cancel Subscription"

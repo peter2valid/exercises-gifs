@@ -15,11 +15,16 @@ export async function GET(req: Request): Promise<NextResponse> {
   if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const admin = getAdminSupabase();
-  const { data } = await admin
+  const { data, error } = await admin
     .from('templates')
     .select('id, name, description, created_by, created_at, template_exercises(id)')
     .eq('gym_id', gymId)
     .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[programs] list:', error);
+    return NextResponse.json({ error: 'Failed to fetch programs' }, { status: 500 });
+  }
 
   return NextResponse.json({ programs: data ?? [] });
 }

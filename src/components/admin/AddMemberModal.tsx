@@ -8,27 +8,29 @@ export function AddMemberModal({ gymId, onClose }: { gymId: string; onClose: () 
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('member');
+  const [error, setError] = useState<string | null>(null);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch('/api/admin/gym/members', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gymId, email, role }),
       });
-      
+
       if (res.ok) {
         window.location.reload();
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to add member');
+        setError(data.error || 'Failed to add member');
       }
-    } catch (e) {
-      alert('Error adding member');
+    } catch {
+      setError('Network error — please try again');
     } finally {
       setLoading(false);
     }
@@ -69,6 +71,10 @@ export function AddMemberModal({ gymId, onClose }: { gymId: string; onClose: () 
               <option value="trainer">Trainer</option>
             </select>
           </div>
+
+          {error && (
+            <p className="text-[13px] text-[#ef4444] bg-[#ef4444]/10 border border-[#ef4444]/20 rounded-lg px-3 py-2">{error}</p>
+          )}
 
           <div className="pt-2 flex gap-3">
             <AdminButton type="button" variant="ghost" className="flex-1" onClick={onClose}>

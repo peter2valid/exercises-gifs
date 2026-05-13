@@ -10,29 +10,31 @@ export function NewGymModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !slug) return;
-    
+
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch('/api/super-admin/gyms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, slug, ownerEmail }),
       });
-      
+
       if (res.ok) {
         router.refresh();
         onClose();
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to create gym');
+        setError(data.error || 'Failed to create gym');
       }
-    } catch (e) {
-      alert('Error creating gym');
+    } catch {
+      setError('Network error — please try again');
     } finally {
       setLoading(false);
     }
@@ -85,6 +87,10 @@ export function NewGymModal({ onClose }: { onClose: () => void }) {
             />
             <p className="text-[10px] text-[#444]">If the user exists, they will get access immediately. Otherwise, an invitation will be created.</p>
           </div>
+
+          {error && (
+            <p className="text-[13px] text-[#ef4444] bg-[#ef4444]/10 border border-[#ef4444]/20 rounded-lg px-3 py-2">{error}</p>
+          )}
 
           <div className="pt-2 flex gap-3">
             <AdminButton type="button" variant="ghost" className="flex-1" onClick={onClose}>

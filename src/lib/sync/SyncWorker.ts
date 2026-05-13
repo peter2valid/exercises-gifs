@@ -70,10 +70,7 @@ export class SyncWorker {
           table: 'events',
           filter: `user_id=eq.${session.user.id}` 
         },
-        () => {
-          console.log('[SyncWorker] Real-time poke received');
-          this.cycle();
-        }
+        () => this.cycle()
       )
       .subscribe();
   }

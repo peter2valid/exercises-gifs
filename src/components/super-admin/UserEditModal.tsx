@@ -22,30 +22,32 @@ export function UserEditModal({ user, gyms, initialRoles, onClose }: {
   onClose: () => void 
 }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(initialRoles.some(r => r.role === 'super_admin'));
   const [gymRoles, setGymRoles] = useState(initialRoles.filter(r => r.gym_id));
   const router = useRouter();
 
   const handleSave = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch(`/api/super-admin/users/${user.id}/roles`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           isSuperAdmin,
           gymRoles: gymRoles.map(r => ({ gym_id: r.gym_id, role: r.role }))
         }),
       });
-      
+
       if (res.ok) {
         router.refresh();
         onClose();
       } else {
-        alert('Failed to update roles');
+        setError('Failed to update roles');
       }
-    } catch (e) {
-      alert('Error updating roles');
+    } catch {
+      setError('Network error — please try again');
     } finally {
       setLoading(false);
     }
@@ -146,7 +148,11 @@ export function UserEditModal({ user, gyms, initialRoles, onClose }: {
           </div>
         </div>
 
-        <div className="mt-8 flex gap-3">
+        {error && (
+          <p className="mt-4 text-[13px] text-[#ef4444] bg-[#ef4444]/10 border border-[#ef4444]/20 rounded-lg px-3 py-2">{error}</p>
+        )}
+
+        <div className="mt-4 flex gap-3">
           <AdminButton variant="ghost" className="flex-1" onClick={onClose}>
             Cancel
           </AdminButton>
