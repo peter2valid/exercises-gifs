@@ -23,7 +23,6 @@ export function BottomNav() {
 
   if (
     pathname.startsWith('/auth') ||
-    pathname.startsWith('/workout') ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/super-admin')
   ) return null;

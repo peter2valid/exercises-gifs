@@ -283,7 +283,7 @@ export function IdleView({
   onStartProgram?: (program: any) => void;
 }) {
   return (
-    <div className="dashboard-bg min-h-screen pb-8 pt-8">
+    <div className="dashboard-bg min-h-screen pb-24 pt-8">
       <div className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-md flex-col px-4">
         <div className="mb-8 space-y-3">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/30">Workout now</p>
@@ -409,7 +409,7 @@ export function RestingView({
   const unit = getWeightUnit();
 
   return (
-    <div className="dashboard-bg min-h-screen px-4 pb-8 pt-8">
+    <div className="dashboard-bg min-h-screen px-4 pb-24 pt-8">
       <div className="mx-auto flex max-w-md flex-col items-center space-y-6">
         <div className="w-full text-center">
           <p className="text-xs font-bold uppercase tracking-[0.35em] text-white/25">Rest timer</p>
@@ -753,7 +753,7 @@ export function ActiveView({
   };
 
   return (
-    <div className="dashboard-bg flex min-h-screen flex-col pb-8">
+    <div className="dashboard-bg flex min-h-screen flex-col pb-24">
       <div className="sticky top-0 z-20 border-b border-white/5 bg-black/85 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-4">
           <button
@@ -1068,7 +1068,7 @@ export function FinishedView({
   const allSets = [...strengthSets, ...timedSets];
 
   return (
-    <div className="dashboard-bg min-h-screen px-4 pb-8 pt-8">
+    <div className="dashboard-bg min-h-screen px-4 pb-24 pt-8">
       <div className="mx-auto flex max-w-md flex-col items-center gap-6 text-center">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-white/25">Workout complete</p>
