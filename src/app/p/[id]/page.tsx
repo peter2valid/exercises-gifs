@@ -36,7 +36,7 @@ export default async function PublicProgramPage({ params }: { params: Promise<{ 
   const exercises = (program.template_exercises || []).sort((a: any, b: any) => a.ord - b.ord);
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-20">
+    <div className="min-h-screen bg-[#050505] text-white pb-32">
       {/* Header */}
       <div className="relative h-64 w-full">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-600/20 to-[#050505]" />

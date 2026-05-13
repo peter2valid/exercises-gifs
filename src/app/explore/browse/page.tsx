@@ -77,8 +77,8 @@ function BrowsePageContent() {
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        // Subtract BottomNav height (~72px) so the list doesn't scroll under the fixed nav
-        setListHeight(Math.max(200, entry.contentRect.height - 72));
+        // 112px clears the fixed nav (~72px) plus safe-area inset on notch devices (up to 34px)
+        setListHeight(Math.max(200, entry.contentRect.height - 112));
       }
     });
     ro.observe(el);

@@ -283,7 +283,7 @@ export function IdleView({
   onStartProgram?: (program: any) => void;
 }) {
   return (
-    <div className="dashboard-bg min-h-screen pb-24 pt-8">
+    <div className="dashboard-bg min-h-screen pb-28 pt-8">
       <div className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-md flex-col px-4">
         <div className="mb-8 space-y-3">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/30">Workout now</p>
@@ -409,7 +409,7 @@ export function RestingView({
   const unit = getWeightUnit();
 
   return (
-    <div className="dashboard-bg min-h-screen px-4 pb-24 pt-8">
+    <div className="dashboard-bg min-h-screen px-4 pb-28 pt-8">
       <div className="mx-auto flex max-w-md flex-col items-center space-y-6">
         <div className="w-full text-center">
           <p className="text-xs font-bold uppercase tracking-[0.35em] text-white/25">Rest timer</p>
@@ -753,7 +753,7 @@ export function ActiveView({
   };
 
   return (
-    <div className="dashboard-bg flex min-h-screen flex-col pb-24">
+    <div className="dashboard-bg flex min-h-screen flex-col pb-28">
       <div className="sticky top-0 z-20 border-b border-white/5 bg-black/85 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-4">
           <button
@@ -957,7 +957,10 @@ export function ActiveView({
             </button>
           </div>
 
-          <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 py-4">
+          <div
+            className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-4"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
+          >
             <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white/25">
               Select one or more exercises
             </p>
@@ -994,7 +997,11 @@ export function ActiveView({
 
       {moreOpen && (
         <div className="fixed inset-0 z-50 flex items-end bg-black/70 backdrop-blur-sm" onClick={() => { setMoreOpen(false); setAbandonConfirm(false); }}>
-          <div className="mx-auto w-full max-w-md rounded-t-[28px] border border-white/10 bg-[#121212] p-4" onClick={(event) => event.stopPropagation()}>
+          <div
+        className="mx-auto w-full max-w-md rounded-t-[28px] border border-white/10 bg-[#121212] px-4 pt-4"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
+        onClick={(event) => event.stopPropagation()}
+      >
             <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-white/10" />
             {abandonConfirm ? (
               <div className="space-y-3">
@@ -1068,7 +1075,7 @@ export function FinishedView({
   const allSets = [...strengthSets, ...timedSets];
 
   return (
-    <div className="dashboard-bg min-h-screen px-4 pb-24 pt-8">
+    <div className="dashboard-bg min-h-screen px-4 pb-28 pt-8">
       <div className="mx-auto flex max-w-md flex-col items-center gap-6 text-center">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-white/25">Workout complete</p>
