@@ -56,6 +56,8 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
   const [addingEx, setAddingEx] = useState<Exercise | null>(null);
   const [addingExercise, setAddingExercise] = useState(false);
 
+  const [copied, setCopied] = useState(false);
+
   // Assign
   const [showAssign, setShowAssign] = useState(false);
   const [assignEmail, setAssignEmail] = useState('');
@@ -147,8 +149,10 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
   const shareUrl = selected ? (typeof window !== 'undefined' ? `${window.location.origin}/p/${selected.id}` : '') : '';
 
   const copyLink = () => {
-    navigator.clipboard.writeText(shareUrl);
-    alert('Link copied to clipboard!');
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   const shareWhatsApp = () => {
@@ -260,10 +264,10 @@ export function ProgramsClient({ gymId, initialPrograms, exercises }: Props) {
         <div className="flex gap-2">
           <button
             onClick={copyLink}
-            className="p-2 rounded-lg border border-[#262626] text-[#909090] hover:text-white transition-colors"
-            title="Copy Link"
+            className={`p-2 rounded-lg border transition-colors ${copied ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' : 'border-[#262626] text-[#909090] hover:text-white'}`}
+            title={copied ? 'Copied!' : 'Copy link'}
           >
-            <Copy size={16} />
+            {copied ? <Check size={16} /> : <Copy size={16} />}
           </button>
           <button
             onClick={shareWhatsApp}

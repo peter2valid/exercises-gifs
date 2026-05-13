@@ -23,22 +23,23 @@ export default function SubscriptionPage() {
 
   const [canceling, setCanceling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useState(false);
 
   if (isLoading) return <LoadingPage />;
 
   const isPlus = hasMemberPremium;
-  const currentPlanLabel = isPlus ? 'Viewora Plus' : (gymPlan ? `${gymPlan.toUpperCase()} Plan` : 'Free');
+  const currentPlanLabel = isPlus ? 'GymApp Plus' : (gymPlan ? `${gymPlan.toUpperCase()} Plan` : 'Free');
 
   const handleCancel = async () => {
-    if (!confirm('Are you sure you want to cancel your Viewora Plus subscription? You will lose access to premium features at the end of your billing cycle.')) return;
     setCanceling(true);
     setCancelError(null);
     try {
       const res = await fetch('/api/billing/cancel', { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Failed to cancel subscription');
-      alert('Subscription canceled successfully. Your premium features will remain active until the end of your current billing period.');
-      // Refresh state if needed, or let background refresh handle it
+      setCancelSuccess(true);
+      setShowCancelConfirm(false);
       router.refresh();
     } catch (err) {
       setCancelError(err instanceof Error ? err.message : 'An error occurred');
@@ -79,7 +80,7 @@ export default function SubscriptionPage() {
           </h1>
           <p className="text-sm text-white/40 max-w-[280px] mx-auto leading-relaxed">
             {isPlus 
-              ? 'Enjoy unrestricted access to all premium Viewora features.' 
+              ? 'Enjoy unrestricted access to all premium GymApp features.'
               : 'Unlock advanced analytics, AI recommendations, and deeper insights.'}
           </p>
         </section>
@@ -106,14 +107,42 @@ export default function SubscriptionPage() {
               </div>
             )}
 
-            <button
-              onClick={handleCancel}
-              disabled={canceling}
-              className="w-full py-2.5 rounded-xl border border-rose-500/20 text-rose-400 text-sm font-bold hover:bg-rose-500/10 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {canceling ? <Loader2 size={16} className="animate-spin" /> : <AlertTriangle size={16} />}
-              Cancel Subscription
-            </button>
+            {cancelSuccess && (
+              <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">
+                Subscription canceled. Your premium features remain active until the end of your billing period.
+              </div>
+            )}
+
+            {showCancelConfirm ? (
+              <div className="space-y-2">
+                <p className="text-xs text-white/50 text-center">Are you sure? You will lose Plus features at the end of your billing cycle.</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCancel}
+                    disabled={canceling}
+                    className="flex-1 py-2.5 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {canceling ? <Loader2 size={14} className="animate-spin" /> : null}
+                    {canceling ? 'Canceling…' : 'Yes, Cancel'}
+                  </button>
+                  <button
+                    onClick={() => setShowCancelConfirm(false)}
+                    className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/50 text-sm font-bold"
+                  >
+                    Keep Plan
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowCancelConfirm(true)}
+                disabled={canceling || cancelSuccess}
+                className="w-full py-2.5 rounded-xl border border-rose-500/20 text-rose-400 text-sm font-bold hover:bg-rose-500/10 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <AlertTriangle size={16} />
+                Cancel Subscription
+              </button>
+            )}
           </div>
         )}
 
@@ -148,7 +177,7 @@ export default function SubscriptionPage() {
                   <Star className="w-5 h-5 text-emerald-500 fill-emerald-500/20" />
                 </div>
                 <div className="text-left">
-                  <p className="text-lg font-black text-white tracking-tight uppercase italic">Viewora Plus</p>
+                  <p className="text-lg font-black text-white tracking-tight uppercase italic">GymApp Plus</p>
                   <p className="text-xs text-emerald-500/60 font-bold uppercase tracking-widest">Starting at KES 99</p>
                 </div>
               </div>
@@ -211,7 +240,7 @@ export default function SubscriptionPage() {
             <Shield size={12} />
             <span className="text-[10px] font-black uppercase tracking-widest">Secure Payments</span>
           </div>
-          <p className="text-[9px] font-bold text-white/60">© 2026 Viewora Gym App. All rights reserved.</p>
+          <p className="text-[9px] font-bold text-white/60">© 2026 GymApp. All rights reserved.</p>
         </footer>
       </div>
     </div>

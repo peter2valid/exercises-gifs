@@ -25,12 +25,17 @@ function daysUntil(iso: string | null): number | null {
 
 export default async function PackagesPage() {
   const { gymId } = await requireAdminAccess();
+
+  if (!gymId) {
+    return <div className="text-[#555] text-sm">No gym associated with this account.</div>;
+  }
+
   const admin = getAdminSupabase();
 
   const { data: sub } = await admin
     .from('gym_subscriptions')
     .select('plan, status, current_period_start, current_period_end, grace_period_end')
-    .eq('gym_id', gymId ?? '')
+    .eq('gym_id', gymId)
     .maybeSingle();
 
   const plan = (sub?.plan ?? null) as GymPlan | null;
@@ -86,7 +91,7 @@ export default async function PackagesPage() {
             </ul>
           </div>
 
-          <UpgradePlanPanel gymId={gymId ?? ''} currentPlan={plan} />
+          <UpgradePlanPanel gymId={gymId} currentPlan={plan} />
         </div>
       ) : (
         <div className="space-y-6">
@@ -96,7 +101,7 @@ export default async function PackagesPage() {
             <p className="text-[12px] text-[#444] mt-1">Choose a plan below to get started.</p>
           </div>
 
-          <UpgradePlanPanel gymId={gymId ?? ''} currentPlan={null} />
+          <UpgradePlanPanel gymId={gymId} currentPlan={null} />
         </div>
       )}
     </div>

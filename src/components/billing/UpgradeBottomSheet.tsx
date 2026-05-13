@@ -90,7 +90,7 @@ export function UpgradeBottomSheet() {
               <Zap className="w-7 h-7 text-emerald-500 fill-emerald-500/20" />
             </div>
             <div>
-              <p className="text-white font-black text-2xl tracking-tighter uppercase italic">Viewora Plus</p>
+              <p className="text-white font-black text-2xl tracking-tighter uppercase italic">GymApp Plus</p>
               {targetMeta && (
                 <p className="text-white/40 text-[13px] mt-0.5 tracking-tight font-medium">
                   Unlock <span className="text-white font-bold">{targetMeta.label}</span>

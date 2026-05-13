@@ -33,12 +33,17 @@ const cols: AdminColumn[] = [
 
 export default async function CheckInsPage() {
   const { gymId } = await requireAdminAccess();
+
+  if (!gymId) {
+    return <div className="text-[#555] text-sm">No gym associated with this account.</div>;
+  }
+
   const admin = getAdminSupabase();
 
   const { data: checkIns } = await admin
     .from('member_check_ins')
     .select('id, member_user_id, method, checked_in_at, staff_user_id')
-    .eq('gym_id', gymId ?? '')
+    .eq('gym_id', gymId)
     .order('checked_in_at', { ascending: false })
     .limit(100);
 

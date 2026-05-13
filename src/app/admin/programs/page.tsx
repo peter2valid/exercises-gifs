@@ -6,15 +6,19 @@ export const dynamic = 'force-dynamic';
 
 export default async function ProgramsPage() {
   const { gymId } = await requireAdminAccess();
+
+  if (!gymId) {
+    return <div className="text-[#555] text-sm">No gym associated with this account.</div>;
+  }
+
   const admin = getAdminSupabase();
 
   const { data: programs } = await admin
     .from('templates')
     .select('id, name, description, created_at, template_exercises(id)')
-    .eq('gym_id', gymId ?? '')
+    .eq('gym_id', gymId)
     .order('created_at', { ascending: false });
 
-  // Fetch exercises for the picker
   const { data: exercises } = await admin
     .from('exercises')
     .select('id, name, body_part')
@@ -22,7 +26,7 @@ export default async function ProgramsPage() {
 
   return (
     <ProgramsClient
-      gymId={gymId ?? ''}
+      gymId={gymId}
       initialPrograms={(programs ?? []) as any[]}
       exercises={(exercises ?? []) as { id: string; name: string; body_part: string }[]}
     />

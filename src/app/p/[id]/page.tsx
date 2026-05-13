@@ -47,7 +47,7 @@ export default async function PublicProgramPage({ params }: { params: Promise<{ 
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400 mb-1">Workout Program</p>
           <h1 className="text-3xl font-black tracking-tight leading-tight">{program.name}</h1>
           <p className="text-sm text-white/50 mt-2 font-medium">
-            By {(program.gyms as any)?.name || 'Viewora Fitness'}
+            By {(program.gyms as any)?.name || 'GymApp'}
           </p>
         </div>
       </div>
@@ -95,8 +95,8 @@ export default async function PublicProgramPage({ params }: { params: Promise<{ 
         </div>
 
         <div className="pt-6">
-          <Link 
-            href="/auth?next=/home"
+          <Link
+            href={`/auth?next=${encodeURIComponent(`/p/${program.id}`)}`}
             className="block w-full bg-white text-black py-4 rounded-2xl font-black text-center tracking-tight hover:bg-white/90 active:scale-[0.98] transition-all shadow-xl shadow-white/5"
           >
             JOIN GYM TO START WORKOUT

@@ -8,7 +8,16 @@ export const dynamic = 'force-dynamic';
 export default async function SettingsPage() {
   const { gym, user } = await requireAdminAccess();
 
-  if (!gym) return null;
+  if (!gym) {
+    return (
+      <div className="space-y-2 max-w-3xl">
+        <h2 className="text-[18px] font-bold text-[#e8e8e8]">Settings</h2>
+        <p className="text-[13px] text-[#ef4444]">
+          No gym found for this account. If you just registered, try refreshing. If the issue persists, contact support.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-3xl">

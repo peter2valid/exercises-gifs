@@ -37,12 +37,17 @@ const cols: AdminColumn[] = [
 
 export default async function PaymentsPage() {
   const { gymId } = await requireAdminAccess();
+
+  if (!gymId) {
+    return <div className="text-[#555] text-sm">No gym associated with this account.</div>;
+  }
+
   const admin = getAdminSupabase();
 
   const { data: payments } = await admin
     .from('payments')
     .select('id, reference, amount_kobo, currency, status, created_at')
-    .eq('subject_id', gymId ?? '')
+    .eq('subject_id', gymId)
     .eq('subject_type', 'gym_subscription')
     .order('created_at', { ascending: false })
     .limit(50);

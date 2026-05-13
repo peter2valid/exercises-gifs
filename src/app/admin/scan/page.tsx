@@ -5,6 +5,13 @@ export const dynamic = 'force-dynamic';
 
 export default async function ScanPage() {
   const { gymId, gym } = await requireAdminAccess();
+
+  if (!gymId) {
+    return (
+      <div className="text-[#555] text-sm">No gym associated with this account.</div>
+    );
+  }
+
   return (
     <div className="space-y-4 max-w-lg">
       <div>
@@ -13,7 +20,7 @@ export default async function ScanPage() {
           Point the camera at a member&apos;s QR code to check them in
         </p>
       </div>
-      <QRScanner gymId={gymId ?? ''} gymName={gym?.name ?? ''} />
+      <QRScanner gymId={gymId} gymName={gym?.name ?? ''} />
     </div>
   );
 }

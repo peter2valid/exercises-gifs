@@ -10,7 +10,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
   return (
     <AdminShell
       variant="super-admin"
-      gymName="Viewora"
+      gymName="GymApp"
       userEmail={user.email ?? ''}
     >
       {children}

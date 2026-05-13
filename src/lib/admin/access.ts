@@ -30,21 +30,45 @@ export async function requireAdminAccess() {
     website: string | null;
   } | null = null;
 
+  const GYM_FIELDS = 'id, name, address, phone, type, location, description, logo_url, website';
+  const GYM_FIELDS_FALLBACK = 'id, name';
+  const nullDetails = { address: null, phone: null, type: null, location: null, description: null, logo_url: null, website: null };
+
   if (gymId) {
-    const { data } = await admin
+    const { data, error } = await admin
       .from('gyms')
-      .select('id, name, address, phone, type, location, description, logo_url, website')
+      .select(GYM_FIELDS)
       .eq('id', gymId)
       .maybeSingle();
-    gym = data;
+    if (error) {
+      // Columns may not exist yet — fall back to core fields
+      const { data: basicData } = await admin
+        .from('gyms')
+        .select(GYM_FIELDS_FALLBACK)
+        .eq('id', gymId)
+        .maybeSingle();
+      gym = basicData ? { ...basicData, ...nullDetails } : null;
+    } else {
+      gym = data;
+    }
   } else if (isSA) {
-    const { data } = await admin
+    const { data, error } = await admin
       .from('gyms')
-      .select('id, name, address, phone, type, location, description, logo_url, website')
+      .select(GYM_FIELDS)
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();
-    gym = data;
+    if (error) {
+      const { data: basicData } = await admin
+        .from('gyms')
+        .select(GYM_FIELDS_FALLBACK)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      gym = basicData ? { ...basicData, ...nullDetails } : null;
+    } else {
+      gym = data;
+    }
   }
 
   return {

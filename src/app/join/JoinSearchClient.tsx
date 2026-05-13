@@ -12,7 +12,7 @@ interface Gym {
   location: string | null;
 }
 
-export function JoinSearchClient() {
+export function JoinSearchClient({ preselectedGym }: { preselectedGym?: Gym | null }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Gym[]>([]);
@@ -70,6 +70,39 @@ export function JoinSearchClient() {
           <p className="text-sm text-white/40 mt-1">Search for your gym to request membership</p>
         </div>
 
+        {preselectedGym && (
+          <div className="mb-6 glass-panel p-4 border border-sky-500/20 bg-sky-500/5 animate-fade-in">
+            <p className="text-[10px] text-sky-400/60 uppercase tracking-[0.2em] font-bold mb-3">Join this gym</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                  <Building2 size={18} className="text-white/40" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">{preselectedGym.name}</h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {preselectedGym.type && <span className="text-[10px] text-white/30 uppercase tracking-wider">{preselectedGym.type}</span>}
+                    {preselectedGym.type && preselectedGym.location && <span className="text-white/10">·</span>}
+                    {preselectedGym.location && (
+                      <div className="flex items-center gap-1 text-[10px] text-white/30 uppercase tracking-wider">
+                        <MapPin size={10} />
+                        {preselectedGym.location}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => handleJoin(preselectedGym)}
+                disabled={!!joiningId}
+                className="h-9 px-4 rounded-xl bg-white text-black text-xs font-bold transition-all active:scale-[0.97] disabled:opacity-50"
+              >
+                {joiningId === preselectedGym.id ? <Loader2 size={14} className="animate-spin" /> : 'Join'}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="relative mb-6">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
           <input
@@ -78,7 +111,7 @@ export function JoinSearchClient() {
             onChange={e => setQuery(e.target.value)}
             placeholder="Search by name or location..."
             className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 text-white outline-none focus:border-white/20 transition-all"
-            autoFocus
+            autoFocus={!preselectedGym}
           />
         </div>
 

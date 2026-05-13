@@ -105,7 +105,7 @@ async function initMemberUpgrade(
           {
             display_name: 'Plan',
             variable_name: 'plan',
-            value: `Viewora Plus (${period})`,
+            value: `GymApp Plus (${period})`,
           },
         ],
       },

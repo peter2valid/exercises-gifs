@@ -29,22 +29,27 @@ const paymentCols: AdminColumn[] = [
 
 export default async function AdminDashboard() {
   const { gymId, gym } = await requireAdminAccess();
+
+  if (!gymId) {
+    return <div className="text-[#555] text-sm">No gym associated with this account.</div>;
+  }
+
   const admin = getAdminSupabase();
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
   const [membersRes, activeRes, todayRes, paymentsRes, subRes] = await Promise.all([
-    admin.from('gym_memberships').select('id', { count: 'exact', head: true }).eq('gym_id', gymId ?? ''),
+    admin.from('gym_memberships').select('id', { count: 'exact', head: true }).eq('gym_id', gymId),
     admin.from('member_check_ins').select('member_user_id', { count: 'exact', head: true })
-      .eq('gym_id', gymId ?? '').gte('checked_in_at', new Date(Date.now() - 30 * 86400000).toISOString()),
+      .eq('gym_id', gymId).gte('checked_in_at', new Date(Date.now() - 30 * 86400000).toISOString()),
     admin.from('member_check_ins').select('id', { count: 'exact', head: true })
-      .eq('gym_id', gymId ?? '').gte('checked_in_at', todayStart.toISOString()),
+      .eq('gym_id', gymId).gte('checked_in_at', todayStart.toISOString()),
     admin.from('payments').select('id, reference, amount_kobo, currency, status, created_at')
-      .eq('subject_id', gymId ?? '').eq('subject_type', 'gym_subscription')
+      .eq('subject_id', gymId).eq('subject_type', 'gym_subscription')
       .order('created_at', { ascending: false }).limit(8),
     admin.from('gym_subscriptions').select('plan, status, current_period_end')
-      .eq('gym_id', gymId ?? '').maybeSingle(),
+      .eq('gym_id', gymId).maybeSingle(),
   ]);
 
   const payments = (paymentsRes.data ?? []) as Record<string, unknown>[];
