@@ -205,6 +205,42 @@ export default function HomePage() {
     claimGuest();
   }, [gymId]);
 
+  // Auto-join gym stored from QR scan on the explore page
+  useEffect(() => {
+    async function claimPendingGym() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      let pending: { gymId: string; gymName?: string; timestamp: number } | null = null;
+      try {
+        const raw = localStorage.getItem('gymapp:pendingGymJoin');
+        if (!raw) return;
+        pending = JSON.parse(raw);
+      } catch {
+        localStorage.removeItem('gymapp:pendingGymJoin');
+        return;
+      }
+
+      // Clear immediately so we don't retry on next visit
+      localStorage.removeItem('gymapp:pendingGymJoin');
+
+      if (!pending?.gymId) return;
+      if (Date.now() - pending.timestamp > 7 * 24 * 60 * 60 * 1000) return;
+
+      try {
+        await fetch('/api/gym/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gymId: pending.gymId }),
+        });
+        // 409 = already member/pending — both are fine, just continue
+      } catch {
+        // Silent fail: the user can always join manually
+      }
+    }
+    claimPendingGym();
+  }, []);
+
   useEffect(() => {
     async function loadStats() {
       try {

@@ -40,15 +40,16 @@ export function GymQRClient({ gymName, qrCodeDataUrl, joinUrl }: Props) {
           />
         </div>
         <p className="mt-4 text-[14px] font-bold text-black uppercase tracking-wider">{gymName}</p>
-        <p className="text-[10px] text-gray-400 mt-1 uppercase">Scan to Join</p>
+        <p className="text-[10px] text-gray-400 mt-1 uppercase">Scan to Explore</p>
       </div>
 
       <div className="space-y-4">
         <div className="a-card space-y-4">
           <h3 className="text-[13px] font-bold text-[#e8e8e8]">Poster QR Code</h3>
           <p className="text-[12px] text-[#555] leading-relaxed">
-            Download this high-resolution QR code to include in your gym posters, flyers, or social media. 
-            When scanned, it will take members directly to the join request page for your gym.
+            Download this QR code for your gym posters and flyers. When scanned, visitors are taken
+            directly to the exercise library — no login required. Your gym is tracked so they can
+            join with one tap after signing up.
           </p>
           <button
             onClick={handleDownload}
@@ -60,7 +61,7 @@ export function GymQRClient({ gymName, qrCodeDataUrl, joinUrl }: Props) {
         </div>
 
         <div className="a-card space-y-4">
-          <h3 className="text-[13px] font-bold text-[#e8e8e8]">Join Link</h3>
+          <h3 className="text-[13px] font-bold text-[#e8e8e8]">Explore Link</h3>
           <div className="flex items-center gap-2 p-2 bg-[#0a0a0a] border border-[#262626] rounded-lg">
             <code className="flex-1 text-[11px] text-[#909090] truncate font-mono">{joinUrl}</code>
             <button

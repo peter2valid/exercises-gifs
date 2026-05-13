@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Dumbbell, Search, Zap } from 'lucide-react';
+import { Building2, Dumbbell, Search, X, Zap } from 'lucide-react';
 import { LoadingPage } from '@/components/ui';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { seedExercises } from '@/lib/db/seed';
@@ -15,6 +15,15 @@ import {
 } from '@/lib/explore/constants';
 import { CompactTile, MuscleTile, EquipmentTile } from '@/components/ExploreTiles';
 
+const PENDING_GYM_KEY = 'gymapp:pendingGymJoin';
+
+interface PendingGym {
+  gymId: string;
+  gymName: string;
+  gymType?: string | null;
+  timestamp: number;
+}
+
 
 export default function ExplorePage() {
   const router = useRouter();
@@ -22,6 +31,8 @@ export default function ExplorePage() {
   const [showEquipment, setShowEquipment] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingGym, setPendingGym] = useState<PendingGym | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -34,6 +45,43 @@ export default function ExplorePage() {
       }
     }
     load();
+  }, []);
+
+  // Detect gym context from QR scan: ?gymId=X
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const gymId = params.get('gymId');
+    if (!gymId) {
+      // Show existing pending gym if not yet dismissed
+      try {
+        const raw = localStorage.getItem(PENDING_GYM_KEY);
+        if (raw) {
+          const saved: PendingGym = JSON.parse(raw);
+          if (Date.now() - saved.timestamp < 7 * 24 * 60 * 60 * 1000) {
+            setPendingGym(saved);
+          }
+        }
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
+    // Fetch gym details and store pending join
+    fetch(`/api/public/gyms/${gymId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data?.gym) return;
+        const pending: PendingGym = {
+          gymId: data.gym.id,
+          gymName: data.gym.name,
+          gymType: data.gym.type ?? null,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(PENDING_GYM_KEY, JSON.stringify(pending));
+        setPendingGym(pending);
+      })
+      .catch(() => {});
   }, []);
 
   const muscleCounts = useMemo(() => {
@@ -93,6 +141,38 @@ export default function ExplorePage() {
           <p className="text-xs font-medium uppercase tracking-[0.25em] text-white/35">Explore</p>
           <h1 className="text-2xl font-semibold text-white">{showEquipment ? 'Equipment' : 'Exercises'}</h1>
         </div>
+
+        {/* Gym context banner — shown when arriving via gym QR code */}
+        {pendingGym && !bannerDismissed && (
+          <div className="mb-4 flex items-center gap-3 rounded-2xl px-4 py-3 animate-fade-in"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+            >
+              <Building2 size={16} className="text-white/60" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-white leading-tight truncate">{pendingGym.gymName}</p>
+              <p className="text-[11px] text-white/35 mt-0.5">
+                Sign up to join this gym
+              </p>
+            </div>
+            <button
+              onClick={() => router.push(`/auth?next=${encodeURIComponent(`/join?gymId=${pendingGym.gymId}`)}`)}
+              className="shrink-0 rounded-xl bg-white px-3 py-1.5 text-[12px] font-bold text-black transition-all active:scale-[0.97]"
+            >
+              Join →
+            </button>
+            <button
+              onClick={() => setBannerDismissed(true)}
+              className="shrink-0 text-white/25 hover:text-white/50 transition-colors"
+              aria-label="Dismiss"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        )}
 
         {/* Search — navigates only on Enter or tap of search icon */}
         <div className="mb-4 rounded-[30px] border border-white/10 bg-white px-4 py-3 text-black shadow-[0_18px_45px_rgba(0,0,0,0.16)]">

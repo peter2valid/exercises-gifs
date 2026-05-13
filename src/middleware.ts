@@ -66,9 +66,11 @@ export async function middleware(request: NextRequest) {
   const isJoin = path.startsWith('/join');
   const isStatic = path.match(/\.(.*)$/); // Basic check for static assets
 
-  // 2. REDIRECT: If logged in and trying to access /auth, go to /home
+  // 2. REDIRECT: If logged in and trying to access /auth, honour ?next= or fall back to /home
   if (user && isAuthPage && path !== '/auth/callback') {
-    return NextResponse.redirect(new URL('/home', request.url));
+    const next = url.searchParams.get('next');
+    const destination = next && next.startsWith('/') ? next : '/home';
+    return NextResponse.redirect(new URL(destination, request.url));
   }
 
   // 3. PROTECT: If NOT logged in and trying to access private pages, go to /auth

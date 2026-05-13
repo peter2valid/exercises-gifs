@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui';
@@ -17,6 +17,13 @@ export default function AuthPage() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [nextPath, setNextPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get('next');
+    if (next && next.startsWith('/')) setNextPath(next);
+  }, []);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,15 +37,17 @@ export default function AuthPage() {
         // Wait for session to be acknowledged by browser/cookies before redirecting
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          router.replace('/home');
+          router.replace(nextPath ?? '/home');
         }
       } else {
-        const { error } = await supabase.auth.signUp({ 
-          email, 
+        const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+        if (nextPath) callbackUrl.searchParams.set('next', nextPath);
+        const { error } = await supabase.auth.signUp({
+          email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-            data: { full_name: '', avatar_url: '' } // Preparing metadata for profile
+            emailRedirectTo: callbackUrl.toString(),
+            data: { full_name: '', avatar_url: '' },
           }
         });
         if (error) throw error;
@@ -70,11 +79,11 @@ export default function AuthPage() {
     setLoading(true);
     setError(null);
     try {
+      const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+      if (nextPath) callbackUrl.searchParams.set('next', nextPath);
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
+        options: { redirectTo: callbackUrl.toString() },
       });
       if (error) throw error;
     } catch (err: any) {

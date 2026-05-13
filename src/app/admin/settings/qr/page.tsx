@@ -16,7 +16,7 @@ export default async function GymQRPage() {
   }
 
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-  const joinUrl = `${APP_URL}/join?gymId=${gym.id}`;
+  const joinUrl = `${APP_URL}/explore?gymId=${gym.id}`;
   
   const qrCodeDataUrl = await QRCode.toDataURL(joinUrl, {
     width: 1024,
