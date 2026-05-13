@@ -62,17 +62,14 @@ export default function HomePage() {
   const [recentSessions, setRecentSessions] = useState<RecentSession[]>([]);
 
   useEffect(() => {
-    async function checkUser() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/auth');
-        return;
-      }
-      setUser(session.user);
+    // Middleware already redirects unauthenticated users to /auth.
+    // This effect only needs to load the user object for display.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setUser(session.user);
       setLoading(false);
-    }
-    checkUser();
-  }, [router]);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // If a guest started a session previously, claim it for the signed-in user
   useEffect(() => {

@@ -6,7 +6,12 @@ import { hasGymRole } from '@/lib/auth/roles';
 import type { MemberBillingPeriod, GymPlan } from '@/lib/billing/types';
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY!;
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? (() => {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('[billing] NEXT_PUBLIC_APP_URL is not set! Paystack callbacks will point to localhost.');
+  }
+  return 'http://localhost:3000';
+})();
 
 type MemberPayload = { type: 'member'; period: MemberBillingPeriod };
 type GymPayload    = { type: 'gym'; gymId: string; plan: GymPlan };
@@ -181,6 +186,7 @@ async function initGymUpgrade(
         gym_id: gymId,
         gym_name: gym.name,
         plan,
+        billing_period: 'monthly',
         admin_user_id: user.id,
         custom_fields: [
           {

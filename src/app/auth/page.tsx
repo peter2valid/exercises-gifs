@@ -30,7 +30,6 @@ export default function AuthPage() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           router.replace('/home');
-          router.refresh();
         }
       } else {
         const { error } = await supabase.auth.signUp({ 

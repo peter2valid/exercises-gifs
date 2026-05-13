@@ -141,9 +141,8 @@ async function handleEvent(event: { event: string; data: Record<string, any> }):
       }
 
       if (metadata.type === 'gym_subscription') {
-        const { gym_id, plan } = metadata;
-        const periodEnd = new Date(now);
-        periodEnd.setMonth(periodEnd.getMonth() + 1);
+        const { gym_id, plan, billing_period } = metadata;
+        const periodEnd = addPeriod(now, billing_period || 'monthly');
 
         await adminSupabase.from('gym_subscriptions').upsert(
           {

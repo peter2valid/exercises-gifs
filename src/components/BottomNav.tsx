@@ -21,7 +21,12 @@ export function BottomNav() {
     { href: '/profile', icon: User, label: 'Profile' },
   ];
 
-  if (pathname.startsWith('/auth')) return null;
+  if (
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/workout') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/super-admin')
+  ) return null;
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 

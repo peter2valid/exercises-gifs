@@ -1,0 +1,110 @@
+/*
+ * Admin UI — scoped styles
+ * Imported only by /admin and /super-admin layouts.
+ * Provides visual separation from the member app (no glass, no grain, no sport typography).
+ */
+
+.admin-root {
+  --a-bg:      #0a0a0a;
+  --a-surface: #141414;
+  --a-surf2:   #1c1c1c;
+  --a-border:  #262626;
+  --a-text:    #e8e8e8;
+  --a-text2:   #909090;
+  --a-text3:   #555555;
+  --a-accent:  #3b82f6;
+  --a-ok:      #22c55e;
+  --a-warn:    #f59e0b;
+  --a-err:     #ef4444;
+
+  background-color: var(--a-bg);
+  color: var(--a-text);
+  font-feature-settings: "tnum";
+}
+
+/* Sidebar nav links */
+.a-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--a-text2);
+  text-decoration: none;
+  transition: color 0.12s ease, background 0.12s ease;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.a-nav-link:hover {
+  color: var(--a-text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.a-nav-link.active {
+  color: var(--a-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Stat cards */
+.a-card {
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* Table */
+.a-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.a-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--a-text3);
+  border-bottom: 1px solid var(--a-border);
+}
+
+.a-table td {
+  padding: 12px 14px;
+  color: var(--a-text2);
+  border-bottom: 1px solid var(--a-border);
+  vertical-align: middle;
+}
+
+.a-table tr:last-child td {
+  border-bottom: none;
+}
+
+.a-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Badges */
+.a-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.a-badge-ok   { background: rgba(34,197,94,0.12);  color: #4ade80; }
+.a-badge-warn { background: rgba(245,158,11,0.12); color: #fbbf24; }
+.a-badge-err  { background: rgba(239,68,68,0.12);  color: #f87171; }
+.a-badge-blue { background: rgba(59,130,246,0.12); color: #60a5fa; }
+.a-badge-gray { background: rgba(255,255,255,0.06); color: var(--a-text2); }

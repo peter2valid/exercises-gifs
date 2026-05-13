@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { db } from '@/lib/db/dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { CloudOff, AlertCircle, RefreshCw } from 'lucide-react';
 
 export function SyncStatus() {
+  const pathname = usePathname();
   const [isOnline, setIsOnline] = useState(
     typeof window !== 'undefined' ? window.navigator.onLine : true
   );
@@ -35,6 +37,7 @@ export function SyncStatus() {
     };
   }, []);
 
+  if (pathname.startsWith('/admin') || pathname.startsWith('/super-admin')) return null;
   if (isOnline && failedCount === 0 && stalledCount === 0) return null;
 
   const label = !isOnline
