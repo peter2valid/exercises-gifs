@@ -232,7 +232,10 @@ export function ProgramsClient({ gymId, initialPrograms, assignments, userDirect
       {deleteTarget && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
-          <div className="relative w-full max-w-sm bg-[#111] border border-[#262626] rounded-2xl shadow-2xl p-6 space-y-4">
+          <div
+            className="relative w-full max-w-sm bg-[#111] border border-[#262626] rounded-2xl shadow-2xl p-6 space-y-4"
+            style={{ maxHeight: 'calc(100vh - (var(--bottom-nav-height,76px) + env(safe-area-inset-bottom) + 48px))', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}
+          >
             <p className="text-sm font-semibold text-[#e8e8e8]">Delete &ldquo;{deleteTarget.name}&rdquo;?</p>
             <p className="text-[13px] text-[#555]">This action cannot be undone. All exercises in this program will also be removed.</p>
             <div className="flex gap-3 pt-2">

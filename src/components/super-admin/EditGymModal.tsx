@@ -50,7 +50,8 @@ export function EditGymModal({ gym, ownerEmail: initialEmail, onClose }: { gym: 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-[#111] border border-[#262626] rounded-2xl shadow-2xl p-6">
+      <div className="relative w-full max-w-md bg-[#111] border border-[#262626] rounded-2xl shadow-2xl p-6"
+        style={{ maxHeight: 'calc(100vh - (var(--bottom-nav-height,76px) + env(safe-area-inset-bottom) + 48px))', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-bold text-white">Edit Gym</h3>
           <button onClick={onClose} className="text-[#555] hover:text-white transition-colors">
