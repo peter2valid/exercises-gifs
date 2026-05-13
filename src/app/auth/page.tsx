@@ -94,6 +94,16 @@ export default function AuthPage() {
           <p className="text-white/40 text-sm mt-1">Distributed Sync Engine</p>
         </div>
 
+        {/* Gym registration CTA */}
+        <div className="text-center mb-4">
+          <a
+            href="/onboarding"
+            className="text-xs text-white/40 hover:text-white/70 transition-colors underline underline-offset-2"
+          >
+            Opening a gym? Register here →
+          </a>
+        </div>
+
         {/* Auth Card */}
         <div className="glass-panel p-6 shadow-2xl border-white/10">
           
