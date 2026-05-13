@@ -28,10 +28,12 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   const { data: gym, error: gymErr } = await admin
     .from('gyms')
-    .insert({ 
-      name, 
+    .insert({
+      name,
       slug,
-      admin_user_id: user.id 
+      type: type || null,
+      location: location || null,
+      admin_user_id: user.id
     })
     .select('id, name')
     .single();

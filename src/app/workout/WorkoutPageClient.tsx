@@ -175,7 +175,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
         .sort((a: any, b: any) => a.ord - b.ord)
         .map((e: any) => e.exercise_id);
       try {
-        localStorage.setItem(`supafast-workout-roster:${sessionId}`, JSON.stringify(roster));
+        localStorage.setItem(`gymapp-workout-roster:${sessionId}`, JSON.stringify(roster));
       } catch (err) {
         console.error('Failed to save program roster:', err);
       }
@@ -220,7 +220,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
   const handleAbandon = () => {
     // Clear session state without emitting SESSION_COMPLETED
     if (session?.id) {
-      try { localStorage.removeItem(`supafast-workout-roster:${session.id}`); } catch {}
+      try { localStorage.removeItem(`gymapp-workout-roster:${session.id}`); } catch {}
     }
     reset();
     clearSessionId();
@@ -232,7 +232,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
   const handleReset = () => {
     // Clean up this session's roster from localStorage
     if (session?.id) {
-      try { localStorage.removeItem(`supafast-workout-roster:${session.id}`); } catch {}
+      try { localStorage.removeItem(`gymapp-workout-roster:${session.id}`); } catch {}
     }
     reset();
     clearSessionId();

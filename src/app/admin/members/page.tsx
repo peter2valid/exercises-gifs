@@ -6,12 +6,21 @@ export const dynamic = 'force-dynamic';
 
 export default async function MembersPage() {
   const { gymId } = await requireAdminAccess();
+
+  if (!gymId) {
+    return (
+      <div className="space-y-4 max-w-5xl">
+        <p className="text-sm text-[#555]">No gym found for your account.</p>
+      </div>
+    );
+  }
+
   const admin = getAdminSupabase();
 
   const { data: allMembers } = await admin
     .from('gym_memberships')
     .select('id, user_id, role, joined_at, status, created_at')
-    .eq('gym_id', gymId ?? '')
+    .eq('gym_id', gymId)
     .order('created_at', { ascending: false });
 
   const members = (allMembers ?? []).filter(m => m.status === 'active');
@@ -26,8 +35,8 @@ export default async function MembersPage() {
         </p>
       </div>
 
-      <MembersPanel 
-        gymId={gymId ?? ''} 
+      <MembersPanel
+        gymId={gymId}
         initialMembers={members as any} 
         initialRequests={requests as any} 
       />

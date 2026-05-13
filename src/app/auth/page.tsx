@@ -90,7 +90,7 @@ export default function AuthPage() {
           <div className="w-16 h-16 rounded-[22px] bg-white text-black flex items-center justify-center shadow-[0_20px_50px_rgba(255,255,255,0.15)] mb-4">
             <Zap size={32} fill="currentColor" />
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Supafast</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight">GymApp</h1>
           <p className="text-white/40 text-sm mt-1">Distributed Sync Engine</p>
         </div>
 

@@ -161,19 +161,19 @@ export default function HomePage() {
           <h1 className="text-2xl font-extrabold text-white tracking-tight">Ready To Move?</h1>
         </div>
 
-        {/* Minimal stat tiles (mimic reference) */}
+        {/* Stat tiles — real data from Dexie */}
         <div className="flex items-center justify-between gap-3 animate-slide-up mt-4">
           <div className="flex-1 glass-panel p-3 text-center">
-            <p className="text-2xl font-black text-white">6541</p>
-            <p className="text-xs text-white/40 mt-1">Steps</p>
+            <p className="text-2xl font-black text-white">{thisWeek}</p>
+            <p className="text-xs text-white/40 mt-1">This Week</p>
           </div>
           <div className="flex-1 glass-panel p-3 text-center">
-            <p className="text-2xl font-black text-white">1.5</p>
-            <p className="text-xs text-white/40 mt-1">Liters</p>
+            <p className="text-2xl font-black text-white">{recentSessions.length > 0 ? recentSessions[0].setCount : 0}</p>
+            <p className="text-xs text-white/40 mt-1">Last Sets</p>
           </div>
           <div className="flex-1 glass-panel p-3 text-center">
-            <p className="text-2xl font-black text-white">259</p>
-            <p className="text-xs text-white/40 mt-1">Cal Burn</p>
+            <p className="text-2xl font-black text-white">{totalVolume > 0 ? `${Math.round(totalVolume / 1000)}k` : '0'}</p>
+            <p className="text-xs text-white/40 mt-1">Volume ({unit})</p>
           </div>
         </div>
 

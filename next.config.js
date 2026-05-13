@@ -35,7 +35,7 @@ const securityHeaders = [
   // Lock down browser features not used by the app
   {
     key: 'Permissions-Policy',
-    value: 'camera=(), microphone=(), geolocation=(), payment=(self), usb=()',
+    value: 'camera=(self), microphone=(), geolocation=(), payment=(self), usb=()',
   },
   // Basic XSS filter (legacy browsers) + block page on detection
   { key: 'X-XSS-Protection', value: '1; mode=block' },

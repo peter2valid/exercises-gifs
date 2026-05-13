@@ -6,6 +6,15 @@ export const dynamic = 'force-dynamic';
 
 export default async function StaffPage() {
   const { gymId } = await requireAdminAccess();
+
+  if (!gymId) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-[#555]">No gym found for your account.</p>
+      </div>
+    );
+  }
+
   const admin = getAdminSupabase();
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
@@ -13,13 +22,13 @@ export default async function StaffPage() {
     admin
       .from('user_gym_roles')
       .select('id, user_id, role, created_at')
-      .eq('gym_id', gymId ?? '')
+      .eq('gym_id', gymId)
       .in('role', ['gym_owner', 'gym_admin', 'trainer', 'member'])
       .order('created_at', { ascending: false }),
     admin
       .from('gym_invitations')
       .select('id, email, role, token, created_at, expires_at')
-      .eq('gym_id', gymId ?? '')
+      .eq('gym_id', gymId)
       .is('accepted_at', null)
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false }),
@@ -41,7 +50,7 @@ export default async function StaffPage() {
         </p>
       </div>
       <StaffPanel
-        gymId={gymId ?? ''}
+        gymId={gymId}
         initialStaff={staff}
         initialInvites={invites}
         appUrl={APP_URL}

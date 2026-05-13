@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { VariableSizeList as List } from 'react-window';
+import { FixedSizeList as List } from 'react-window';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   ChevronLeft,
@@ -44,7 +44,6 @@ function BrowsePageContent() {
 
   const [search, setSearch] = useState(queryParam || '');
   const deferredSearch = useDeferredValue(search);
-  const activeTab = 'exercises' as const;
   const [mode, setMode] = useState<ExploreMode>(modeParam === 'equipment' ? 'equipment' : 'muscles');
   const [activeMuscle, setActiveMuscle] = useState<BodyGroupKey | null>(
     muscleParam && muscleParam !== 'all' ? (muscleParam as BodyGroupKey) : null
@@ -52,7 +51,6 @@ function BrowsePageContent() {
   const [activeEquipment, setActiveEquipment] = useState<string | null>(equipmentParam || null);
   const [view, setView] = useState<ExploreView>('grid');
 
-  const listRef = useRef<any>(null);
   const muscleRailRef = useRef<HTMLDivElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
   const [listHeight, setListHeight] = useState(400);
@@ -79,7 +77,8 @@ function BrowsePageContent() {
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setListHeight(entry.contentRect.height);
+        // Subtract BottomNav height (~72px) so the list doesn't scroll under the fixed nav
+        setListHeight(Math.max(200, entry.contentRect.height - 72));
       }
     });
     ro.observe(el);
@@ -94,10 +93,6 @@ function BrowsePageContent() {
       }
     }
   }, [activeMuscle, loading]);
-
-  useEffect(() => {
-    if (listRef.current) listRef.current.resetAfterIndex(0);
-  }, [activeMuscle, activeEquipment, mode, view, loading, exercises, deferredSearch]);
 
   const equipmentGroups = useMemo(() => {
     const items = new Map<string, number>();
@@ -155,8 +150,8 @@ function BrowsePageContent() {
     return `${count} Exercise${count !== 1 ? 's' : ''}`;
   }, [filteredExercises.length, deferredSearch, activeMuscle, activeEquipment]);
 
-  const showMuscleGrid = mode === 'muscles' && !activeMuscle && !explicitBrowse && !deferredSearch.trim() && activeTab === 'exercises';
-  const showEquipGrid = mode === 'equipment' && !activeEquipment && activeTab === 'exercises';
+  const showMuscleGrid = mode === 'muscles' && !activeMuscle && !explicitBrowse && !deferredSearch.trim();
+  const showEquipGrid = mode === 'equipment' && !activeEquipment;
   const showExerciseList = !showMuscleGrid && !showEquipGrid;
 
   const getItemSize = () => view === 'grid' ? GRID_ROW_HEIGHT : LIST_ITEM_HEIGHT;
@@ -246,8 +241,7 @@ function BrowsePageContent() {
             </div>
           </div>
 
-          {activeTab === 'exercises' && (
-            <>
+          <>
               {/* Muscle rail */}
               <div ref={muscleRailRef} className="mb-4 flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
                 <button
@@ -291,8 +285,7 @@ function BrowsePageContent() {
                   </div>
                 </div>
               </div>
-            </>
-          )}
+          </>
         </div>
       </div>
 
@@ -336,7 +329,7 @@ function BrowsePageContent() {
       )}
 
       {/* Results count when exercises are shown */}
-      {activeTab === 'exercises' && showExerciseList && (
+      {showExerciseList && (
         <div className="flex-none px-5 pb-2 max-w-md mx-auto w-full">
           <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/25">
             {resultLabel}
@@ -344,7 +337,7 @@ function BrowsePageContent() {
         </div>
       )}
 
-      {activeTab === 'exercises' && showEquipGrid && (
+      {showEquipGrid && (
         <div className="flex-none px-5 pb-3 max-w-md mx-auto w-full">
           <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-center text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
             Pick equipment to reveal exercises
@@ -366,10 +359,9 @@ function BrowsePageContent() {
             </div>
           ) : (
             <List
-              ref={listRef}
               height={listHeight}
               itemCount={itemCount}
-              itemSize={getItemSize}
+              itemSize={getItemSize()}
               width="100%"
               className="scrollbar-hide"
             >

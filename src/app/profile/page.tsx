@@ -24,6 +24,8 @@ export default function ProfilePage() {
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [saveErrorMsg, setSaveErrorMsg] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -70,6 +72,7 @@ export default function ProfilePage() {
 
   const handleUpdateProfile = async () => {
     setUpdating(true);
+    setSaveStatus('idle');
     try {
       const { error } = await supabase
         .from('profiles')
@@ -80,9 +83,11 @@ export default function ProfilePage() {
           updated_at: new Date().toISOString(),
         });
       if (error) throw error;
-      alert('Profile updated!');
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (err: any) {
-      alert(err.message);
+      setSaveStatus('error');
+      setSaveErrorMsg(err.message ?? 'Failed to save');
     } finally {
       setUpdating(false);
     }
@@ -121,12 +126,16 @@ export default function ProfilePage() {
             <p className="text-xs tracking-[0.3em] text-white/30 uppercase font-medium mb-2">Profile</p>
             <h1 className="text-3xl font-bold text-white tracking-tight">You</h1>
           </div>
-          <button 
+          <button
             onClick={handleUpdateProfile}
             disabled={updating}
-            className="text-xs font-bold text-sky-400 uppercase tracking-widest hover:text-sky-300 transition-colors disabled:opacity-50"
+            className={`text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50 ${
+              saveStatus === 'saved' ? 'text-emerald-400' :
+              saveStatus === 'error' ? 'text-rose-400' :
+              'text-sky-400 hover:text-sky-300'
+            }`}
           >
-            {updating ? 'Saving...' : 'Save Changes'}
+            {updating ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : saveStatus === 'error' ? saveErrorMsg : 'Save Changes'}
           </button>
         </div>
 
@@ -167,9 +176,10 @@ export default function ProfilePage() {
                 <UserIcon size={36} className="text-white/20" />
               </div>
             )}
-            <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-sky-500 border-4 border-[#090909] flex items-center justify-center text-white">
+            <label className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-sky-500 border-4 border-[#090909] flex items-center justify-center text-white cursor-pointer">
               <Camera size={14} />
-            </button>
+              <input type="file" accept="image/*" className="sr-only" onChange={() => {}} />
+            </label>
           </div>
           
           <div className="space-y-4 px-2">

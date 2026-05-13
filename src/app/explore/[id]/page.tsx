@@ -8,7 +8,6 @@ import { LoadingPage } from '@/components/ui';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { type Exercise } from '@/lib/db/schema';
-import { bodyGroups } from '@/lib/explore/constants';
 
 import { ExerciseThumbnail } from '@/components/ExerciseCard';
 
@@ -33,22 +32,7 @@ export default function ExerciseDetail({ params }: { params: Promise<{ id: strin
   if (!exercise) return notFound();
 
   const handleBack = () => {
-    // If we have history, use back() to preserve exact scroll/filter state
-    if (window.history.length > 1) {
-      router.back();
-      return;
-    }
-
-    // Fallback: Smart redirect based on exercise category
-    if (exercise) {
-      const muscleKey = exercise.body_part || exercise.target;
-      // Map body part to muscle group keys used in constants
-      const validGroups = bodyGroups.map(g => g.key);
-      const targetKey = validGroups.find(k => k === muscleKey) || 'all';
-      router.push(`/explore/browse?muscle=${targetKey}`);
-    } else {
-      router.push('/explore');
-    }
+    router.back();
   };
 
   return (

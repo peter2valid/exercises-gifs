@@ -10,8 +10,8 @@ import { EntitlementProvider } from '@/components/billing/EntitlementProvider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Supafast Gym - Efficient Workout Tracking',
-  description: 'Track your gym progress with lightning speed and offline-first reliability.',
+  title: 'GymApp - Workout Tracking & Gym Management',
+  description: 'Track your gym progress and manage your gym with offline-first reliability.',
 };
 
 export default function RootLayout({

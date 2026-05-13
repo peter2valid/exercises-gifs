@@ -39,6 +39,7 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
+              replace={active}
               className="flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all duration-200"
               style={{
                 background: active

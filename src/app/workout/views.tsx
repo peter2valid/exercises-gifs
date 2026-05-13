@@ -66,7 +66,7 @@ type ExerciseDraft = {
 };
 
 function rosterStorageKey(sessionId: string) {
-  return `supafast-workout-roster:${sessionId || 'draft'}`;
+  return `gymapp-workout-roster:${sessionId || 'draft'}`;
 }
 
 function modeLabel(mode: WorkoutExerciseMode) {

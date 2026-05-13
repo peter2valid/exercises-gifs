@@ -50,7 +50,7 @@ export function JoinClient({ token, gymName, email, role, isLoggedIn, error }: P
           <div className="w-16 h-16 rounded-[22px] bg-white text-black flex items-center justify-center shadow-[0_20px_50px_rgba(255,255,255,0.15)] mb-4">
             <Zap size={32} fill="currentColor" />
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Supafast</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight">GymApp</h1>
         </div>
 
         <div className="glass-panel p-6 shadow-2xl border-white/10">
