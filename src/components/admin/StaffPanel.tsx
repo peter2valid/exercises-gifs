@@ -64,6 +64,7 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
 
   // Remove
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,16 +276,35 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
                     </td>
                     <td>
                       {row.role !== 'gym_owner' && (
-                        <button
-                          onClick={() => removeStaff(row)}
-                          disabled={removingId === row.id}
-                          className="text-[#555] hover:text-[#ef4444] transition-colors disabled:opacity-40"
-                          title="Remove"
-                        >
-                          {removingId === row.id
-                            ? <Loader2 size={14} className="animate-spin" />
-                            : <Trash2 size={14} />}
-                        </button>
+                        confirmRemoveId === row.id ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => removeStaff(row)}
+                              disabled={removingId === row.id}
+                              className="h-8 px-3 rounded-lg bg-rose-500/20 border border-rose-500/30 text-rose-400 text-[11px] font-bold hover:bg-rose-500/30 transition-colors disabled:opacity-40"
+                            >
+                              {removingId === row.id ? <Loader2 size={12} className="animate-spin" /> : 'Confirm'}
+                            </button>
+                            <button
+                              onClick={() => setConfirmRemoveId(null)}
+                              disabled={removingId === row.id}
+                              className="h-8 px-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-[#909090] text-[11px] font-bold hover:text-white hover:border-[#555] transition-colors disabled:opacity-40"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmRemoveId(row.id)}
+                            disabled={removingId === row.id}
+                            className="text-[#555] hover:text-[#ef4444] transition-colors disabled:opacity-40"
+                            title="Remove"
+                          >
+                            {removingId === row.id
+                              ? <Loader2 size={14} className="animate-spin" />
+                              : <Trash2 size={14} />}
+                          </button>
+                        )
                       )}
                     </td>
                   </tr>

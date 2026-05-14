@@ -36,6 +36,7 @@ export function MembersPanel({ gymId, initialMembers, initialRequests }: Props) 
   const [members, setMembers] = useState(initialMembers);
   const [requests, setRequests] = useState(initialRequests);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
   const handleAction = async (membershipId: string, action: 'approve' | 'reject' | 'delete') => {
@@ -190,14 +191,33 @@ export function MembersPanel({ gymId, initialMembers, initialRequests }: Props) 
                       {new Date(m.joined_at).toLocaleDateString()}
                     </td>
                     <td className="text-right">
-                      <button
-                        onClick={() => handleAction(m.id, 'delete')}
-                        disabled={!!processingId}
-                        className="text-[#555] hover:text-red-400 transition-colors p-2"
-                        title="Remove member"
-                      >
-                        {processingId === m.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                      </button>
+                      {confirmDeleteId === m.id ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleAction(m.id, 'delete')}
+                            disabled={!!processingId}
+                            className="h-8 px-3 rounded-lg bg-rose-500/20 border border-rose-500/30 text-rose-400 text-[11px] font-bold hover:bg-rose-500/30 transition-colors disabled:opacity-50"
+                          >
+                            {processingId === m.id ? <Loader2 size={12} className="animate-spin" /> : 'Confirm'}
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            disabled={!!processingId}
+                            className="h-8 px-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-[#909090] text-[11px] font-bold hover:text-white hover:border-[#555] transition-colors disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteId(m.id)}
+                          disabled={!!processingId}
+                          className="text-[#555] hover:text-red-400 transition-colors p-2"
+                          title="Remove member"
+                        >
+                          {processingId === m.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

@@ -81,6 +81,11 @@ export function GymSubscriptionModal({
           </button>
         </div>
 
+        <div className="mb-4 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-2">
+          <p className="text-[12px] font-semibold text-amber-300">Critical change</p>
+          <p className="mt-1 text-[11px] text-amber-100/70">This updates a live subscription record. Review the values carefully before saving.</p>
+        </div>
+
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-[11px] font-bold text-[#555] uppercase tracking-wider">Plan</label>
