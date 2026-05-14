@@ -65,6 +65,7 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
   // Remove
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+  const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +108,10 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ inviteId: invite.id, gymId }),
     });
-    if (res.ok) setInvites(prev => prev.filter(i => i.id !== invite.id));
+    if (res.ok) {
+      setInvites(prev => prev.filter(i => i.id !== invite.id));
+      setConfirmRevokeId(null);
+    }
   };
 
   const removeStaff = async (row: StaffRow) => {
@@ -118,7 +122,10 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roleId: row.id, gymId }),
       });
-      if (res.ok) setStaff(prev => prev.filter(s => s.id !== row.id));
+      if (res.ok) {
+        setStaff(prev => prev.filter(s => s.id !== row.id));
+        setConfirmRemoveId(null);
+      }
     } finally {
       setRemovingId(null);
     }
@@ -216,13 +223,30 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
                       </button>
                     </td>
                     <td>
-                      <button
-                        onClick={() => revokeInvite(inv)}
-                        className="text-[#555] hover:text-[#ef4444] transition-colors"
-                        title="Revoke"
-                      >
-                        <X size={14} />
-                      </button>
+                      {confirmRevokeId === inv.id ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => revokeInvite(inv)}
+                            className="h-8 px-3 rounded-lg bg-rose-500/20 border border-rose-500/30 text-rose-400 text-[11px] font-bold hover:bg-rose-500/30 transition-colors"
+                          >
+                            Revoke
+                          </button>
+                          <button
+                            onClick={() => setConfirmRevokeId(null)}
+                            className="h-8 px-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-[#909090] text-[11px] font-bold hover:text-white hover:border-[#555] transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmRevokeId(inv.id)}
+                          className="text-[#555] hover:text-[#ef4444] transition-colors"
+                          title="Revoke"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
