@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { requireAdminAccess } from '@/lib/admin/access';
+import { requireTrainerAccess } from '@/lib/admin/access';
 import { getAdminSupabase } from '@/lib/supabase/server';
 import { AdminCard } from '@/components/admin/AdminCard';
 import { Dumbbell, Users, ClipboardList, PlusCircle } from 'lucide-react';
@@ -7,7 +7,7 @@ import { Dumbbell, Users, ClipboardList, PlusCircle } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default async function TrainerDashboardPage() {
-  const { gymId, gym } = await requireAdminAccess();
+  const { gymId, gym } = await requireTrainerAccess();
 
   if (!gymId) {
     return <div className="text-[#555] text-sm">No gym associated with this account.</div>;

@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell, ShieldCheck, Camera, Phone, User as UserCircle, ChevronRight, QrCode } from 'lucide-react';
+import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell, ShieldCheck, Camera, Phone, User as UserCircle, ChevronRight, QrCode, Dumbbell } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useEntitlementStore } from '@/store/entitlementStore';
 import { type WeightUnit } from '@/lib/settings';
+import { getUserRoles, type UserRole } from '@/lib/auth/roles';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function ProfilePage() {
 
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
@@ -47,7 +49,14 @@ export default function ProfilePage() {
       }
       setUser(session.user);
 
-      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+      const [profileRes, userRoles] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle(),
+        getUserRoles(session.user.id, supabase),
+      ]);
+
+      setRoles(userRoles);
+
+      const profileData = profileRes.data;
 
       if (profileData) {
         setProfile(profileData);
@@ -99,6 +108,8 @@ export default function ProfilePage() {
     setSoundEnabled(next);
     localStorage.setItem('restTimerSound', next ? 'on' : 'off');
   };
+
+  const hasTrainerRole = roles.some(r => r.role === 'trainer');
 
   if (loading) {
     return (
@@ -180,6 +191,24 @@ export default function ProfilePage() {
         </div>
 
         <div className="space-y-3">
+          {hasTrainerRole && (
+            <Link
+              href="/trainer"
+              className="w-full glass-panel p-4 flex items-center justify-between bg-cyan-500/5 border-cyan-500/20 hover:bg-cyan-500/10 transition-all active:scale-[0.98] group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                  <Dumbbell size={20} className="text-cyan-300" />
+                </div>
+                <div className="text-left">
+                  <span className="block text-sm font-bold text-white tracking-tight">Trainer Dashboard</span>
+                  <span className="block text-[10px] text-cyan-300/60 uppercase tracking-widest font-bold">Programs and members</span>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-white/20 group-hover:text-cyan-300 transition-colors" />
+            </Link>
+          )}
+
           <Link
             href="/subscription"
             className="w-full glass-panel p-4 flex items-center justify-between hover:bg-white/10 transition-all active:scale-[0.98] group"

@@ -89,3 +89,26 @@ export async function requireSuperAdmin() {
 
   return { user };
 }
+
+export async function requireTrainerAccess() {
+  const supabase = await getServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/auth');
+
+  const roles = await getUserRoles(user.id);
+  const trainerRole = roles.find(r => r.role === 'trainer');
+  if (!trainerRole?.gym_id) redirect('/home');
+
+  const admin = getAdminSupabase();
+  const { data: gym } = await admin
+    .from('gyms')
+    .select('id, name, address, phone, type, location, description, logo_url, website')
+    .eq('id', trainerRole.gym_id)
+    .maybeSingle();
+
+  return {
+    user,
+    gym,
+    gymId: gym?.id ?? trainerRole.gym_id,
+  };
+}
