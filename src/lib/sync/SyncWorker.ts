@@ -167,14 +167,15 @@ export class SyncWorker {
   private async processDownstream(accessToken: string) {
     try {
       const deviceId = 'local-browser';
+      const limit = 100;
 
-      const res = await fetch(`/api/sync/pull?since=${this.lastPullSequence}&exclude_device_id=${deviceId}`, {
+      const res = await fetch(`/api/sync/pull?since=${this.lastPullSequence}&exclude_device_id=${deviceId}&limit=${limit}`, {
         headers: { 'Authorization': `Bearer ${accessToken}` },
       });
       if (!res.ok) return;
 
       const { events }: { events: any[] } = await res.json();
-      if (events.length === 0) return;
+      if (!events || events.length === 0) return;
 
       const affectedSessions = new Set<string>();
 
@@ -190,6 +191,12 @@ export class SyncWorker {
       // Re-project affected sessions
       for (const sessionId of affectedSessions) {
         await projectFromEvents(sessionId);
+      }
+
+      // Greedy fetch: if we got a full batch, there's likely more. 
+      // Pull again immediately without waiting for the next poll cycle.
+      if (events.length === limit) {
+        await this.processDownstream(accessToken);
       }
     } catch (err) {
       console.error('[SyncWorker] downstream pull failed:', err);
