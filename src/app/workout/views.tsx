@@ -983,13 +983,19 @@ export function ActiveView({
                 {PickerRow}
               </FixedSizeList>
             )}
-            <div className="grid grid-cols-2 gap-3 border-t border-white/5 pt-4">
-              <Button type="button" variant="secondary" className="h-12 rounded-[18px]" onClick={() => setPickerOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="button" variant="primary" className="h-12 rounded-[18px]" onClick={addSelectedExercises}>
-                Add selected {pickerSelection.length > 0 ? `(${pickerSelection.length})` : ''}
-              </Button>
+            <div className="sticky bottom-0 -mx-4 mt-4 border-t border-white/5 bg-black/90 px-4 pt-4 backdrop-blur-xl">
+              <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-white/30">
+                <span>{pickerSelection.length > 0 ? `${pickerSelection.length} selected` : 'No exercises selected'}</span>
+                <span>Tap items to toggle</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 pb-1">
+                <Button type="button" variant="secondary" className="h-12 rounded-[18px]" onClick={() => setPickerOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="button" variant="primary" className="h-12 rounded-[18px]" onClick={addSelectedExercises} disabled={pickerSelection.length === 0}>
+                  Add selected {pickerSelection.length > 0 ? `(${pickerSelection.length})` : ''}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

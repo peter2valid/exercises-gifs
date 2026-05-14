@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import {
   LayoutDashboard, Users, ScanLine, CreditCard, Package,
-  UserCheck, Settings2, Building2, Tag, X, LogOut, Zap, ExternalLink,
+  UserCheck, Settings2, Building2, Tag, X, LogOut, Zap,
   QrCode, Dumbbell,
 } from 'lucide-react';
 
@@ -90,21 +90,6 @@ export function AdminSidebar({ variant, gymName, isOpen, onClose }: Props) {
 
       {/* Bottom actions */}
       <div className="border-t border-[#262626] px-2 py-3 space-y-0.5">
-        {variant === 'admin' ? (
-          <Link href="/super-admin" className="a-nav-link" onClick={onClose}>
-            <Zap size={15} />
-            Super Admin
-          </Link>
-        ) : (
-          <Link href="/admin" className="a-nav-link" onClick={onClose}>
-            <Building2 size={15} />
-            Gym Admin
-          </Link>
-        )}
-        <Link href="/home" className="a-nav-link" onClick={onClose}>
-          <ExternalLink size={15} />
-          Member App
-        </Link>
         <button onClick={handleSignOut} className="a-nav-link">
           <LogOut size={15} />
           Sign out
