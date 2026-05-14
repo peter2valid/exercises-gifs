@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import Image from 'next/image';
 import { Plus, ChevronRight, Trash2, PlusCircle, X, Loader2, Dumbbell, Check, Share2, Copy, Send } from 'lucide-react';
@@ -602,7 +603,14 @@ function AssignPanel({
         {assigning ? 'Assigning…' : 'Assign'}
       </button>
       {result && (
-        <p className={`w-full text-[13px] ${result.ok ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>{result.msg}</p>
+        <div className="w-full space-y-1.5">
+          <p className={`text-[13px] ${result.ok ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>{result.msg}</p>
+          {!result.ok && /not a member|No account found/i.test(result.msg) && (
+            <p className="text-[12px] text-[#555]">
+              Add them first from <Link href="/admin/staff" className="text-blue-400 hover:text-blue-300 underline">Staff</Link> or <Link href="/admin/members" className="text-blue-400 hover:text-blue-300 underline">Members</Link>.
+            </p>
+          )}
+        </div>
       )}
     </form>
   );
