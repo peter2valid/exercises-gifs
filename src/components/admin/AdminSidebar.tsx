@@ -21,6 +21,12 @@ const ADMIN_NAV = [
   { href: '/admin/settings',    label: 'Settings',    icon: Settings2 },
 ];
 
+const TRAINER_NAV = [
+  { href: '/trainer',           label: 'Dashboard',   icon: LayoutDashboard, exact: true },
+  { href: '/admin/programs',    label: 'Programs',    icon: Dumbbell },
+  { href: '/admin/members',     label: 'Members',     icon: Users },
+];
+
 const SUPER_NAV = [
   { href: '/super-admin',                  label: 'Dashboard',     icon: LayoutDashboard, exact: true },
   { href: '/super-admin/gyms',             label: 'Gyms',          icon: Building2 },
@@ -30,7 +36,7 @@ const SUPER_NAV = [
 ];
 
 interface Props {
-  variant: 'admin' | 'super-admin';
+  variant: 'admin' | 'super-admin' | 'trainer';
   gymName: string;
   isOpen: boolean;
   onClose: () => void;
@@ -54,7 +60,7 @@ function NavItem({
 
 export function AdminSidebar({ variant, gymName, isOpen, onClose }: Props) {
   const router = useRouter();
-  const navItems = variant === 'admin' ? ADMIN_NAV : SUPER_NAV;
+  const navItems = variant === 'admin' ? ADMIN_NAV : (variant === 'trainer' ? TRAINER_NAV : SUPER_NAV);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -72,7 +78,7 @@ export function AdminSidebar({ variant, gymName, isOpen, onClose }: Props) {
           <div className="min-w-0">
             <p className="truncate text-[13px] font-semibold text-[#e8e8e8] leading-none">{gymName}</p>
             <p className="text-[10px] text-[#555] mt-0.5 leading-none uppercase tracking-wide">
-              {variant === 'admin' ? 'Gym Admin' : 'Super Admin'}
+              {variant === 'admin' ? 'Gym Admin' : (variant === 'trainer' ? 'Gym Trainer' : 'Super Admin')}
             </p>
           </div>
         </div>
