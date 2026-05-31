@@ -242,7 +242,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
   };
 
   const setList = Object.values(sets);
-  const exMap = Object.fromEntries(exercises.map((ex) => [ex.id, ex]));
+  const exMap = useMemo(() => Object.fromEntries(exercises.map((ex) => [ex.id, ex])), [exercises]);
   const preselectedExercise = initialExerciseId ? (exMap[initialExerciseId] ?? null) : null;
 
   if (isRestoring) return <RestoringView />;

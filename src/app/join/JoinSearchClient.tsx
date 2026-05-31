@@ -109,7 +109,7 @@ export function JoinSearchClient({ preselectedGym }: { preselectedGym?: Gym | nu
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search by name or location..."
+            placeholder="Search by name, location or ID..."
             className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 text-white outline-none focus:border-white/20 transition-all"
             autoFocus={!preselectedGym}
           />
@@ -178,8 +178,17 @@ export function JoinSearchClient({ preselectedGym }: { preselectedGym?: Gym | nu
             ))}
 
             {query.length >= 2 && !searching && results.length === 0 && (
-              <div className="py-12 text-center">
-                <p className="text-sm text-white/20">No gyms found matching &quot;{query}&quot;</p>
+              <div className="py-12 text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-2">
+                  <Building2 size={32} className="text-white/10" />
+                </div>
+                <p className="text-sm text-white/40">No gyms found matching &quot;{query}&quot;</p>
+                <div className="pt-4 border-t border-white/5 max-w-[240px] mx-auto">
+                  <p className="text-[10px] text-white/20 uppercase tracking-widest font-bold mb-2">Looking for a specific gym?</p>
+                  <p className="text-[11px] text-white/30 leading-relaxed">
+                    Ask your gym owner for their <strong>Gym ID</strong> and paste it into the search box above.
+                  </p>
+                </div>
               </div>
             )}
           </div>

@@ -40,7 +40,7 @@ export default async function AdminDashboard() {
   todayStart.setHours(0, 0, 0, 0);
 
   const [membersRes, activeRes, todayRes, paymentsRes, subRes] = await Promise.all([
-    admin.from('gym_memberships').select('id', { count: 'exact', head: true }).eq('gym_id', gymId),
+    admin.from('gym_memberships').select('id', { count: 'exact', head: true }).eq('gym_id', gymId).eq('status', 'active'),
     admin.from('member_check_ins').select('member_user_id', { count: 'exact', head: true })
       .eq('gym_id', gymId).gte('checked_in_at', new Date(Date.now() - 30 * 86400000).toISOString()),
     admin.from('member_check_ins').select('id', { count: 'exact', head: true })

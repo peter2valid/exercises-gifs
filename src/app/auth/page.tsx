@@ -101,7 +101,7 @@ export default function AuthPage() {
             <Zap size={32} fill="currentColor" />
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight">GymApp</h1>
-          <p className="text-white/40 text-sm mt-1">Distributed Sync Engine</p>
+          <p className="text-white/40 text-sm mt-1">Track your progress, anywhere.</p>
         </div>
 
         {/* Gym registration CTA */}

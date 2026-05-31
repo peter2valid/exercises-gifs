@@ -12,7 +12,7 @@ export default async function OnboardingPage() {
   if (!user) redirect('/auth?next=/onboarding');
 
   const roles = await getUserRoles(user.id);
-  if (roles.some(r => r.role === 'gym_owner')) redirect('/admin');
+  if (roles.some(r => r.role === 'gym_owner' || r.role === 'gym_admin' || r.role === 'super_admin')) redirect('/admin');
 
   return <OnboardingClient />;
 }

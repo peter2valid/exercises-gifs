@@ -8,7 +8,7 @@ interface Member {
   id: string;
   user_id: string;
   role: string;
-  joined_at: string;
+  created_at: string;
   profiles?: {
     full_name: string;
     avatar_url: string;
@@ -61,7 +61,7 @@ export function MembersPanel({ gymId, initialMembers, initialRequests }: Props) 
           if (action === 'approve') {
             const approved = requests.find(r => r.id === membershipId);
             if (approved) {
-              setMembers(prev => [{ ...approved, joined_at: new Date().toISOString() }, ...prev]);
+              setMembers(prev => [{ ...approved, created_at: new Date().toISOString() }, ...prev]);
             }
           }
           setRequests(prev => prev.filter(r => r.id !== membershipId));
@@ -188,7 +188,7 @@ export function MembersPanel({ gymId, initialMembers, initialRequests }: Props) 
                       <span className="a-badge a-badge-gray capitalize">{m.role}</span>
                     </td>
                     <td className="text-[12px] text-[#555]">
-                      {new Date(m.joined_at).toLocaleDateString()}
+                      {new Date(m.created_at).toLocaleDateString()}
                     </td>
                     <td className="text-right">
                       {confirmDeleteId === m.id ? (

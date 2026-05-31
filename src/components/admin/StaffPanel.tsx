@@ -56,7 +56,7 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
 
   // Invite form
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'gym_admin' | 'trainer' | 'member'>('trainer');
+  const [role, setRole] = useState<'gym_admin' | 'trainer'>('trainer');
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [newInviteUrl, setNewInviteUrl] = useState<string | null>(null);
@@ -70,6 +70,14 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (inviting) return;
+
+    // Explicit validation to prevent "vague tooltips"
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setInviteError('Please enter a valid email address.');
+      return;
+    }
+
     setInviting(true);
     setInviteError(null);
     setNewInviteUrl(null);
@@ -136,13 +144,12 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
       {/* Invite form */}
       <div className="a-card">
         <h3 className="text-[14px] font-semibold text-[#e8e8e8] mb-4">Invite someone</h3>
-        <form onSubmit={handleInvite} className="flex gap-2 flex-wrap">
+        <form onSubmit={handleInvite} className="flex gap-2 flex-wrap" noValidate>
           <input
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             placeholder="name@example.com"
-            required
             className="flex-1 min-w-[200px] h-9 rounded-lg border border-[#262626] bg-[#141414] px-3 text-sm text-[#e8e8e8] outline-none focus:border-[#3b82f6] transition-colors"
           />
           <select
@@ -152,7 +159,6 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
           >
             <option value="gym_admin">Admin</option>
             <option value="trainer">Trainer</option>
-            <option value="member">Member</option>
           </select>
           <button
             type="submit"

@@ -556,6 +556,8 @@ export function ActiveView({
   const [pickerSelection, setPickerSelection] = useState<string[]>([]);
   const [roster, setRoster] = useState<string[]>(() => (initialExerciseId ? [initialExerciseId] : []));
   const [activeExerciseId, setActiveExerciseId] = useState(initialExerciseId || '');
+  const restoredRef = useRef(false);
+
   const [weight, setWeight] = useState(20);
   const [reps, setReps] = useState(8);
   const [duration, setDuration] = useState(20);
@@ -570,32 +572,44 @@ export function ActiveView({
     return () => window.clearInterval(timer);
   }, []);
 
+  // One-time restoration when session starts or exercises load
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || restoredRef.current || Object.keys(exMap).length === 0) return;
+    
+    let nextRoster: string[] = [];
     try {
       const saved = localStorage.getItem(rosterKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          const cleaned = parsed.filter((id) => typeof id === 'string' && exMap[id]);
-          if (cleaned.length > 0) {
-            setRoster(cleaned);
-            setActiveExerciseId(cleaned[0]);
-            return;
-          }
+          nextRoster = parsed.filter((id) => typeof id === 'string' && exMap[id]);
         }
       }
     } catch {
-      // Ignore storage issues and fall back to the current session state.
+      // Ignore storage issues
     }
-    if (initialExerciseId && exMap[initialExerciseId]) {
-      setRoster([initialExerciseId]);
-      setActiveExerciseId(initialExerciseId);
+
+    // Merge initial exercise into roster if missing
+    if (initialExerciseId && exMap[initialExerciseId] && !nextRoster.includes(initialExerciseId)) {
+      nextRoster.push(initialExerciseId);
     }
+
+    if (nextRoster.length > 0) {
+      setRoster(nextRoster);
+      // Ensure we have a valid active exercise
+      setActiveExerciseId((current) => {
+        if (initialExerciseId && exMap[initialExerciseId]) return initialExerciseId;
+        if (current && nextRoster.includes(current)) return current;
+        return nextRoster[0];
+      });
+    }
+
+    restoredRef.current = true;
   }, [exMap, initialExerciseId, rosterKey, sessionId]);
 
+  // Sync to storage when roster changes, but ONLY after initial restoration
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || !restoredRef.current) return;
     try {
       localStorage.setItem(rosterKey, JSON.stringify(roster));
     } catch {
@@ -1010,17 +1024,22 @@ export function ActiveView({
       >
             <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-white/10" />
             {abandonConfirm ? (
-              <div className="space-y-3">
-                <p className="text-center text-sm font-semibold text-white">Abandon this workout?</p>
-                <p className="text-center text-xs text-white/40">Your logged sets will be lost. This cannot be undone.</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button type="button" variant="secondary" className="h-12 rounded-[18px]" onClick={() => setAbandonConfirm(false)}>
+              <div className="space-y-4 py-2">
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center mx-auto mb-3">
+                    <AlertTriangle size={24} className="text-red-400" />
+                  </div>
+                  <p className="text-sm font-bold text-white">Abandon Workout?</p>
+                  <p className="text-[12px] text-white/40 mt-1">Your current progress will be permanently lost.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button type="button" variant="secondary" className="h-12 rounded-[18px] border-white/10 text-white/60" onClick={() => setAbandonConfirm(false)}>
                     Keep going
                   </Button>
                   <button
                     type="button"
                     onClick={() => { setMoreOpen(false); setAbandonConfirm(false); onAbandon(); }}
-                    className="h-12 rounded-[18px] bg-red-600 text-sm font-bold text-white transition-transform active:scale-[0.99]"
+                    className="h-12 rounded-[18px] bg-red-600 text-sm font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
                   >
                     Abandon
                   </button>
@@ -1028,23 +1047,34 @@ export function ActiveView({
               </div>
             ) : (
               <div className="space-y-2">
-                <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4" onClick={() => { setMoreOpen(false); onStartRest(); }} disabled={!hasLastSet}>
-                  <Timer size={16} className="mr-2" />
-                  Take rest now
-                </Button>
-                <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4" onClick={() => { setMoreOpen(false); onComplete(); }} disabled={sets.length === 0 || isLogging}>
-                  <CheckCircle size={16} className="mr-2" />
-                  Finish workout
-                </Button>
-                <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4" onClick={() => { clearRoster(); setMoreOpen(false); }}>
-                  <XCircle size={16} className="mr-2" />
+                <div className="flex flex-col gap-2">
+                  <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4 gap-3" onClick={() => { setMoreOpen(false); onStartRest(); }} disabled={!hasLastSet}>
+                    <Timer size={18} className={hasLastSet ? "text-sky-400" : "text-white/20"} />
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-bold">Take rest now</span>
+                      {!hasLastSet && <span className="text-[9px] text-white/20 uppercase tracking-wider font-bold">Log a set first</span>}
+                    </div>
+                  </Button>
+                  <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4 gap-3" onClick={() => { setMoreOpen(false); onComplete(); }} disabled={sets.length === 0 || isLogging}>
+                    <CheckCircle size={18} className={sets.length > 0 ? "text-emerald-400" : "text-white/20"} />
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-bold">Finish workout</span>
+                      {sets.length === 0 && <span className="text-[9px] text-white/20 uppercase tracking-wider font-bold">No sets logged yet</span>}
+                    </div>
+                  </Button>
+                </div>
+                
+                <div className="h-px bg-white/5 my-2" />
+
+                <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4 text-white/60 hover:text-white" onClick={() => { clearRoster(); setMoreOpen(false); }}>
+                  <RotateCcw size={16} className="mr-2" />
                   Clear exercise roster
                 </Button>
-                <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4 text-red-400 hover:text-red-300" onClick={() => setAbandonConfirm(true)}>
+                <Button type="button" variant="secondary" className="h-12 w-full rounded-[18px] justify-start px-4 text-red-400/80 hover:text-red-400 hover:bg-red-500/10" onClick={() => setAbandonConfirm(true)}>
                   <XCircle size={16} className="mr-2" />
                   Abandon workout
                 </Button>
-                <Button type="button" variant="ghost" className="h-12 w-full rounded-[18px] justify-center" onClick={() => setMoreOpen(false)}>
+                <Button type="button" variant="ghost" className="h-12 w-full rounded-[18px] justify-center mt-2" onClick={() => setMoreOpen(false)}>
                   Close
                 </Button>
               </div>

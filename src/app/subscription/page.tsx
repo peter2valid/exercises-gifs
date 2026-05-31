@@ -76,7 +76,7 @@ export default function SubscriptionPage() {
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full blur-lg opacity-50" />
           </div>
           <h1 className="text-3xl font-black text-white tracking-tighter mb-2 uppercase italic">
-            {isPlus ? 'You are Elite' : 'Level Up'}
+            {isPlus ? 'You are Plus' : 'Level Up'}
           </h1>
           <p className="text-sm text-white/40 max-w-[280px] mx-auto leading-relaxed">
             {isPlus 

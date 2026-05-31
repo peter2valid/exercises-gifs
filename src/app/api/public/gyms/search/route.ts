@@ -12,11 +12,21 @@ export async function GET(req: Request): Promise<NextResponse> {
   }
 
   const admin = getAdminSupabase();
-  const { data, error } = await admin
+  
+  // If it looks like a UUID, attempt an exact ID match first
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(q);
+  
+  let queryBuilder = admin
     .from('gyms')
-    .select('id, name, slug, type, location')
-    .or(`name.ilike.%${q}%,slug.ilike.%${q}%,location.ilike.%${q}%`)
-    .limit(10);
+    .select('id, name, slug, type, location');
+
+  if (isUuid) {
+    queryBuilder = queryBuilder.or(`id.eq.${q},name.ilike.%${q}%,slug.ilike.%${q}%,location.ilike.%${q}%`);
+  } else {
+    queryBuilder = queryBuilder.or(`name.ilike.%${q}%,slug.ilike.%${q}%,location.ilike.%${q}%`);
+  }
+
+  const { data, error } = await queryBuilder.limit(10);
 
   if (error) {
     console.error('[gyms/search]', error);

@@ -317,7 +317,7 @@ export default function HomePage() {
   const todayLabel = new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 
   return (
-    <div style={{ background: '#050505', minHeight: '100vh', paddingBottom: 112 }}>
+    <div className="dashboard-bg min-h-screen">
       <div className="max-w-md mx-auto px-5 pt-14">
 
         {/* Header */}

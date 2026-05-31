@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import Image from 'next/image';
 import { Plus, ChevronRight, Trash2, PlusCircle, X, Loader2, Dumbbell, Check, Share2, Copy, Send } from 'lucide-react';
+import { searchExercises } from '@/lib/search';
 
 interface TemplateExercise {
   id: string;
@@ -198,10 +199,7 @@ export function ProgramsClient({ gymId, initialPrograms, assignments, userDirect
     setProgramExercises(prev => prev.filter(e => e.id !== ex.id));
   };
 
-  const filteredEx = exercises.filter(e =>
-    e.name.toLowerCase().includes(exSearch.toLowerCase()) ||
-    e.body_part.toLowerCase().includes(exSearch.toLowerCase())
-  );
+  const filteredEx = searchExercises(exercises, exSearch);
 
   const shareUrl = selected ? (typeof window !== 'undefined' ? `${window.location.origin}/p/${selected.id}` : '') : '';
 

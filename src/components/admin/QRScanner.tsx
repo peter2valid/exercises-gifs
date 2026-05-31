@@ -108,8 +108,8 @@ export function QRScanner({ gymId, gymName }: Props) {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: 'environment' },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
         },
       });
       streamRef.current = stream;
@@ -202,7 +202,11 @@ export function QRScanner({ gymId, gymName }: Props) {
     }
   }, [handleQrFound, cooldown]);
 
-  useEffect(() => () => stopCamera(), [stopCamera]);
+  useEffect(() => {
+    // Attempt auto-start on mount. Will gracefully fail if blocked by browser policy.
+    startCamera();
+    return () => stopCamera();
+  }, [startCamera, stopCamera]);
 
   const isLive = state === 'scanning' || state === 'processing';
 

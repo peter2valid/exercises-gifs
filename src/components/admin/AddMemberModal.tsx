@@ -10,9 +10,17 @@ export function AddMemberModal({ gymId, onClose }: { gymId: string; onClose: () 
   const [role, setRole] = useState('member');
   const [error, setError] = useState<string | null>(null);
 
+  const [success, setSuccess] = useState(false);
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    
+    // Explicit validation to prevent "vague tooltips"
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim() || !emailRegex.test(email.trim())) {
+      setError('Please enter a valid email address.');
+      return;
+    }
     
     setLoading(true);
     setError(null);
@@ -24,7 +32,10 @@ export function AddMemberModal({ gymId, onClose }: { gymId: string; onClose: () 
       });
 
       if (res.ok) {
-        window.location.reload();
+        setSuccess(true);
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       } else {
         const data = await res.json();
         setError(data.error || 'Failed to add member');
@@ -35,6 +46,21 @@ export function AddMemberModal({ gymId, onClose }: { gymId: string; onClose: () 
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div className="relative w-full max-w-sm bg-[#111] border border-[#262626] rounded-2xl shadow-2xl p-8 text-center animate-fade-in">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mx-auto mb-4">
+            <Loader2 size={24} className="text-emerald-400 animate-spin" />
+          </div>
+          <h3 className="text-lg font-bold text-white mb-2">Member Added!</h3>
+          <p className="text-sm text-[#555]">Refreshing the list...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -48,7 +74,7 @@ export function AddMemberModal({ gymId, onClose }: { gymId: string; onClose: () 
           </button>
         </div>
 
-        <form onSubmit={handleAdd} className="space-y-4">
+        <form onSubmit={handleAdd} className="space-y-4" noValidate>
           <div className="space-y-1.5">
             <label className="text-[11px] font-bold text-[#555] uppercase tracking-wider">User Email</label>
             <input
@@ -59,18 +85,6 @@ export function AddMemberModal({ gymId, onClose }: { gymId: string; onClose: () 
               placeholder="member@example.com"
               className="w-full bg-[#0a0a0a] border border-[#262626] rounded-lg px-3 py-2 text-sm text-[#e8e8e8] outline-none focus:border-blue-600 transition-colors"
             />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-[#555] uppercase tracking-wider">Role</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full bg-[#0a0a0a] border border-[#262626] rounded-lg px-3 py-2 text-sm text-[#e8e8e8] outline-none focus:border-blue-600 transition-colors"
-            >
-              <option value="member">Member</option>
-              <option value="trainer">Trainer</option>
-            </select>
           </div>
 
           {error && (

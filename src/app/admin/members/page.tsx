@@ -17,13 +17,12 @@ export default async function MembersPage() {
 
   const admin = getAdminSupabase();
 
-  const { data: allMembers } = await admin
+  const { data: allMembers, error } = await admin
     .from('gym_memberships')
     .select(`
       id, 
       user_id, 
       role, 
-      joined_at, 
       status, 
       created_at,
       profiles:user_id (
@@ -33,6 +32,10 @@ export default async function MembersPage() {
     `)
     .eq('gym_id', gymId)
     .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[MembersPage] Error fetching members:', error);
+  }
 
   const members = (allMembers ?? []).filter(m => m.status === 'active');
   const requests = (allMembers ?? []).filter(m => m.status === 'pending');

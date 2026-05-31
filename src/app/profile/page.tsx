@@ -94,8 +94,8 @@ export default function ProfilePage() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    router.push('/auth');
-    router.refresh();
+    // Use hard reload to ensure all stores and cookies are cleared
+    window.location.href = '/auth';
   };
 
   const handleWeightUnit = (unit: WeightUnit) => {
@@ -268,8 +268,8 @@ export default function ProfilePage() {
         <div className="fixed inset-0 z-[100] flex flex-col justify-end">
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowSettings(false)} />
         <div
-          className="relative bg-[#111] rounded-t-3xl px-6 pt-6 pb-10 space-y-6 animate-slide-up"
-          style={{ maxHeight: 'calc(100vh - (var(--bottom-nav-height,76px) + env(safe-area-inset-bottom) + 24px))', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}
+          className="relative bg-[#111] rounded-t-3xl px-6 pt-6 pb-12 space-y-6 animate-slide-up"
+          style={{ maxHeight: 'calc(100vh - (var(--bottom-nav-height,76px) + env(safe-area-inset-bottom) + 24px))', overflowY: 'auto', paddingBottom: 'calc(env(safe-area-inset-bottom) + 32px)' }}
         >
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-white">Settings</h3>

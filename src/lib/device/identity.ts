@@ -1,5 +1,5 @@
-const USER_ID_KEY  = 'supafast_user_id';
-const SESSION_KEY  = 'supafast_session_id';
+const USER_ID_KEY  = 'gymapp:device_user_id';
+const SESSION_KEY  = 'gymapp:active_session_id';
 
 // Returns a stable, device-local user ID. Generated once on first launch.
 export function getDeviceUserId(): string {

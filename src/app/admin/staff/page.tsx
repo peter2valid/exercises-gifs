@@ -23,7 +23,7 @@ export default async function StaffPage() {
       .from('user_gym_roles')
       .select('id, user_id, role, created_at, profiles:user_id(full_name, avatar_url)')
       .eq('gym_id', gymId)
-      .in('role', ['gym_owner', 'gym_admin', 'trainer', 'member'])
+      .in('role', ['gym_owner', 'gym_admin', 'trainer'])
       .order('created_at', { ascending: false }),
     admin
       .from('gym_invitations')

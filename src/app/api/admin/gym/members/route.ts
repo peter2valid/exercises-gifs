@@ -37,7 +37,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   const { error: updateErr } = await admin
     .from('gym_memberships')
-    .update({ status: 'active', joined_at: new Date().toISOString() })
+    .update({ status: 'active' })
     .eq('id', membershipId);
 
   if (updateErr) {
@@ -92,7 +92,6 @@ export async function PUT(req: Request): Promise<NextResponse> {
       gym_id: gymId,
       status: 'active',
       role: role,
-      joined_at: new Date().toISOString()
     }, { onConflict: 'user_id,gym_id' });
 
   if (memErr) {
