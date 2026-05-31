@@ -17,6 +17,7 @@ import {
   ChevronDown,
   MoreHorizontal,
   XCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button, Loading } from '@/components/ui';
 import { ExerciseThumbnail } from '@/components/ExerciseCard';
