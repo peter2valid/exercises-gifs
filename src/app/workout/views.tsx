@@ -32,32 +32,6 @@ import {
 } from '@/lib/workout/exerciseClassification';
 import { getWeightUnit, convertWeight, toInternalWeight, getWeightSuffix, type WeightUnit } from '@/lib/settings';
 
-function formatTime(seconds: number) {
-  const clamped = Math.max(0, Math.floor(seconds));
-  const minutes = Math.floor(clamped / 60);
-  const secs = clamped % 60;
-  return `${minutes}:${secs.toString().padStart(2, '0')}`;
-}
-
-function playBeep() {
-  if (typeof window !== 'undefined' && localStorage.getItem('restTimerSound') === 'off') return;
-  try {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.35, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.5);
-    ctx.close().catch(() => {});
-  } catch {
-    // Audio can fail on restricted devices; fall back silently.
-  }
-}
 
 type ExerciseDraft = {
   weight: number;
@@ -144,67 +118,18 @@ function NumericControl({
 }
 
 function SessionHeader({
-  startedAt,
   volume,
   sets,
 }: {
-  startedAt?: string | null;
   volume: number;
   sets: number;
 }) {
-  const [now, setNow] = useState(Date.now());
   const unit = getWeightUnit();
-
-  // Local timer controls (UI-only): pause/resume and restart (display only)
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [pausedAt, setPausedAt] = useState<number | null>(null);
-  const [accumulatedMs, setAccumulatedMs] = useState<number>(0);
-  const [startTime, setStartTime] = useState<number | null>(null);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  // Sync with underlying session start
-  useEffect(() => {
-    if (startedAt) {
-      setStartTime(new Date(startedAt).getTime());
-      setAccumulatedMs(0);
-      setPausedAt(null);
-    } else {
-      setStartTime(null);
-    }
-    setMenuOpen(false);
-  }, [startedAt]);
-
-  // Compute displayed elapsed milliseconds
-  let elapsedMs = 0;
-  if (startTime) {
-    if (pausedAt) {
-      elapsedMs = accumulatedMs;
-    } else {
-      elapsedMs = accumulatedMs + (now - startTime);
-    }
-  }
-  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
   const displayVolume = convertWeight(volume, unit);
 
   return (
-    <div className="relative rounded-[24px] border border-white/10 bg-white/[0.03] p-4 shadow-2xl">
-      <div className="grid grid-cols-3 gap-3 text-center">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">Duration</p>
-          <button
-            type="button"
-            onClick={() => { if (!startedAt) return; setMenuOpen((s) => !s); }}
-            className="mt-1 text-2xl font-semibold tabular-nums text-sky-400 focus:outline-none"
-            aria-expanded={menuOpen}
-            aria-controls="timer-menu"
-          >
-            {formatTime(elapsedSeconds)}
-          </button>
-        </div>
+    <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
+      <div className="grid grid-cols-2 gap-3 text-center">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">Volume</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums text-white">{Math.round(displayVolume).toLocaleString()} {unit}</p>
@@ -214,46 +139,6 @@ function SessionHeader({
           <p className="mt-1 text-2xl font-semibold tabular-nums text-white">{sets}</p>
         </div>
       </div>
-
-      {menuOpen && startedAt && (
-        <div id="timer-menu" className="absolute left-1/2 top-full z-[60] mt-3 w-64 -translate-x-1/2 rounded-lg border border-white/10 bg-[#0b0b0b] p-3 shadow-lg">
-          <p className="mb-2 text-xs text-white/40">Timer controls</p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                if (!startTime) return;
-                const currentTime = Date.now();
-                if (pausedAt) {
-                  // resume
-                  setStartTime(currentTime);
-                  setPausedAt(null);
-                } else {
-                  // pause
-                  setAccumulatedMs(accumulatedMs + (currentTime - startTime));
-                  setPausedAt(currentTime);
-                }
-                setMenuOpen(false);
-              }}
-              className="flex-1 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/90"
-            >
-              {pausedAt ? 'Resume' : 'Pause'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setStartTime(Date.now());
-                setAccumulatedMs(0);
-                setPausedAt(null);
-                setMenuOpen(false);
-              }}
-              className="flex-1 rounded-md bg-sky-500 px-3 py-2 text-sm font-bold text-black"
-            >
-              Restart
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -274,6 +159,8 @@ export function IdleView({
   exercisesError,
   assignedPrograms = [],
   onStartProgram,
+  exercises = [],
+  onCreateWorkout,
 }: {
   onStart: () => void;
   onBrowseLibrary: () => void;
@@ -282,14 +169,159 @@ export function IdleView({
   exercisesError?: boolean;
   assignedPrograms?: any[];
   onStartProgram?: (program: any) => void;
+  exercises?: Exercise[];
+  onCreateWorkout?: (name: string, exerciseIds: string[]) => void;
 }) {
+  const [mode, setMode] = useState<'home' | 'create'>('home');
+  const [workoutName, setWorkoutName] = useState('');
+  const [search, setSearch] = useState('');
+  const [roster, setRoster] = useState<Exercise[]>([]);
+
+  const deferredSearch = useDeferredValue(search);
+  const searchResults = useMemo(() => {
+    if (!deferredSearch.trim()) return exercises.slice(0, 20);
+    return searchExercises(exercises, deferredSearch).slice(0, 20);
+  }, [deferredSearch, exercises]);
+
+  const rosterIds = useMemo(() => new Set(roster.map(e => e.id)), [roster]);
+
+  const addExercise = (ex: Exercise) => {
+    if (!rosterIds.has(ex.id)) setRoster(prev => [...prev, ex]);
+  };
+
+  const removeExercise = (id: string) => {
+    setRoster(prev => prev.filter(e => e.id !== id));
+  };
+
+  const handleStartCreated = () => {
+    onCreateWorkout?.(workoutName.trim() || 'My Workout', roster.map(e => e.id));
+  };
+
+  if (mode === 'create') {
+    return (
+      <div className="dashboard-bg min-h-screen pb-28 pt-8">
+        <div className="mx-auto flex max-w-md flex-col px-4">
+          {/* Header */}
+          <div className="mb-6 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => { setMode('home'); setRoster([]); setSearch(''); setWorkoutName(''); }}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/50 hover:text-white transition-colors"
+            >
+              <X size={16} />
+            </button>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/30">New Workout</p>
+              <h1 className="text-xl font-bold tracking-tight text-white">Build your plan</h1>
+            </div>
+          </div>
+
+          {/* Workout name */}
+          <input
+            type="text"
+            value={workoutName}
+            onChange={e => setWorkoutName(e.target.value)}
+            placeholder="Workout name (optional)"
+            className="mb-5 h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm font-semibold text-white outline-none placeholder:text-white/25 focus:border-white/20 transition-all"
+          />
+
+          {/* Roster */}
+          {roster.length > 0 && (
+            <div className="mb-5">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">{roster.length} exercise{roster.length !== 1 ? 's' : ''} planned</p>
+              <div className="space-y-2">
+                {roster.map((ex, idx) => (
+                  <div key={ex.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
+                    <span className="w-5 shrink-0 text-center text-[11px] font-bold text-white/25">{idx + 1}</span>
+                    <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                      <ExerciseThumbnail alt={ex.name} exerciseId={ex.id} />
+                    </div>
+                    <p className="flex-1 truncate text-sm font-semibold text-white">{ex.name}</p>
+                    <button
+                      type="button"
+                      onClick={() => removeExercise(ex.id)}
+                      className="shrink-0 text-white/25 hover:text-rose-400 transition-colors"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Start button */}
+          {roster.length > 0 && (
+            <button
+              type="button"
+              onClick={handleStartCreated}
+              disabled={isLoading}
+              className="mb-5 flex h-14 w-full items-center justify-center gap-3 rounded-[20px] bg-white text-black font-bold shadow-[0_12px_40px_rgba(255,255,255,0.1)] transition-transform active:scale-[0.99] disabled:opacity-60"
+            >
+              <Play size={16} fill="currentColor" />
+              {isLoading ? 'Starting…' : `Start Workout · ${roster.length} exercise${roster.length !== 1 ? 's' : ''}`}
+            </button>
+          )}
+
+          {/* Exercise search */}
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.22em] text-white/30">Add exercises</p>
+          <div className="relative mb-3">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25" size={15} />
+            <input
+              type="search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search exercises…"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-white/[0.04] pl-10 pr-4 text-sm text-white outline-none placeholder:text-white/25 focus:border-white/20 transition-all"
+            />
+          </div>
+
+          <div className="space-y-2 pb-4">
+            {searchResults.map(ex => {
+              const added = rosterIds.has(ex.id);
+              return (
+                <button
+                  key={ex.id}
+                  type="button"
+                  onClick={() => added ? removeExercise(ex.id) : addExercise(ex)}
+                  className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition-all active:scale-[0.99] ${
+                    added
+                      ? 'border-white/20 bg-white/8'
+                      : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.05]'
+                  }`}
+                >
+                  <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                    <ExerciseThumbnail alt={ex.name} exerciseId={ex.id} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-white">{ex.name}</p>
+                    {ex.muscle_group && (
+                      <p className="text-[10px] uppercase tracking-wider text-white/30">{ex.muscle_group}</p>
+                    )}
+                  </div>
+                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all ${
+                    added
+                      ? 'border-white/30 bg-white text-black'
+                      : 'border-white/15 bg-white/5 text-white/40'
+                  }`}>
+                    {added ? <X size={12} /> : <Plus size={12} />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-bg min-h-screen pb-28 pt-8">
       <div className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-md flex-col px-4">
         <div className="mb-8 space-y-3">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/30">Workout now</p>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Start a simple session</h1>
-          <p className="max-w-sm text-sm text-white/45">Log without a plan, then add exercises only when you need them.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Ready to train?</h1>
+          <p className="max-w-sm text-sm text-white/45">Start free and add exercises as you go, or plan your session first.</p>
         </div>
 
         {preselectedExercise && (
@@ -316,6 +348,22 @@ export function IdleView({
             </div>
             <div className="min-w-0 text-left">
               <p className="text-base font-bold">{isLoading ? 'Starting workout…' : 'Start Free Workout'}</p>
+              <p className="text-xs text-black/45">Add exercises as you go</p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMode('create')}
+            disabled={isLoading}
+            className="flex h-16 w-full items-center gap-4 rounded-[20px] border border-white/10 bg-white/[0.04] transition-transform active:scale-[0.99] disabled:opacity-60"
+          >
+            <div className="ml-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white">
+              <Plus size={16} />
+            </div>
+            <div className="min-w-0 text-left">
+              <p className="text-base font-bold text-white">Create a Workout</p>
+              <p className="text-xs text-white/35">Pick exercises, then start</p>
             </div>
           </button>
 
@@ -329,6 +377,7 @@ export function IdleView({
             </div>
             <div className="min-w-0 text-left">
               <p className="text-base font-bold text-white">Find exercises</p>
+              <p className="text-xs text-white/35">Browse the full library</p>
             </div>
           </button>
         </div>
@@ -369,43 +418,12 @@ export function IdleView({
 export function RestingView({
   lastSet,
   exMap,
-  activeRest,
   onEndRest,
-  onAdjustRest,
 }: {
   lastSet: SetLog | null;
   exMap: Record<string, Exercise>;
-  activeRest: { startedAt: string; durationSeconds: number } | null;
   onEndRest: () => void;
-  onAdjustRest: (seconds: number) => void;
 }) {
-  const [remaining, setRemaining] = useState(0);
-  const beepedRef = useRef(false);
-
-  useEffect(() => {
-    if (!activeRest) return;
-    beepedRef.current = false;
-
-    const tick = () => {
-      const start = new Date(activeRest.startedAt).getTime();
-      const now = Date.now();
-      const elapsed = Math.floor((now - start) / 1000);
-      const nextRemaining = Math.max(0, activeRest.durationSeconds - elapsed);
-      setRemaining(nextRemaining);
-
-      if (nextRemaining === 0 && !beepedRef.current) {
-        beepedRef.current = true;
-        playBeep();
-      }
-    };
-
-    tick();
-    const timer = window.setInterval(tick, 1000);
-    return () => window.clearInterval(timer);
-  }, [activeRest]);
-
-  const isDone = remaining === 0;
-  const progress = activeRest && activeRest.durationSeconds > 0 ? (remaining / activeRest.durationSeconds) * 100 : 0;
   const lastExercise = lastSet ? exMap[lastSet.exercise_id] : null;
   const unit = getWeightUnit();
 
@@ -413,31 +431,8 @@ export function RestingView({
     <div className="dashboard-bg min-h-screen px-4 pb-28 pt-8">
       <div className="mx-auto flex max-w-md flex-col items-center space-y-6">
         <div className="w-full text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.35em] text-white/25">Rest timer</p>
-          <div className="mx-auto mt-8 flex h-44 w-44 items-center justify-center rounded-full border border-white/10 bg-white/[0.03]">
-            <div className="text-center">
-              <p className={`text-5xl font-bold tabular-nums ${isDone ? 'text-rose-400' : 'text-white'}`}>{formatTime(remaining)}</p>
-              <p className={`mt-2 text-[10px] font-bold uppercase tracking-[0.2em] ${isDone ? 'text-rose-400/70' : 'text-white/30'}`}>
-                {isDone ? 'Ready now' : 'Remaining'}
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 flex items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => onAdjustRest(-15)}
-              className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-bold text-white/65 transition-colors active:scale-95"
-            >
-              -15s
-            </button>
-            <button
-              type="button"
-              onClick={() => onAdjustRest(30)}
-              className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-bold text-white/65 transition-colors active:scale-95"
-            >
-              +30s
-            </button>
-          </div>
+          <p className="text-xs font-bold uppercase tracking-[0.35em] text-white/25">Resting</p>
+          <p className="mt-3 text-sm text-white/40">Take your time, then continue when ready.</p>
         </div>
 
         {lastSet && (
@@ -451,14 +446,10 @@ export function RestingView({
         <button
           type="button"
           onClick={onEndRest}
-          className={`w-full rounded-[24px] border border-white/10 px-5 py-4 text-base font-bold transition-transform active:scale-[0.99] ${isDone ? 'bg-rose-500 text-black' : 'bg-white text-black'}`}
+          className="w-full rounded-[24px] border border-white/10 bg-white px-5 py-4 text-base font-bold text-black transition-transform active:scale-[0.99]"
         >
-          {isDone ? 'Go now' : 'Back to workout'}
+          Back to workout
         </button>
-
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-          <div className={`h-full rounded-full transition-all ${isDone ? 'bg-rose-500' : 'bg-sky-400'}`} style={{ width: `${progress}%` }} />
-        </div>
       </div>
     </div>
   );
@@ -525,7 +516,6 @@ export function ActiveView({
   exMap,
   initialExerciseId,
   sessionId,
-  sessionStartedAt,
   onLogSet,
   onStartRest,
   onComplete,
@@ -537,7 +527,6 @@ export function ActiveView({
   exMap: Record<string, Exercise>;
   initialExerciseId: string;
   sessionId: string;
-  sessionStartedAt?: string | null;
   onLogSet: (exerciseId: string, weight: number, reps: number) => Promise<void>;
   onStartRest: () => void;
   onComplete: () => void;
@@ -563,15 +552,9 @@ export function ActiveView({
   const [reps, setReps] = useState(8);
   const [duration, setDuration] = useState(20);
   const [distance, setDistance] = useState(0);
-  const [now, setNow] = useState(Date.now());
   const unit = getWeightUnit();
 
   const rosterKey = sessionId ? rosterStorageKey(sessionId) : '';
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
 
   // One-time restoration when session starts or exercises load
   useEffect(() => {
@@ -640,8 +623,6 @@ export function ActiveView({
     }, 0),
     [exMap, sets]
   );
-
-  const elapsedSeconds = sessionStartedAt ? Math.max(0, Math.floor((now - new Date(sessionStartedAt).getTime()) / 1000)) : 0;
 
   useEffect(() => {
     if (!selectedExercise) return;
@@ -779,10 +760,7 @@ export function ActiveView({
           >
             <ChevronDown size={22} />
           </button>
-          <div className="flex items-center gap-2 text-sky-400">
-            <Timer size={18} />
-            <span className="text-xs font-bold uppercase tracking-[0.25em] text-white/40">{formatTime(elapsedSeconds)}</span>
-          </div>
+          <div />
           <button
             type="button"
             onClick={onComplete}
@@ -795,7 +773,7 @@ export function ActiveView({
       </div>
 
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 pt-5">
-        <SessionHeader startedAt={sessionStartedAt} volume={totalVolume} sets={sets.length} />
+        <SessionHeader volume={totalVolume} sets={sets.length} />
 
         {rosterExercises.length === 0 ? null : (
           <div className="space-y-3">

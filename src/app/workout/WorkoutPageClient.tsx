@@ -32,14 +32,11 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
   const phase = useWorkoutStore((s) => s.phase);
   const session = useWorkoutStore((s) => s.session);
   const sets = useWorkoutStore((s) => s.sets);
-  const activeRest = useWorkoutStore((s) => s.activeRest);
-
   // Store actions — stable references, safe to read once
   const startSession = useWorkoutStore((s) => s.startSession);
   const logSet = useWorkoutStore((s) => s.logSet);
   const startRest = useWorkoutStore((s) => s.startRest);
   const endRest = useWorkoutStore((s) => s.endRest);
-  const adjustRest = useWorkoutStore((s) => s.adjustRest);
   const completeSession = useWorkoutStore((s) => s.completeSession);
   const loadSession = useWorkoutStore((s) => s.loadSession);
   const reset = useWorkoutStore((s) => s.reset);
@@ -168,7 +165,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
     startingRef.current = true;
     const currentGymId = useEntitlementStore.getState().gymId;
     const sessionId = crypto.randomUUID();
-    
+
     // Pre-fill roster with program exercises
     if (program.template_exercises?.length > 0) {
       const roster = program.template_exercises
@@ -187,6 +184,32 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
       .catch((e) => {
         console.error('[workout] start program failed:', e);
         setError('Could not start the program. Please try again.');
+      })
+      .finally(() => {
+        startingRef.current = false;
+        setIsStarting(false);
+      });
+  };
+
+  const handleCreateWorkout = (name: string, exerciseIds: string[]) => {
+    if (startingRef.current || !userId) return;
+    startingRef.current = true;
+    const currentGymId = useEntitlementStore.getState().gymId;
+    const sessionId = crypto.randomUUID();
+
+    try {
+      localStorage.setItem(`gymapp-workout-roster:${sessionId}`, JSON.stringify(exerciseIds));
+      if (name) localStorage.setItem(`gymapp-workout-name:${sessionId}`, name);
+    } catch (err) {
+      console.error('Failed to save workout roster:', err);
+    }
+
+    setIsStarting(true);
+    startSession(sessionId, userId, resolveTenantId(userId, currentGymId), 'local-browser')
+      .then(() => saveSessionId(sessionId))
+      .catch((e) => {
+        console.error('[workout] create workout start failed:', e);
+        setError('Could not start the workout. Please try again.');
       })
       .finally(() => {
         startingRef.current = false;
@@ -258,6 +281,8 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
           exercisesError={exercisesError}
           assignedPrograms={assignedPrograms}
           onStartProgram={handleStartProgram}
+          exercises={exercises}
+          onCreateWorkout={handleCreateWorkout}
         />
       )}
       {phase === 'active' && (
@@ -267,7 +292,6 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
           exMap={exMap}
           initialExerciseId={initialExerciseId}
           sessionId={session?.id ?? ''}
-          sessionStartedAt={session?.started_at ?? null}
           onLogSet={handleLogSet}
           onStartRest={handleStartRest}
           onComplete={handleComplete}
@@ -279,9 +303,7 @@ export default function WorkoutPageClient({ initialExerciseId }: { initialExerci
         <RestingView
           lastSet={lastSetId ? (sets[lastSetId] ?? null) : null}
           exMap={exMap}
-          activeRest={activeRest}
           onEndRest={endRest}
-          onAdjustRest={adjustRest}
         />
       )}
       {phase === 'finished' && (
