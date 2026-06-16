@@ -3,18 +3,15 @@
 import { useState, useEffect } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui';
-import { Zap, Mail, Lock, Loader2, Smartphone } from 'lucide-react';
+import { Mail, Lock, Loader2, Dumbbell, ArrowLeft } from 'lucide-react';
 
 export default function AuthPage() {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
   const [loading, setLoading] = useState(false);
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone' | null>(null);
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [nextPath, setNextPath] = useState<string | null>(null);
@@ -33,12 +30,15 @@ export default function AuthPage() {
     try {
       if (mode === 'signin') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        // Wait for session to be acknowledged by browser/cookies before redirecting
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          router.replace(nextPath ?? '/home');
+        if (error) {
+          // Help Google-OAuth users who try email/password
+          if (error.message.toLowerCase().includes('invalid login credentials')) {
+            throw new Error('Incorrect email or password. If you signed up with Google, use "Continue with Google" instead.');
+          }
+          throw error;
         }
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) router.replace(nextPath ?? '/home');
       } else {
         const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
         if (nextPath) callbackUrl.searchParams.set('next', nextPath);
@@ -60,14 +60,17 @@ export default function AuthPage() {
     }
   };
 
-  const handlePhoneAuth = async (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      const { error } = await supabase.auth.signInWithOtp({ phone });
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/home`,
+      });
       if (error) throw error;
-      setNotice('Check your phone for the login code!');
+      setNotice('Password reset email sent! Check your inbox.');
+      setMode('signin');
     } catch (err: any) {
       setError(err.message || 'An error occurred');
     } finally {
@@ -75,14 +78,14 @@ export default function AuthPage() {
     }
   };
 
-  const handleSocialAuth = async (provider: 'google' | 'apple' | 'facebook') => {
+  const handleGoogleAuth = async () => {
     setLoading(true);
     setError(null);
     try {
       const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
       if (nextPath) callbackUrl.searchParams.set('next', nextPath);
       const { error } = await supabase.auth.signInWithOAuth({
-        provider,
+        provider: 'google',
         options: { redirectTo: callbackUrl.toString() },
       });
       if (error) throw error;
@@ -94,167 +97,178 @@ export default function AuthPage() {
 
   return (
     <div className="dashboard-bg min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        {/* Logo/Icon */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-[22px] bg-white text-black flex items-center justify-center shadow-[0_20px_50px_rgba(255,255,255,0.15)] mb-4">
-            <Zap size={32} fill="currentColor" />
-          </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">GymApp</h1>
-          <p className="text-white/40 text-sm mt-1">Track your progress, anywhere.</p>
-        </div>
+      <div className="w-full max-w-[340px]">
 
-        {/* Gym registration CTA */}
-        <div className="text-center mb-4">
-          <a
-            href="/onboarding"
-            className="text-xs text-white/40 hover:text-white/70 transition-colors underline underline-offset-2"
-          >
-            Opening a gym? Register here →
-          </a>
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-white text-black flex items-center justify-center shadow-[0_8px_32px_rgba(255,255,255,0.12)] mb-3">
+            <Dumbbell size={22} />
+          </div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">GymApp</h1>
+          <p className="text-white/35 text-xs mt-0.5">Track your progress, anywhere.</p>
         </div>
 
         {notice && (
-          <div className="mb-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-300 text-center">
+          <div className="mb-3 px-4 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 text-center">
             {notice}
           </div>
         )}
 
         {/* Auth Card */}
-        <div className="glass-panel p-6 shadow-2xl border-white/10">
-          
-          {!authMethod ? (
-            <div className="space-y-3">
-              {/* The "Best" Providers */}
-              <Button 
-                onClick={() => handleSocialAuth('apple')}
-                variant="secondary" 
-                className="w-full h-12 bg-white text-black hover:bg-gray-200 border-none font-semibold flex items-center justify-center gap-2"
-                disabled={loading}
-              >
-                <svg viewBox="0 0 384 512" width="18" height="18" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 24 184.5 15.6 233.9 2.6 308.8 28.7 391.2 59.5 432.2c16 22 36.8 45.4 60.1 44.4 22.3-.9 31.9-14.7 58.7-14.7 26.6 0 35.7 14.7 59.3 14.3 24.3-.5 41.9-21.7 57.6-43.8 19-27.8 26.8-54.8 27.2-56.1-.5-.2-43.5-16.7-43.7-107.6zM228.6 96.1c13.1-15.8 21.9-38 19.5-60.1-18.7 1.1-41.6 13.5-55.5 29.8-11.7 13.8-21.8 36.5-18.9 58.2 21.2 1.9 41.8-12 54.9-27.9z"/></svg>
-                Continue with Apple
-              </Button>
-              <Button 
-                onClick={() => handleSocialAuth('google')}
-                variant="secondary" 
-                className="w-full h-12 bg-white/10 hover:bg-white/20 border border-white/10 font-semibold flex items-center justify-center gap-2"
-                disabled={loading}
-              >
-                <svg viewBox="0 0 488 512" width="18" height="18" fill="currentColor"><path d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"/></svg>
-                Continue with Google
-              </Button>
+        <div
+          className="rounded-2xl p-5 space-y-3"
+          style={{
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.09)',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.07) inset, 0 12px 40px rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(24px)',
+          }}
+        >
+          {mode === 'reset' ? (
+            /* ── Forgot password view ── */
+            <form onSubmit={handleResetPassword} className="space-y-3">
+              <div className="flex items-center gap-2 mb-1">
+                <button
+                  type="button"
+                  onClick={() => { setMode('signin'); setError(null); }}
+                  className="text-white/30 hover:text-white/70 transition-colors"
+                >
+                  <ArrowLeft size={15} />
+                </button>
+                <p className="text-sm font-semibold text-white">Reset password</p>
+              </div>
+              <p className="text-[11px] text-white/40 leading-relaxed">
+                Enter your email and we'll send a reset link. Works for Google accounts too — you can set a password after clicking the link.
+              </p>
 
-              <div className="relative my-4 flex items-center">
-                <div className="flex-grow border-t border-white/10"></div>
-                <span className="flex-shrink-0 mx-4 text-white/30 text-[10px] uppercase tracking-wider font-bold">OR</span>
-                <div className="flex-grow border-t border-white/10"></div>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={14} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email"
+                  className="w-full h-10 bg-white/5 border border-white/8 rounded-xl pl-9 pr-3 text-white text-sm placeholder:text-white/25 outline-none focus:border-white/20 focus:bg-white/7 transition-all"
+                  required
+                  autoFocus
+                />
               </div>
 
-              <Button 
-                onClick={() => setAuthMethod('email')}
-                variant="secondary" 
-                className="w-full h-12 bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center gap-2"
-              >
-                <Mail size={18} />
-                Continue with Email
-              </Button>
+              {error && <p className="text-rose-400 text-xs px-0.5">{error}</p>}
 
-              <Button 
-                onClick={() => setAuthMethod('phone')}
-                variant="secondary" 
-                className="w-full h-12 bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center gap-2"
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-10 rounded-xl bg-white text-black text-sm font-semibold flex items-center justify-center transition-all hover:bg-white/90 active:scale-[0.98] disabled:opacity-50"
               >
-                <Smartphone size={18} />
-                Continue with Phone
-              </Button>
-            </div>
+                {loading ? <Loader2 className="animate-spin" size={16} /> : 'Send reset link'}
+              </button>
+            </form>
           ) : (
-            <div className="space-y-4">
-              <button 
-                onClick={() => { setAuthMethod(null); setError(null); }}
-                className="text-white/40 text-xs mb-2 flex items-center gap-1 hover:text-white transition-colors"
+            /* ── Sign in / Sign up view ── */
+            <>
+              {/* Google */}
+              <button
+                type="button"
+                onClick={handleGoogleAuth}
+                disabled={loading}
+                className="w-full h-10 rounded-xl bg-white/8 hover:bg-white/12 border border-white/10 text-white text-sm font-medium flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] disabled:opacity-50"
               >
-                ← Back to all options
+                <svg viewBox="0 0 48 48" width="16" height="16">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                Continue with Google
               </button>
 
-              {authMethod === 'email' && (
-                <form onSubmit={handleEmailAuth} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 ml-1">Email</label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={16} />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="name@example.com"
-                        className="w-full h-12 bg-white/5 border border-white/5 rounded-xl pl-10 pr-4 text-white text-sm outline-none focus:border-white/20 transition-all"
-                        required
-                      />
+              <div className="flex items-center gap-3">
+                <div className="flex-grow border-t border-white/8"></div>
+                <span className="text-white/20 text-[10px] uppercase tracking-widest font-semibold">or</span>
+                <div className="flex-grow border-t border-white/8"></div>
+              </div>
+
+              {/* Email form */}
+              <form onSubmit={handleEmailAuth} className="space-y-2.5">
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={14} />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Email"
+                    className="w-full h-10 bg-white/5 border border-white/8 rounded-xl pl-9 pr-3 text-white text-sm placeholder:text-white/25 outline-none focus:border-white/20 focus:bg-white/7 transition-all"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={14} />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Password"
+                      className="w-full h-10 bg-white/5 border border-white/8 rounded-xl pl-9 pr-3 text-white text-sm placeholder:text-white/25 outline-none focus:border-white/20 focus:bg-white/7 transition-all"
+                      required
+                    />
+                  </div>
+                  {mode === 'signin' && (
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => { setMode('reset'); setError(null); }}
+                        className="text-[11px] text-white/30 hover:text-white/60 transition-colors"
+                      >
+                        Forgot password?
+                      </button>
                     </div>
-                  </div>
+                  )}
+                </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 ml-1">Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={16} />
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full h-12 bg-white/5 border border-white/5 rounded-xl pl-10 pr-4 text-white text-sm outline-none focus:border-white/20 transition-all"
-                        required
-                      />
-                    </div>
-                  </div>
+                {error && <p className="text-rose-400 text-xs px-0.5">{error}</p>}
 
-                  {error && <p className="text-rose-400 text-xs px-1">{error}</p>}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-10 rounded-xl bg-white text-black text-sm font-semibold flex items-center justify-center transition-all hover:bg-white/90 active:scale-[0.98] disabled:opacity-50 mt-1"
+                >
+                  {loading ? <Loader2 className="animate-spin" size={16} /> : mode === 'signin' ? 'Sign in' : 'Create account'}
+                </button>
+              </form>
 
-                  <Button type="submit" className="w-full h-12 mt-2" disabled={loading}>
-                    {loading ? <Loader2 className="animate-spin" size={20} /> : mode === 'signin' ? 'Sign In' : 'Create Account'}
-                  </Button>
-
-                  <div className="text-center mt-4">
-                    <button
-                      type="button"
-                      onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-                      className="text-xs text-white/40 hover:text-white transition-colors"
-                    >
-                      {mode === 'signin' ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {authMethod === 'phone' && (
-                <form onSubmit={handlePhoneAuth} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 ml-1">Phone Number</label>
-                    <div className="relative">
-                      <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={16} />
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+1234567890"
-                        className="w-full h-12 bg-white/5 border border-white/5 rounded-xl pl-10 pr-4 text-white text-sm outline-none focus:border-white/20 transition-all"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {error && <p className="text-rose-400 text-xs px-1">{error}</p>}
-
-                  <Button type="submit" className="w-full h-12 mt-2" disabled={loading}>
-                    {loading ? <Loader2 className="animate-spin" size={20} /> : 'Send Login Code'}
-                  </Button>
-                </form>
-              )}
-            </div>
+              <div className="flex items-center justify-between pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); }}
+                  className="text-[11px] text-white/35 hover:text-white/70 transition-colors"
+                >
+                  {mode === 'signin' ? 'New here? Sign up' : 'Have an account? Sign in'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('signup');
+                    setNextPath('/onboarding');
+                    window.history.replaceState({}, '', '/auth?next=/onboarding');
+                  }}
+                  className="text-[11px] text-white/35 hover:text-white/70 transition-colors"
+                >
+                  Own a gym?
+                </button>
+              </div>
+            </>
           )}
         </div>
+
+        <p className="text-[10px] text-white/20 text-center mt-4 leading-relaxed">
+          By continuing you agree to our{' '}
+          <a href="/terms" className="underline underline-offset-2 hover:text-white/40 transition-colors">Terms</a>
+          {' '}and{' '}
+          <a href="/privacy" className="underline underline-offset-2 hover:text-white/40 transition-colors">Privacy Policy</a>.
+        </p>
 
       </div>
     </div>

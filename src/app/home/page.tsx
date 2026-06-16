@@ -24,10 +24,14 @@ import {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getFirstName(email: string): string {
+function getFirstName(user: { email?: string; user_metadata?: Record<string, string> }): string {
+  const full = user.user_metadata?.full_name ?? user.user_metadata?.name ?? '';
+  if (full.trim()) return full.trim().split(/\s+/)[0];
+  const email = user.email ?? '';
+  if (!email) return 'there';
   const localPart = email.split('@')[0];
-  const firstSegment = localPart.split(/[.+_]/)[0];
-  return firstSegment.charAt(0).toUpperCase() + firstSegment.slice(1);
+  const firstSegment = localPart.split(/[.+_]/)[0].replace(/\d+$/, '');
+  return firstSegment.charAt(0).toUpperCase() + firstSegment.slice(1) || 'there';
 }
 
 function getTimeGreeting(): string {
@@ -178,6 +182,7 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [hasActiveSession, setHasActiveSession] = useState(false);
+  const [hasGymLink, setHasGymLink] = useState(true); // optimistic — avoids flash on load
   const [thisWeek, setThisWeek] = useState(0);
   const [streak, setStreak] = useState(0);
   const [totalVolume, setTotalVolume] = useState(0);
@@ -194,6 +199,27 @@ export default function HomePage() {
 
   useEffect(() => {
     setHasActiveSession(!!getSavedSessionId());
+  }, []);
+
+  useEffect(() => {
+    async function checkGymLink() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setHasGymLink(false); return; }
+
+      const [{ count: memberCount }, { count: roleCount }] = await Promise.all([
+        supabase
+          .from('gym_memberships')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', session.user.id),
+        supabase
+          .from('user_gym_roles')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', session.user.id),
+      ]);
+
+      setHasGymLink(!!(memberCount || roleCount));
+    }
+    checkGymLink();
   }, []);
 
   useEffect(() => {
@@ -312,7 +338,7 @@ export default function HomePage() {
 
   if (loading) return <LoadingPage />;
 
-  const firstName = user?.email ? getFirstName(user.email) : 'there';
+  const firstName = user ? getFirstName(user) : 'there';
   const unit = getWeightUnit();
   const todayLabel = new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 
@@ -402,8 +428,8 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Gym connect prompt — only show after entitlements confirm no gym */}
-        {entitlementsReady && !gymId && (
+        {/* Gym connect prompt — only show to users with zero gym connection */}
+        {entitlementsReady && !hasGymLink && (
           <div
             className="w-full rounded-[22px] p-5 mb-6"
             style={{

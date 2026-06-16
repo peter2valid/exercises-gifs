@@ -1,18 +1,16 @@
 import { redirect } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabase/server';
+import { getAdminSupabase } from '@/lib/supabase/admin';
 import { JoinSearchClient } from './JoinSearchClient';
+import { JoinSuccessClient } from './JoinSuccessClient';
 
 export const dynamic = 'force-dynamic';
 
-interface Gym {
-  id: string;
-  name: string;
-  slug: string;
-  type: string | null;
-  location: string | null;
-}
-
-export default async function JoinSearchPage({ searchParams }: { searchParams: Promise<{ gymId?: string }> }) {
+export default async function JoinPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ gymId?: string }>;
+}) {
   const { gymId } = await searchParams;
   const supabase = await getServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
@@ -22,15 +20,37 @@ export default async function JoinSearchPage({ searchParams }: { searchParams: P
     redirect(`/auth?next=${encodeURIComponent(next)}`);
   }
 
-  let preselectedGym: Gym | null = null;
+  // Auto-join flow when arriving from a gym QR scan
   if (gymId) {
-    const { data } = await supabase
+    const admin = getAdminSupabase();
+
+    const { data: gym } = await admin
       .from('gyms')
-      .select('id, name, slug, type, location')
+      .select('id, name')
       .eq('id', gymId)
       .maybeSingle();
-    preselectedGym = data ?? null;
+
+    if (!gym) redirect('/explore');
+
+    const { data: existing } = await admin
+      .from('gym_memberships')
+      .select('status')
+      .eq('user_id', user.id)
+      .eq('gym_id', gymId)
+      .maybeSingle();
+
+    if (!existing) {
+      await admin.from('gym_memberships').insert({
+        user_id: user.id,
+        gym_id: gymId,
+        status: 'pending',
+        role: 'member',
+      });
+    }
+
+    return <JoinSuccessClient gymName={gym.name} alreadyMember={!!existing} />;
   }
 
-  return <JoinSearchClient preselectedGym={preselectedGym} />;
+  // Manual search flow (no gymId in URL)
+  return <JoinSearchClient preselectedGym={null} />;
 }
