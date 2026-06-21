@@ -62,7 +62,7 @@ export function JoinSuccessClient({ gymName, alreadyMember }: Props) {
             >
               <Clock size={13} className="text-white/30 shrink-0" />
               <p className="text-[11px] text-white/30 leading-snug">
-                Pending approval — you'll get access once the gym confirms you.
+                Pending approval — you&apos;ll get access once the gym confirms you.
               </p>
             </div>
           )}

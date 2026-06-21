@@ -138,7 +138,7 @@ export default function AuthPage() {
                 <p className="text-sm font-semibold text-white">Reset password</p>
               </div>
               <p className="text-[11px] text-white/40 leading-relaxed">
-                Enter your email and we'll send a reset link. Works for Google accounts too — you can set a password after clicking the link.
+                Enter your email and we&apos;ll send a reset link. Works for Google accounts too — you can set a password after clicking the link.
               </p>
 
               <div className="relative">

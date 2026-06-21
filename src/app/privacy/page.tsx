@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import { Zap } from 'lucide-react';
 import Link from 'next/link';
 
