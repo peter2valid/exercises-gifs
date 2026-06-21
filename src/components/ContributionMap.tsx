@@ -355,13 +355,13 @@ function WeeklyView({ dayMap }: { dayMap: Map<string, number> }) {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 const VIEWS: { id: View; label: string }[] = [
-  { id: 'annual',  label: '1Y' },
   { id: 'monthly', label: '1M' },
   { id: 'weekly',  label: '1W' },
+  { id: 'annual',  label: '1Y' },
 ];
 
 export function ContributionMap({ sessions }: { sessions: WorkoutSession[] }) {
-  const [view, setView] = useState<View>('annual');
+  const [view, setView] = useState<View>('monthly');
   const dayMap = useMemo(() => buildDayMap(sessions), [sessions]);
 
   return (

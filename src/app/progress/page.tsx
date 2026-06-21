@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, Flame, TrendingUp } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { LoadingPage } from '@/components/ui';
 import { db } from '@/lib/db/dexie';
@@ -13,30 +13,22 @@ import { convertWeight, getWeightUnit } from '@/lib/settings';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ContributionMap } from '@/components/ContributionMap';
 
-function fmtDate(iso?: string | null) {
-  if (!iso) return '—';
-  try {
-    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  } catch {
-    return '—';
-  }
-}
-
 function formatRelativeDate(iso: string): string {
   const date = new Date(iso);
   const diffDays = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-interface ProgressStats {
-  totalVolume: number;
-  totalSessions: number;
-  totalSets: number;
-  lastSessionDate: string | null;
-  avgSetsPerSession: number;
-  thisWeekSessions: number;
+function fmtLastSeen(iso: string | null): string {
+  if (!iso) return '—';
+  const diffDays = Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 interface RecentSession {
@@ -45,15 +37,6 @@ interface RecentSession {
   setCount: number;
   volume: number;
 }
-
-const EMPTY: ProgressStats = {
-  totalVolume: 0,
-  totalSessions: 0,
-  totalSets: 0,
-  lastSessionDate: null,
-  avgSetsPerSession: 0,
-  thisWeekSessions: 0,
-};
 
 export default function ProgressPage() {
   const router = useRouter();
@@ -68,7 +51,6 @@ export default function ProgressPage() {
     });
   }, [router]);
 
-  // Live queries — auto-update whenever Dexie changes (e.g. after sync)
   const sessions = useLiveQuery<WorkoutSession[]>(
     () => userId
       ? db.workout_sessions.where('user_id').equals(userId).filter(s => s.status === 'completed').toArray()
@@ -89,62 +71,58 @@ export default function ProgressPage() {
 
   const unit = getWeightUnit();
 
-  const { stats, recentSessions } = useMemo(() => {
-    if (!sessions || !allSets || !exercises) return { stats: EMPTY, recentSessions: [] as RecentSession[] };
+  const { totalSessions, thisWeekSessions, lastSessionDate, totalVolume, avgSetsPerSession, recentSessions } = useMemo(() => {
+    if (!sessions || !allSets || !exercises) {
+      return { totalSessions: 0, thisWeekSessions: 0, lastSessionDate: null, totalVolume: 0, avgSetsPerSession: 0, recentSessions: [] as RecentSession[] };
+    }
 
     const exerciseMap = Object.fromEntries(exercises.map(e => [e.id, e]));
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
     weekStart.setHours(0, 0, 0, 0);
-    const weekStartIso = weekStart.toISOString();
 
-    const totalSessions = sessions.length;
-    const thisWeekSessions = sessions.filter(s => s.started_at >= weekStartIso).length;
     const sorted = [...sessions].sort((a, b) => b.started_at.localeCompare(a.started_at));
-    const lastSessionDate = sorted[0]?.started_at ?? null;
+    const thisWeek = sessions.filter(s => s.started_at >= weekStart.toISOString()).length;
     const strengthSets = allSets.filter(set => usesVolumeExercise(exerciseMap[set.exercise_id]));
-    const totalVolume = strengthSets.reduce((acc, set) => acc + set.weight * set.reps, 0);
-    const totalSets = allSets.length;
-    const avgSetsPerSession = totalSessions > 0
-      ? Math.round((totalSets / totalSessions) * 10) / 10
-      : 0;
+    const vol = strengthSets.reduce((acc, set) => acc + set.weight * set.reps, 0);
+    const avg = sessions.length > 0 ? Math.round((allSets.length / sessions.length) * 10) / 10 : 0;
 
     const setsBySession = new Map<string, typeof allSets>();
     for (const set of allSets) {
-      const bucket = setsBySession.get(set.session_id) ?? [];
-      bucket.push(set);
-      setsBySession.set(set.session_id, bucket);
+      const b = setsBySession.get(set.session_id) ?? [];
+      b.push(set);
+      setsBySession.set(set.session_id, b);
     }
 
     const recent: RecentSession[] = sorted.slice(0, 10).map(s => {
-      const sessionSets = setsBySession.get(s.id) ?? [];
-      const sessionVol = sessionSets.reduce((acc, set) =>
+      const ss = setsBySession.get(s.id) ?? [];
+      const sv = ss.reduce((acc, set) =>
         usesVolumeExercise(exerciseMap[set.exercise_id]) ? acc + (set.weight || 0) * (set.reps || 0) : acc, 0);
-      return { id: s.id, startedAt: s.started_at, setCount: sessionSets.length, volume: Math.round(sessionVol) };
+      return { id: s.id, startedAt: s.started_at, setCount: ss.length, volume: Math.round(sv) };
     });
 
     return {
-      stats: { totalVolume: Math.round(totalVolume), totalSessions, totalSets, lastSessionDate, avgSetsPerSession, thisWeekSessions },
+      totalSessions: sessions.length,
+      thisWeekSessions: thisWeek,
+      lastSessionDate: sorted[0]?.started_at ?? null,
+      totalVolume: Math.round(vol),
+      avgSetsPerSession: avg,
       recentSessions: recent,
     };
   }, [sessions, allSets, exercises]);
 
   if (authLoading || sessions === undefined) return <LoadingPage />;
 
-  if (stats.totalSessions === 0) {
+  if (totalSessions === 0) {
     return (
       <div className="dashboard-bg min-h-screen pb-24 pt-8">
         <div className="max-w-md mx-auto px-4">
-          <div className="mb-8 animate-fade-in">
-            <p className="text-xs tracking-[0.3em] text-white/30 uppercase font-medium mb-2">Progress</p>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Your Stats</h1>
-          </div>
+          <p className="text-xs tracking-[0.3em] text-white/30 uppercase font-medium mb-2">Progress</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight mb-10">Your Stats</h1>
           <div className="glass-panel p-10 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 mx-auto mb-4">
-              <TrendingUp size={24} className="text-white/20" />
-            </div>
-            <p className="text-sm font-semibold text-white/50 mb-1">No workouts yet</p>
-            <p className="text-xs text-white/25">Complete a session to start tracking your progress</p>
+            <Calendar size={28} className="text-white/15 mx-auto mb-4" />
+            <p className="text-sm font-semibold text-white/40 mb-1">No workouts yet</p>
+            <p className="text-xs text-white/20">Complete a session to start tracking your progress.</p>
           </div>
         </div>
       </div>
@@ -153,71 +131,72 @@ export default function ProgressPage() {
 
   return (
     <div className="dashboard-bg min-h-screen pb-24 pt-8">
-      <div className="max-w-md mx-auto px-4">
-        <div className="mb-8 animate-fade-in">
-          <p className="text-xs tracking-[0.3em] text-white/30 uppercase font-medium mb-2">Progress</p>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Your Stats</h1>
-        </div>
+      <div className="max-w-md mx-auto px-4 space-y-4">
 
-        <div className="glass-panel p-6 mb-4 animate-slide-up">
-          <p className="text-xs text-white/40 tracking-[0.1em] uppercase mb-1">All-Time Volume</p>
-          <p className="text-4xl font-bold text-white">{Math.round(convertWeight(stats.totalVolume, unit)).toLocaleString()} {unit}</p>
-          <p className="text-xs text-white/25 mt-2">All time, strength sets only</p>
-        </div>
+        {/* ── Header + key numbers ───────────────────────────────────────── */}
+        <div className="animate-fade-in">
+          <p className="text-xs tracking-[0.3em] text-white/30 uppercase font-medium mb-1">Progress</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight mb-5">Your Stats</h1>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="glass-panel p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Flame size={14} className="text-orange-400" />
-              <p className="text-[10px] text-white/40 tracking-[0.1em] uppercase font-bold">This Week</p>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="glass-panel px-3 py-3.5 text-center">
+              <p className="text-2xl font-bold text-white leading-none">{totalSessions}</p>
+              <p className="text-[9px] text-white/30 uppercase tracking-widest font-bold mt-1.5">All Time</p>
             </div>
-            <p className="text-2xl font-bold text-white">{stats.thisWeekSessions}</p>
-            <p className="text-[10px] text-white/25 mt-1">workouts</p>
-          </div>
-          <div className="glass-panel p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp size={14} className="text-emerald-400" />
-              <p className="text-[10px] text-white/40 tracking-[0.1em] uppercase font-bold">All Time</p>
+            <div className="glass-panel px-3 py-3.5 text-center">
+              <p className="text-2xl font-bold text-white leading-none">{thisWeekSessions}</p>
+              <p className="text-[9px] text-white/30 uppercase tracking-widest font-bold mt-1.5">This Week</p>
             </div>
-            <p className="text-2xl font-bold text-white">{stats.totalSessions}</p>
-            <p className="text-[10px] text-white/25 mt-1">workouts</p>
+            <div className="glass-panel px-3 py-3.5 text-center">
+              <p className="text-sm font-bold text-white leading-none">{fmtLastSeen(lastSessionDate)}</p>
+              <p className="text-[9px] text-white/30 uppercase tracking-widest font-bold mt-1.5">Last Session</p>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-3 mb-8">
-          <div className="glass-panel p-4">
-            <p className="text-[10px] text-white/40 tracking-[0.1em] uppercase font-bold mb-1">Last Session</p>
-            <p className="text-base font-semibold text-white">{fmtDate(stats.lastSessionDate)}</p>
-          </div>
-          <div className="glass-panel p-4">
-            <p className="text-[10px] text-white/40 tracking-[0.1em] uppercase font-bold mb-1">Total Sets Logged</p>
-            <p className="text-2xl font-bold text-white">{stats.totalSets.toLocaleString()}</p>
-          </div>
-          <div className="glass-panel p-4">
-            <p className="text-[10px] text-white/40 tracking-[0.1em] uppercase font-bold mb-1">Avg Sets / Workout</p>
-            <p className="text-2xl font-bold text-white">{stats.avgSetsPerSession}</p>
-          </div>
-        </div>
-
+        {/* ── Activity map ───────────────────────────────────────────────── */}
         <ContributionMap sessions={sessions ?? []} />
 
-        <div className="mt-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/30 mb-3">Recent Sessions</p>
+        {/* ── Volume summary ─────────────────────────────────────────────── */}
+        <div className="glass-panel px-5 py-4 flex items-center justify-between">
+          <div>
+            <p className="text-[9px] text-white/30 uppercase tracking-widest font-bold mb-1">Total Volume</p>
+            <p className="text-xl font-bold text-white">
+              {Math.round(convertWeight(totalVolume, unit)).toLocaleString()}
+              <span className="text-sm font-medium text-white/40 ml-1">{unit}</span>
+            </p>
+          </div>
+          <div className="w-px h-8 bg-white/10" />
+          <div className="text-right">
+            <p className="text-[9px] text-white/30 uppercase tracking-widest font-bold mb-1">Avg Sets</p>
+            <p className="text-xl font-bold text-white">
+              {avgSetsPerSession}
+              <span className="text-sm font-medium text-white/40 ml-1">/ session</span>
+            </p>
+          </div>
+        </div>
+
+        {/* ── Recent sessions ────────────────────────────────────────────── */}
+        <div>
+          <p className="text-[9px] font-bold uppercase tracking-[0.28em] text-white/25 mb-3">Recent Sessions</p>
           <div className="space-y-2">
             {recentSessions.map((session) => (
-              <div key={session.id} className="glass-panel p-4 flex items-center justify-between">
+              <div key={session.id} className="glass-panel px-4 py-3.5 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-white">{formatRelativeDate(session.startedAt)}</p>
-                  <p className="text-xs text-white/40 mt-0.5">
+                  <p className="text-xs text-white/35 mt-0.5">
                     {session.setCount} {session.setCount === 1 ? 'set' : 'sets'}
-                    {session.volume > 0 ? ` · ${Math.round(convertWeight(session.volume, unit)).toLocaleString()} ${unit}` : ''}
+                    {session.volume > 0
+                      ? ` · ${Math.round(convertWeight(session.volume, unit)).toLocaleString()} ${unit}`
+                      : ''}
                   </p>
                 </div>
-                <Calendar size={14} className="text-white/20 shrink-0" />
+                <Calendar size={13} className="text-white/15 shrink-0" />
               </div>
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );
