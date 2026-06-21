@@ -29,8 +29,8 @@ export default function RootLayout({
           <SyncStatus />
           <div className="fixed inset-0 overflow-y-auto overflow-x-hidden">
             <main className="min-h-full" style={{ paddingBottom: 'calc(var(--bottom-nav-height,76px) + 20px + env(safe-area-inset-bottom))' }}>{children}</main>
+            <BottomNav />
           </div>
-          <BottomNav />
         </EntitlementProvider>
       </body>
     </html>

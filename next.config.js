@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
-const remotePatterns = [];
+const remotePatterns = [
+  // Google OAuth profile pictures
+  { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+];
 
 if (process.env.NEXT_PUBLIC_R2_PUBLIC_URL) {
   try {

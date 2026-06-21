@@ -33,7 +33,7 @@ export function BottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/95 backdrop-blur-xl"
       // Expose a CSS variable so other components can align to the nav height.
-      style={{ height: '76px', paddingBottom: 'env(safe-area-inset-bottom)', ['--bottom-nav-height' as any]: '76px' }}
+      style={{ height: '76px', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="max-w-md mx-auto px-2 h-full flex items-center justify-around">
         {navItems.map(({ href, icon: Icon, label }) => {

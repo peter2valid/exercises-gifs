@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bottom-nav-height: 76px;
+}
+
 html {
   scroll-behavior: smooth;
   height: 100%;
