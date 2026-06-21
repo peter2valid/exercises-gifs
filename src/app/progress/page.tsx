@@ -6,10 +6,12 @@ import { Calendar, Flame, TrendingUp } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { LoadingPage } from '@/components/ui';
 import { db } from '@/lib/db/dexie';
+import type { WorkoutSession } from '@/lib/db/schema';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { usesVolumeExercise } from '@/lib/workout/exerciseClassification';
 import { convertWeight, getWeightUnit } from '@/lib/settings';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { ContributionMap } from '@/components/ContributionMap';
 
 function fmtDate(iso?: string | null) {
   if (!iso) return '—';
@@ -67,10 +69,10 @@ export default function ProgressPage() {
   }, [router]);
 
   // Live queries — auto-update whenever Dexie changes (e.g. after sync)
-  const sessions = useLiveQuery(
+  const sessions = useLiveQuery<WorkoutSession[]>(
     () => userId
       ? db.workout_sessions.where('user_id').equals(userId).filter(s => s.status === 'completed').toArray()
-      : Promise.resolve([]),
+      : Promise.resolve([] as WorkoutSession[]),
     [userId]
   );
 
@@ -197,7 +199,9 @@ export default function ProgressPage() {
           </div>
         </div>
 
-        <div>
+        <ContributionMap sessions={sessions ?? []} />
+
+        <div className="mt-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/30 mb-3">Recent Sessions</p>
           <div className="space-y-2">
             {recentSessions.map((session) => (
