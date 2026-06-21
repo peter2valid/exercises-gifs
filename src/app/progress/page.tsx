@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar, Flame, TrendingUp } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
@@ -9,7 +9,7 @@ import { db } from '@/lib/db/dexie';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { usesVolumeExercise } from '@/lib/workout/exerciseClassification';
 import { convertWeight, getWeightUnit } from '@/lib/settings';
-import { PremiumGate } from '@/components/billing/PremiumGate';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 function fmtDate(iso?: string | null) {
   if (!iso) return '—';
@@ -55,70 +55,79 @@ const EMPTY: ProgressStats = {
 
 export default function ProgressPage() {
   const router = useRouter();
-  const [stats, setStats] = useState<ProgressStats>(EMPTY);
-  const [recentSessions, setRecentSessions] = useState<RecentSession[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    async function checkAndLoad() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/auth');
-        return;
-      }
-
-      try {
-        const weekStart = new Date();
-        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-        weekStart.setHours(0, 0, 0, 0);
-        const weekStartIso = weekStart.toISOString();
-
-        const [sessions, allSets, exercises] = await Promise.all([
-          db.workout_sessions.where('status').equals('completed').toArray(),
-          db.set_logs.toArray(),
-          getAllExercises(),
-        ]);
-
-        const exerciseMap = Object.fromEntries(exercises.map((e) => [e.id, e]));
-        const totalSessions = sessions.length;
-        const thisWeekSessions = sessions.filter((s) => s.started_at >= weekStartIso).length;
-        const sorted = [...sessions].sort((a, b) => b.started_at.localeCompare(a.started_at));
-        const lastSessionDate = sorted[0]?.started_at ?? null;
-        const strengthSets = allSets.filter((set) => usesVolumeExercise(exerciseMap[set.exercise_id]));
-        const totalVolume = strengthSets.reduce((acc, set) => acc + set.weight * set.reps, 0);
-        const totalSets = allSets.length;
-        const avgSetsPerSession = totalSessions > 0
-          ? Math.round((totalSets / totalSessions) * 10) / 10
-          : 0;
-
-        const setsBySession = new Map<string, typeof allSets>();
-        for (const set of allSets) {
-          const bucket = setsBySession.get(set.session_id) ?? [];
-          bucket.push(set);
-          setsBySession.set(set.session_id, bucket);
-        }
-
-        const recent: RecentSession[] = sorted.slice(0, 10).map((s) => {
-          const sessionSets = setsBySession.get(s.id) ?? [];
-          const sessionVol = sessionSets.reduce((acc, set) =>
-            usesVolumeExercise(exerciseMap[set.exercise_id]) ? acc + (set.weight || 0) * (set.reps || 0) : acc, 0);
-          return { id: s.id, startedAt: s.started_at, setCount: sessionSets.length, volume: Math.round(sessionVol) };
-        });
-
-        setStats({ totalVolume: Math.round(totalVolume), totalSessions, totalSets, lastSessionDate, avgSetsPerSession, thisWeekSessions });
-        setRecentSessions(recent);
-      } catch {
-        setStats(EMPTY);
-      } finally {
-        setLoading(false);
-      }
-    }
-    checkAndLoad();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { router.push('/auth'); return; }
+      setUserId(session.user.id);
+      setAuthLoading(false);
+    });
   }, [router]);
+
+  // Live queries — auto-update whenever Dexie changes (e.g. after sync)
+  const sessions = useLiveQuery(
+    () => userId
+      ? db.workout_sessions.where('user_id').equals(userId).filter(s => s.status === 'completed').toArray()
+      : Promise.resolve([]),
+    [userId]
+  );
+
+  const allSets = useLiveQuery(
+    async () => {
+      if (!sessions || sessions.length === 0) return [];
+      const ids = new Set(sessions.map(s => s.id));
+      return (await db.set_logs.toArray()).filter(set => ids.has(set.session_id));
+    },
+    [sessions]
+  );
+
+  const exercises = useLiveQuery(() => getAllExercises(), []);
 
   const unit = getWeightUnit();
 
-  if (loading) return <LoadingPage />;
+  const { stats, recentSessions } = useMemo(() => {
+    if (!sessions || !allSets || !exercises) return { stats: EMPTY, recentSessions: [] as RecentSession[] };
+
+    const exerciseMap = Object.fromEntries(exercises.map(e => [e.id, e]));
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+    const weekStartIso = weekStart.toISOString();
+
+    const totalSessions = sessions.length;
+    const thisWeekSessions = sessions.filter(s => s.started_at >= weekStartIso).length;
+    const sorted = [...sessions].sort((a, b) => b.started_at.localeCompare(a.started_at));
+    const lastSessionDate = sorted[0]?.started_at ?? null;
+    const strengthSets = allSets.filter(set => usesVolumeExercise(exerciseMap[set.exercise_id]));
+    const totalVolume = strengthSets.reduce((acc, set) => acc + set.weight * set.reps, 0);
+    const totalSets = allSets.length;
+    const avgSetsPerSession = totalSessions > 0
+      ? Math.round((totalSets / totalSessions) * 10) / 10
+      : 0;
+
+    const setsBySession = new Map<string, typeof allSets>();
+    for (const set of allSets) {
+      const bucket = setsBySession.get(set.session_id) ?? [];
+      bucket.push(set);
+      setsBySession.set(set.session_id, bucket);
+    }
+
+    const recent: RecentSession[] = sorted.slice(0, 10).map(s => {
+      const sessionSets = setsBySession.get(s.id) ?? [];
+      const sessionVol = sessionSets.reduce((acc, set) =>
+        usesVolumeExercise(exerciseMap[set.exercise_id]) ? acc + (set.weight || 0) * (set.reps || 0) : acc, 0);
+      return { id: s.id, startedAt: s.started_at, setCount: sessionSets.length, volume: Math.round(sessionVol) };
+    });
+
+    return {
+      stats: { totalVolume: Math.round(totalVolume), totalSessions, totalSets, lastSessionDate, avgSetsPerSession, thisWeekSessions },
+      recentSessions: recent,
+    };
+  }, [sessions, allSets, exercises]);
+
+  if (authLoading || sessions === undefined) return <LoadingPage />;
 
   if (stats.totalSessions === 0) {
     return (
@@ -188,30 +197,23 @@ export default function ProgressPage() {
           </div>
         </div>
 
-        <PremiumGate 
-          feature="workout_history" 
-          mode="blur"
-          title="Workout History"
-          description="Unlock detailed logs of all your past training sessions."
-        >
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/30 mb-3">Recent Sessions</p>
-            <div className="space-y-2">
-              {recentSessions.map((session) => (
-                <div key={session.id} className="glass-panel p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-white">{formatRelativeDate(session.startedAt)}</p>
-                    <p className="text-xs text-white/40 mt-0.5">
-                      {session.setCount} {session.setCount === 1 ? 'set' : 'sets'}
-                      {session.volume > 0 ? ` · ${Math.round(convertWeight(session.volume, unit)).toLocaleString()} ${unit}` : ''}
-                    </p>
-                  </div>
-                  <Calendar size={14} className="text-white/20 shrink-0" />
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/30 mb-3">Recent Sessions</p>
+          <div className="space-y-2">
+            {recentSessions.map((session) => (
+              <div key={session.id} className="glass-panel p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-white">{formatRelativeDate(session.startedAt)}</p>
+                  <p className="text-xs text-white/40 mt-0.5">
+                    {session.setCount} {session.setCount === 1 ? 'set' : 'sets'}
+                    {session.volume > 0 ? ` · ${Math.round(convertWeight(session.volume, unit)).toLocaleString()} ${unit}` : ''}
+                  </p>
                 </div>
-              ))}
-            </div>
+                <Calendar size={14} className="text-white/20 shrink-0" />
+              </div>
+            ))}
           </div>
-        </PremiumGate>
+        </div>
       </div>
     </div>
   );

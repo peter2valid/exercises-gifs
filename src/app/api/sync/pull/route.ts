@@ -14,19 +14,18 @@ export async function GET(req: Request) {
     const userId = user.id;
     const supabase = getAdminSupabase();
     const { searchParams } = new URL(req.url);
-    const since = parseInt(searchParams.get('since') || '0', 10);
-    const excludeDeviceId = searchParams.get('exclude_device_id') || '';
+    // since_date: ISO timestamp cursor — pull events created after this point.
+    // Default to epoch so the first pull on a fresh device gets everything.
+    const sinceDate = searchParams.get('since_date') || '1970-01-01T00:00:00.000Z';
+    const limit = Math.min(parseInt(searchParams.get('limit') || '100', 10), 500);
 
-    // 2. Pull events from the global log
-    // We enforce user_id = userId to ensure strict isolation
     const { data: events, error } = await supabase
       .from('events')
       .select('*')
       .eq('user_id', userId)
-      .gt('server_sequence', since)
-      .neq('device_id', excludeDeviceId)
-      .order('server_sequence', { ascending: true })
-      .limit(100);
+      .gt('created_at', sinceDate)
+      .order('created_at', { ascending: true })
+      .limit(limit);
 
     if (error) {
       console.error('Supabase Sync Pull Error:', error);

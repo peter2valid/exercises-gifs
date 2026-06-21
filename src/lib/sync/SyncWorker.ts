@@ -10,6 +10,8 @@ const MAX_BACKOFF_MS = 60000; // 1 minute
 const MAX_ATTEMPTS = 10;      // permanently fail after 10 retries
 const QUEUE_PRUNE_DELAY = 1000 * 60 * 60 * 24; // 24 hours
 
+const PULL_CURSOR_KEY = (userId: string) => `gymapp:lastPullAt:${userId}`;
+
 export interface SyncPushResponse {
   success: boolean;
   synced_ids: string[];
@@ -19,23 +21,14 @@ export interface SyncPushResponse {
 export class SyncWorker {
   private isProcessing = false;
   private timer: NodeJS.Timeout | null = null;
-  private lastPullSequence = 0;
   private channel: RealtimeChannel | null = null;
 
-  /**
-   * Start the worker loop.
-   */
   start(intervalMs = 15000) {
     if (this.timer) return;
-    
-    // 1. Regular Polling (Fallback/Safety)
     this.timer = setInterval(() => this.cycle(), intervalMs);
     this.cycle();
-    
-    // 2. Real-time Triggers
     this.setupRealtime();
 
-    // 3. Environment Triggers
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => this.cycle());
       document.addEventListener('visibilitychange', () => {
@@ -59,37 +52,30 @@ export class SyncWorker {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    // Listen for new events inserted by OTHER devices
     this.channel = supabase
       .channel('gym-events')
       .on(
         'postgres_changes',
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
+        {
+          event: 'INSERT',
+          schema: 'public',
           table: 'events',
-          filter: `user_id=eq.${session.user.id}` 
+          filter: `user_id=eq.${session.user.id}`,
         },
         () => this.cycle()
       )
       .subscribe();
   }
 
-  /**
-   * One full sync cycle: Upstream then Downstream.
-   */
   async cycle() {
     if (this.isProcessing) return;
-
-    // Skip sync if not logged in
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
     this.isProcessing = true;
-
     try {
       await this.processUpstream(session.access_token);
-      await this.processDownstream(session.access_token);
+      await this.processDownstream(session.access_token, session.user.id);
       await this.pruneQueue();
     } catch (err) {
       console.error('[SyncWorker] cycle error:', err);
@@ -100,7 +86,7 @@ export class SyncWorker {
 
   private async processUpstream(accessToken: string) {
     const now = new Date().toISOString();
-    
+
     const readyToSync = await db.sync_queue
       .where('status')
       .equals('pending')
@@ -113,7 +99,6 @@ export class SyncWorker {
     const queueIds = readyToSync.map(i => i.id);
     const eventIds = readyToSync.map(i => i.event_id);
 
-    // Mark as 'syncing'
     await db.transaction('rw', [db.sync_queue, db.events], async () => {
       await db.sync_queue.where('id').anyOf(queueIds).modify({ status: 'syncing', updated_at: now });
       await db.events.where('id').anyOf(eventIds).modify({ sync_state: 'syncing' });
@@ -141,7 +126,6 @@ export class SyncWorker {
       });
 
       if (!res.ok) {
-        // Auth and client errors are permanent — stop retrying immediately
         const permanent = res.status === 401 || res.status === 403 || res.status === 400;
         console.warn(`[SyncWorker] push HTTP ${res.status}${permanent ? ' (permanent)' : ''}`);
         await this.resolveBatch(readyToSync, {
@@ -159,53 +143,66 @@ export class SyncWorker {
       await this.resolveBatch(readyToSync, {
         success: false,
         synced_ids: [],
-        failed_ids: batch.map(e => ({ id: e.id, error: String(err), retryable: true }))
+        failed_ids: batch.map(e => ({ id: e.id, error: String(err), retryable: true })),
       });
     }
   }
 
-  private async processDownstream(accessToken: string) {
+  private getLastPullAt(userId: string): string {
     try {
-      const deviceId = 'local-browser';
+      return localStorage.getItem(PULL_CURSOR_KEY(userId)) || '1970-01-01T00:00:00.000Z';
+    } catch {
+      return '1970-01-01T00:00:00.000Z';
+    }
+  }
+
+  private setLastPullAt(userId: string, at: string): void {
+    try {
+      localStorage.setItem(PULL_CURSOR_KEY(userId), at);
+    } catch { /* storage unavailable */ }
+  }
+
+  private async processDownstream(accessToken: string, userId: string) {
+    try {
+      const sinceDate = this.getLastPullAt(userId);
       const limit = 100;
 
-      const res = await fetch(`/api/sync/pull?since=${this.lastPullSequence}&exclude_device_id=${deviceId}&limit=${limit}`, {
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-      });
+      const res = await fetch(
+        `/api/sync/pull?since_date=${encodeURIComponent(sinceDate)}&limit=${limit}`,
+        { headers: { 'Authorization': `Bearer ${accessToken}` } }
+      );
       if (!res.ok) return;
 
       const { events }: { events: any[] } = await res.json();
       if (!events || events.length === 0) return;
 
       const affectedSessions = new Set<string>();
+      let maxCreatedAt = sinceDate;
 
       await db.transaction('rw', [db.events], async () => {
         for (const event of events) {
-          // Primary key 'id' prevents duplicates
           await db.events.put({ ...event, sync_state: 'synced' });
           affectedSessions.add(event.session_id);
-          this.lastPullSequence = Math.max(this.lastPullSequence, event.server_sequence || 0);
+          if (event.created_at > maxCreatedAt) maxCreatedAt = event.created_at;
         }
       });
 
-      // Re-project affected sessions
+      // Advance the cursor so the next pull only fetches new events
+      this.setLastPullAt(userId, maxCreatedAt);
+
       for (const sessionId of affectedSessions) {
         await projectFromEvents(sessionId);
       }
 
-      // Greedy fetch: if we got a full batch, there's likely more. 
-      // Pull again immediately without waiting for the next poll cycle.
+      // Greedy fetch: if we got a full batch there may be more
       if (events.length === limit) {
-        await this.processDownstream(accessToken);
+        await this.processDownstream(accessToken, userId);
       }
     } catch (err) {
       console.error('[SyncWorker] downstream pull failed:', err);
     }
   }
 
-  /**
-   * Cleanup completed queue items older than 24h.
-   */
   private async pruneQueue() {
     const cutoff = new Date(Date.now() - QUEUE_PRUNE_DELAY).toISOString();
     await db.sync_queue
@@ -231,7 +228,6 @@ export class SyncWorker {
           const failure = failedMap.get(eventId);
           const isRetryable = failure ? failure.retryable : true;
           const error = failure ? failure.error : 'Batch push failed';
-
           const nextAttempts = item.attempts + 1;
           const exceeded = nextAttempts >= MAX_ATTEMPTS;
 
@@ -242,7 +238,6 @@ export class SyncWorker {
           } else {
             const delay = Math.min(MAX_BACKOFF_MS, INITIAL_BACKOFF_MS * Math.pow(2, nextAttempts - 1));
             const nextRetry = new Date(Date.now() + delay).toISOString();
-
             await db.sync_queue.update(item.id, {
               status: 'pending',
               attempts: nextAttempts,
