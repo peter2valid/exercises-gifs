@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell, ShieldCheck, Camera, Phone, User as UserCircle, ChevronRight, QrCode, Dumbbell } from 'lucide-react';
+import { User as UserIcon, LogOut, Settings, Loader2, X, Scale, Bell, ShieldCheck, Camera, Phone, User as UserCircle, ChevronRight, QrCode, Dumbbell, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -242,6 +242,22 @@ export default function ProfilePage() {
               <div className="text-left">
                 <span className="block text-sm font-bold text-white">My Check-in Code</span>
                 <span className="block text-[10px] text-white/30 uppercase tracking-wider">Show at gym entrance</span>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-white/20 group-hover:text-white/50 transition-colors" />
+          </Link>
+
+          <Link
+            href="/join"
+            className="w-full glass-panel p-4 flex items-center justify-between hover:bg-white/10 transition-all active:scale-[0.98] group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                <Building2 size={20} className="text-white/40" />
+              </div>
+              <div className="text-left">
+                <span className="block text-sm font-bold text-white">Find a Gym</span>
+                <span className="block text-[10px] text-white/30 uppercase tracking-wider">Search and join a gym</span>
               </div>
             </div>
             <ChevronRight size={16} className="text-white/20 group-hover:text-white/50 transition-colors" />

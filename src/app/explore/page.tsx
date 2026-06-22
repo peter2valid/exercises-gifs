@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Dumbbell, Search, X, Zap } from 'lucide-react';
+import { Building2, CheckCircle2, Dumbbell, Loader2, Search, X, Zap } from 'lucide-react';
 import { LoadingPage } from '@/components/ui';
 import { getAllExercises } from '@/lib/db/exerciseQueries';
 import { seedExercises } from '@/lib/db/seed';
@@ -14,6 +14,7 @@ import {
   formatEquipmentLabel,
 } from '@/lib/explore/constants';
 import { CompactTile, MuscleTile, EquipmentTile } from '@/components/ExploreTiles';
+import { supabase } from '@/lib/supabase/client';
 
 const PENDING_GYM_KEY = 'gymapp:pendingGymJoin';
 
@@ -24,6 +25,7 @@ interface PendingGym {
   timestamp: number;
 }
 
+type JoinStatus = 'idle' | 'joining' | 'joined' | 'already' | 'error';
 
 export default function ExplorePage() {
   const router = useRouter();
@@ -33,6 +35,12 @@ export default function ExplorePage() {
   const [loading, setLoading] = useState(true);
   const [pendingGym, setPendingGym] = useState<PendingGym | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  // Auth state for smart QR-join
+  const [authLoaded, setAuthLoaded] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [joinStatus, setJoinStatus] = useState<JoinStatus>('idle');
+  const [joinedGymName, setJoinedGymName] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -47,12 +55,23 @@ export default function ExplorePage() {
     load();
   }, []);
 
-  // Detect gym context from QR scan: ?gymId=X
+  // Resolve auth state once on mount
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAccessToken(session?.access_token ?? null);
+      setAuthLoaded(true);
+    });
+  }, []);
+
+  // Detect gym context from QR scan: ?gymId=X — runs after auth is known
+  useEffect(() => {
+    if (!authLoaded) return;
+
     const params = new URLSearchParams(window.location.search);
     const gymId = params.get('gymId');
+
     if (!gymId) {
-      // Show existing pending gym if not yet dismissed
+      // Show existing pending gym stored from a previous QR scan
       try {
         const raw = localStorage.getItem(PENDING_GYM_KEY);
         if (raw) {
@@ -67,22 +86,52 @@ export default function ExplorePage() {
       return;
     }
 
-    // Fetch gym details and store pending join
+    // Fetch gym details
     fetch(`/api/public/gyms/${gymId}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
+      .then(async (data) => {
         if (!data?.gym) return;
-        const pending: PendingGym = {
-          gymId: data.gym.id,
-          gymName: data.gym.name,
-          gymType: data.gym.type ?? null,
-          timestamp: Date.now(),
-        };
-        localStorage.setItem(PENDING_GYM_KEY, JSON.stringify(pending));
-        setPendingGym(pending);
+
+        if (accessToken) {
+          // User is logged in → auto-join immediately
+          setJoinedGymName(data.gym.name);
+          setJoinStatus('joining');
+          try {
+            const res = await fetch('/api/gym/join', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({ gymId: data.gym.id }),
+            });
+            if (res.status === 409) {
+              setJoinStatus('already');
+            } else if (res.ok) {
+              setJoinStatus('joined');
+            } else {
+              setJoinStatus('error');
+            }
+            // Clear any stale pending entry
+            localStorage.removeItem(PENDING_GYM_KEY);
+          } catch {
+            setJoinStatus('error');
+          }
+        } else {
+          // Not logged in → store pending and show banner
+          const pending: PendingGym = {
+            gymId: data.gym.id,
+            gymName: data.gym.name,
+            gymType: data.gym.type ?? null,
+            timestamp: Date.now(),
+          };
+          localStorage.setItem(PENDING_GYM_KEY, JSON.stringify(pending));
+          setPendingGym(pending);
+        }
       })
       .catch(() => {});
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoaded]);
 
   const muscleCounts = useMemo(() => {
     const counts = new Map<BodyGroupKey, number>();
@@ -142,8 +191,50 @@ export default function ExplorePage() {
           <h1 className="text-2xl font-semibold text-white">{showEquipment ? 'Equipment' : 'Exercises'}</h1>
         </div>
 
-        {/* Gym context banner — shown when arriving via gym QR code */}
-        {pendingGym && !bannerDismissed && (
+        {/* Auto-join success banner (logged-in QR scan) */}
+        {(joinStatus === 'joined' || joinStatus === 'already') && (
+          <div className="mb-4 flex items-center gap-3 rounded-2xl px-4 py-3 animate-fade-in"
+            style={{ background: 'rgba(52,211,153,0.07)', border: '1px solid rgba(52,211,153,0.18)' }}
+          >
+            <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-white leading-tight truncate">{joinedGymName}</p>
+              <p className="text-[11px] text-emerald-400/60 mt-0.5">
+                {joinStatus === 'already' ? 'You\'re already a member of this gym' : 'Membership request sent — pending admin approval'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Auto-join error */}
+        {joinStatus === 'error' && (
+          <div className="mb-4 flex items-center gap-3 rounded-2xl px-4 py-3 animate-fade-in"
+            style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.18)' }}
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-white">Could not join {joinedGymName}</p>
+              <button
+                onClick={() => router.push('/join')}
+                className="text-[11px] text-rose-400/70 mt-0.5 underline"
+              >
+                Try again from the Join page
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Auto-joining spinner */}
+        {joinStatus === 'joining' && (
+          <div className="mb-4 flex items-center gap-3 rounded-2xl px-4 py-3 animate-fade-in"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}
+          >
+            <Loader2 size={16} className="text-white/40 animate-spin shrink-0" />
+            <p className="text-[13px] text-white/50">Joining {joinedGymName}…</p>
+          </div>
+        )}
+
+        {/* Gym context banner — for non-logged-in users arriving via QR */}
+        {pendingGym && !bannerDismissed && joinStatus === 'idle' && (
           <div className="mb-4 flex items-center gap-3 rounded-2xl px-4 py-3 animate-fade-in"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}
           >
@@ -155,7 +246,7 @@ export default function ExplorePage() {
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-semibold text-white leading-tight truncate">{pendingGym.gymName}</p>
               <p className="text-[11px] text-white/35 mt-0.5">
-                Sign up to join this gym
+                Sign in to join this gym
               </p>
             </div>
             <button
