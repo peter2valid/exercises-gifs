@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { Zap, Building2, UserPlus, AlertCircle, Loader2, Check } from 'lucide-react';
 
 const ROLE_LABEL: Record<string, string> = {
-  gym_admin: 'Gym Admin',
-  trainer:   'Trainer',
-  member:    'Member',
+  gym_admin:  'Gym Admin',
+  trainer:    'Trainer',
+  front_desk: 'Front Desk',
+  member:     'Member',
 };
 
 interface Props {

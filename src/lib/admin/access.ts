@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getServerSupabase, getAdminSupabase } from '@/lib/supabase/server';
 import { getUserRoles } from '@/lib/auth/roles';
 
-const GYM_STAFF = new Set(['super_admin', 'gym_owner', 'gym_admin', 'trainer']);
+const GYM_STAFF = new Set(['super_admin', 'gym_owner', 'gym_admin', 'trainer', 'front_desk']);
 
 export async function requireAdminAccess() {
   const supabase = await getServerSupabase();
@@ -110,5 +110,28 @@ export async function requireTrainerAccess() {
     user,
     gym,
     gymId: gym?.id ?? trainerRole.gym_id,
+  };
+}
+
+export async function requireDeskAccess() {
+  const supabase = await getServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/auth');
+
+  const roles = await getUserRoles(user.id);
+  const deskRole = roles.find(r => r.role === 'front_desk');
+  if (!deskRole?.gym_id) redirect('/home');
+
+  const admin = getAdminSupabase();
+  const { data: gym } = await admin
+    .from('gyms')
+    .select('id, name, address, phone, type, location, description, logo_url, website')
+    .eq('id', deskRole.gym_id)
+    .maybeSingle();
+
+  return {
+    user,
+    gym,
+    gymId: gym?.id ?? deskRole.gym_id,
   };
 }

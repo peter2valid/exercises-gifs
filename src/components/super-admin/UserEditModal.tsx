@@ -134,6 +134,7 @@ export function UserEditModal({ user, gyms, initialRoles, onClose }: {
                       <option value="gym_owner">Owner</option>
                       <option value="gym_admin">Admin</option>
                       <option value="trainer">Trainer</option>
+                      <option value="front_desk">Front Desk</option>
                       <option value="member">Member</option>
                     </select>
                     <button 

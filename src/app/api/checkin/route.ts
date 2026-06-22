@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/supabase/server';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { parseQrPayload } from '@/lib/qr/token';
-import { hasGymRole } from '@/lib/auth/roles';
+import { hasAnyGymRole } from '@/lib/auth/roles';
+
+// Roles allowed to check members in — a flat set, not a hierarchy, since
+// front_desk shouldn't inherit trainer's program-management permissions.
+const CHECKIN_ROLES = ['gym_owner', 'gym_admin', 'trainer', 'front_desk'] as const;
 
 export async function POST(req: Request): Promise<NextResponse> {
   const staff = await getUserFromRequest(req);
@@ -15,8 +19,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'qrPayload and gymId required' }, { status: 400 });
   }
 
-  // Staff must be at least a trainer for this gym
-  const allowed = await hasGymRole(staff.id, gymId, 'trainer');
+  // Staff must hold a check-in-capable role for this gym
+  const allowed = await hasAnyGymRole(staff.id, gymId, [...CHECKIN_ROLES]);
   if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const parsed = parseQrPayload(qrPayload);
@@ -83,7 +87,7 @@ export async function PUT(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'memberId and gymId required' }, { status: 400 });
   }
 
-  const allowed = await hasGymRole(staff.id, gymId, 'trainer');
+  const allowed = await hasAnyGymRole(staff.id, gymId, [...CHECKIN_ROLES]);
   if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   // Verify the member actually belongs to this gym

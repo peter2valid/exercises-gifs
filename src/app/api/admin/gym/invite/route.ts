@@ -3,7 +3,7 @@ import { getUserFromRequest } from '@/lib/supabase/server';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { hasGymRole } from '@/lib/auth/roles';
 
-const VALID_ROLES = new Set(['gym_admin', 'trainer', 'member']);
+const VALID_ROLES = new Set(['gym_admin', 'trainer', 'front_desk', 'member']);
 
 export async function POST(req: Request): Promise<NextResponse> {
   const user = await getUserFromRequest(req);
@@ -19,7 +19,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Valid email required' }, { status: 400 });
   }
   if (!role || !VALID_ROLES.has(role)) {
-    return NextResponse.json({ error: 'Role must be gym_admin, trainer, or member' }, { status: 400 });
+    return NextResponse.json({ error: 'Role must be gym_admin, trainer, front_desk, or member' }, { status: 400 });
   }
 
   const allowed = await hasGymRole(user.id, gymId, 'gym_admin');

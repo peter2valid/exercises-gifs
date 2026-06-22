@@ -123,7 +123,7 @@ export interface EntitlementCache {
   version: number;
 }
 
-export type GymRoleType = 'super_admin' | 'gym_owner' | 'gym_admin' | 'trainer' | 'member';
+export type GymRoleType = 'super_admin' | 'gym_owner' | 'gym_admin' | 'trainer' | 'front_desk' | 'member';
 
 export interface UserGymRole {
   id: string;

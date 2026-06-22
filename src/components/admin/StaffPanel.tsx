@@ -4,23 +4,26 @@ import { useState, useCallback } from 'react';
 import { UserPlus, Copy, Check, Trash2, Loader2, X } from 'lucide-react';
 
 const ROLE_LABEL: Record<string, string> = {
-  gym_admin: 'Admin',
-  trainer:   'Trainer',
-  member:    'Member',
+  gym_admin:  'Admin',
+  trainer:    'Trainer',
+  front_desk: 'Front Desk',
+  member:     'Member',
 };
 
 const ROLE_CLASS: Record<string, string> = {
-  gym_owner: 'a-badge a-badge-blue',
-  gym_admin: 'a-badge a-badge-ok',
-  trainer:   'a-badge a-badge-warn',
-  member:    'a-badge a-badge-gray',
+  gym_owner:  'a-badge a-badge-blue',
+  gym_admin:  'a-badge a-badge-ok',
+  trainer:    'a-badge a-badge-warn',
+  front_desk: 'a-badge a-badge-blue',
+  member:     'a-badge a-badge-gray',
 };
 
 const STAFF_ROLE_LABEL: Record<string, string> = {
-  gym_owner: 'Owner',
-  gym_admin: 'Admin',
-  trainer:   'Trainer',
-  member:    'Member',
+  gym_owner:  'Owner',
+  gym_admin:  'Admin',
+  trainer:    'Trainer',
+  front_desk: 'Front Desk',
+  member:     'Member',
 };
 
 interface StaffRow {
@@ -56,7 +59,7 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
 
   // Invite form
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'gym_admin' | 'trainer'>('trainer');
+  const [role, setRole] = useState<'gym_admin' | 'trainer' | 'front_desk'>('trainer');
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [newInviteUrl, setNewInviteUrl] = useState<string | null>(null);
@@ -159,6 +162,7 @@ export function StaffPanel({ gymId, initialStaff, initialInvites, appUrl }: Prop
           >
             <option value="gym_admin">Admin</option>
             <option value="trainer">Trainer</option>
+            <option value="front_desk">Front Desk</option>
           </select>
           <button
             type="submit"

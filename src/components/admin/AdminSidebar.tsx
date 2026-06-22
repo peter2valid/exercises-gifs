@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase/client';
 import {
   LayoutDashboard, Users, ScanLine, CreditCard, Package,
   UserCheck, Settings2, Building2, Tag, X, LogOut, Zap,
-  QrCode, Dumbbell,
+  QrCode, Dumbbell, CalendarCheck,
 } from 'lucide-react';
 
 const ADMIN_NAV = [
@@ -14,6 +14,7 @@ const ADMIN_NAV = [
   { href: '/admin/members',     label: 'Members',     icon: Users },
   { href: '/admin/scan',        label: 'Scan QR',     icon: QrCode },
   { href: '/admin/check-ins',   label: 'Check-ins',   icon: ScanLine },
+  { href: '/admin/attendance',  label: 'Attendance',  icon: CalendarCheck },
   { href: '/admin/programs',    label: 'Programs',    icon: Dumbbell },
   { href: '/admin/payments',    label: 'Payments',    icon: CreditCard },
   { href: '/admin/packages',    label: 'Packages',    icon: Package },
@@ -23,8 +24,18 @@ const ADMIN_NAV = [
 
 const TRAINER_NAV = [
   { href: '/trainer',           label: 'Dashboard',   icon: LayoutDashboard, exact: true },
+  { href: '/admin/attendance',  label: 'Attendance',  icon: CalendarCheck },
+  { href: '/admin/scan',        label: 'Scan QR',     icon: QrCode },
+  { href: '/admin/check-ins',   label: 'Check-ins',   icon: ScanLine },
   { href: '/admin/programs',    label: 'Programs',    icon: Dumbbell },
   { href: '/admin/members',     label: 'Members',     icon: Users },
+];
+
+const DESK_NAV = [
+  { href: '/desk',              label: 'Dashboard',   icon: LayoutDashboard, exact: true },
+  { href: '/admin/scan',        label: 'Scan QR',     icon: QrCode },
+  { href: '/admin/check-ins',   label: 'Check-ins',   icon: ScanLine },
+  { href: '/admin/attendance',  label: 'Attendance',  icon: CalendarCheck },
 ];
 
 const SUPER_NAV = [
@@ -36,11 +47,25 @@ const SUPER_NAV = [
 ];
 
 interface Props {
-  variant: 'admin' | 'super-admin' | 'trainer';
+  variant: 'admin' | 'super-admin' | 'trainer' | 'desk';
   gymName: string;
   isOpen: boolean;
   onClose: () => void;
 }
+
+const NAV_BY_VARIANT: Record<Props['variant'], typeof ADMIN_NAV> = {
+  admin: ADMIN_NAV,
+  trainer: TRAINER_NAV,
+  desk: DESK_NAV,
+  'super-admin': SUPER_NAV,
+};
+
+const VARIANT_LABEL: Record<Props['variant'], string> = {
+  admin: 'Gym Admin',
+  trainer: 'Gym Trainer',
+  desk: 'Front Desk',
+  'super-admin': 'Super Admin',
+};
 
 function NavItem({
   href, label, icon: Icon, exact, onClick,
@@ -60,7 +85,7 @@ function NavItem({
 
 export function AdminSidebar({ variant, gymName, isOpen, onClose }: Props) {
   const router = useRouter();
-  const navItems = variant === 'admin' ? ADMIN_NAV : (variant === 'trainer' ? TRAINER_NAV : SUPER_NAV);
+  const navItems = NAV_BY_VARIANT[variant];
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -78,7 +103,7 @@ export function AdminSidebar({ variant, gymName, isOpen, onClose }: Props) {
           <div className="min-w-0">
             <p className="truncate text-[13px] font-semibold text-[#e8e8e8] leading-none">{gymName}</p>
             <p className="text-[10px] text-[#555] mt-0.5 leading-none uppercase tracking-wide">
-              {variant === 'admin' ? 'Gym Admin' : (variant === 'trainer' ? 'Gym Trainer' : 'Super Admin')}
+              {VARIANT_LABEL[variant]}
             </p>
           </div>
         </div>

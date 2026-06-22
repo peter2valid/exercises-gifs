@@ -5,7 +5,7 @@ import { AdminSidebar } from './AdminSidebar';
 import { AdminTopbar } from './AdminTopbar';
 
 interface Props {
-  variant: 'admin' | 'super-admin' | 'trainer';
+  variant: 'admin' | 'super-admin' | 'trainer' | 'desk';
   gymName: string;
   userEmail: string;
   children: React.ReactNode;
