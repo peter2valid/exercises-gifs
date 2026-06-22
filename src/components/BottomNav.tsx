@@ -24,7 +24,9 @@ export function BottomNav() {
   if (
     pathname.startsWith('/auth') ||
     pathname.startsWith('/admin') ||
-    pathname.startsWith('/super-admin')
+    pathname.startsWith('/super-admin') ||
+    pathname.startsWith('/trainer') ||
+    pathname.startsWith('/desk')
   ) return null;
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
